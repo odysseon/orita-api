@@ -1,4 +1,4 @@
-import { Body, Controller, Inject, Post, HttpCode, HttpStatus } from '@nestjs/common';
+import { Body, Controller, Inject, Post, HttpCode, HttpStatus, ConflictException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { AppConfig } from '../../configs/validation.js';
 import {
@@ -22,8 +22,10 @@ import {
   RequestPasswordResetDto,
   ResetPasswordDto,
   ChangePasswordDto,
+  AddPasswordDto,
 } from '../dto/index.js';
 import { MailQueueService } from '../../mail/mail-queue.service.js';
+import { PrismaService } from '../../prisma/prisma.service.js';
 
 @ApiTags('Password Authentication')
 @Controller('auth')
@@ -33,6 +35,7 @@ export class PasswordAuthController {
     private readonly password: PasswordMethods,
     private readonly mailQueueService: MailQueueService,
     private readonly configService: ConfigService<AppConfig>,
+    private readonly prisma: PrismaService,
   ) {}
 
   @ApiOperation({ summary: 'Login with email + password' })
@@ -112,6 +115,33 @@ export class PasswordAuthController {
       accountId: identity.accountId,
       currentPassword: dto.currentPassword,
       newPassword: dto.newPassword,
+    });
+
+    return { success: true };
+  }
+
+  @ApiOperation({ summary: 'Add/set a password for an account (OAuth users)' })
+  @ApiBody({ type: AddPasswordDto })
+  @ApiOkResponse({ description: 'Password added successfully' })
+  @ApiBearerAuth()
+  @Post('password/add')
+  @HttpCode(HttpStatus.OK)
+  async addPassword(
+    @Body() dto: AddPasswordDto,
+    @CurrentIdentity() identity: RequestIdentity,
+  ): Promise<{ success: boolean }> {
+    // Ensure account doesn't already have a password
+    const existingPassword = await this.prisma.passwordHash.findUnique({
+      where: { accountId: identity.accountId },
+    });
+
+    if (existingPassword) {
+      throw new ConflictException('Account already has a password set. Use the change password endpoint instead.');
+    }
+
+    await this.password.addPasswordToAccount({
+      accountId: identity.accountId,
+      password: dto.password,
     });
 
     return { success: true };

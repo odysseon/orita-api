@@ -59,3 +59,13 @@ export class ChangePasswordDto {
   @IsStrongPassword()
   newPassword!: string;
 }
+
+export class AddPasswordDto {
+  /**
+   * The password to add to the account.
+   * @example secret123!
+   */
+  @IsNotEmpty()
+  @IsStrongPassword()
+  password!: string;
+}
