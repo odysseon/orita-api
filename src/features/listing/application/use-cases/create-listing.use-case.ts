@@ -65,6 +65,16 @@ export class CreateListingUseCase {
     await this.eventBus.publish(
       'listing.published',
       new ListingCreatedEvent(listing.id, listing.businessProfileId),
+      {
+        location:
+          businessProfile.latitude && businessProfile.longitude
+            ? {
+                lat: businessProfile.latitude,
+                lng: businessProfile.longitude,
+              }
+            : undefined,
+        categoryIds: [...businessProfile.categoryIds, category.id],
+      },
     );
 
     return listing;
