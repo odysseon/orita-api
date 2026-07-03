@@ -1,4 +1,12 @@
-import { Body, Controller, Inject, Post, HttpCode, HttpStatus, ConflictException } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Inject,
+  Post,
+  HttpCode,
+  HttpStatus,
+  ConflictException,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { AppConfig } from '../../configs/validation.js';
 import {
@@ -136,7 +144,9 @@ export class PasswordAuthController {
     });
 
     if (existingPassword) {
-      throw new ConflictException('Account already has a password set. Use the change password endpoint instead.');
+      throw new ConflictException(
+        'Account already has a password set. Use the change password endpoint instead.',
+      );
     }
 
     await this.password.addPasswordToAccount({
