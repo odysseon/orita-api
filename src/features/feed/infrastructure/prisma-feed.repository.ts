@@ -80,12 +80,15 @@ export class PrismaFeedRepository {
           -- Using linear decay for MVP simplicity: GREATEST(0, 25 * (1 - (days_old / 14)))
           GREATEST(0, 25 * (1 - (EXTRACT(EPOCH FROM (NOW() - "createdAt")) / 86400) / 14)) AS score_freshness,
 
-          -- Quality Score (15 points max)
-          (CASE WHEN "verificationStatus" = 'VERIFIED' THEN 15 ELSE 5 END) AS score_quality,
-          
-          -- Popularity Score (10 points max)
-          -- Hardcoded to 5 for MVP until analytics are fully wired
-          5 AS score_popularity
+          -- Derived Popularity Score from pre-aggregated signals
+          (
+            ("clicksCount" * 1) 
+            + ("savesCount" * 10) 
+            + ("messagesCount" * 15) 
+            + ("sharesCount" * 5)
+            - ("hidesCount" * 15)
+            - ("reportsCount" * 50)
+          ) AS score_popularity
 
         FROM feed_candidates
       )

@@ -39,6 +39,103 @@ export class FeedConsumer {
     );
   }
 
+  @OnEvent('listing.saved')
+  async handleListingSaved(payload: { listingId: string }) {
+    this.logger.log(`Handling listing.saved for ${payload.listingId}`);
+    await this.incrementCounter(DiscoveryItemType.LISTING, payload.listingId, 'savesCount', 1);
+  }
+
+  @OnEvent('listing.unsaved')
+  async handleListingUnsaved(payload: { listingId: string }) {
+    this.logger.log(`Handling listing.unsaved for ${payload.listingId}`);
+    await this.incrementCounter(DiscoveryItemType.LISTING, payload.listingId, 'savesCount', -1);
+  }
+
+  @OnEvent('business.saved')
+  async handleBusinessSaved(payload: { businessProfileId: string }) {
+    this.logger.log(`Handling business.saved for ${payload.businessProfileId}`);
+    await this.incrementCounter(
+      DiscoveryItemType.BUSINESS,
+      payload.businessProfileId,
+      'savesCount',
+      1,
+    );
+  }
+
+  @OnEvent('business.unsaved')
+  async handleBusinessUnsaved(payload: { businessProfileId: string }) {
+    this.logger.log(`Handling business.unsaved for ${payload.businessProfileId}`);
+    await this.incrementCounter(
+      DiscoveryItemType.BUSINESS,
+      payload.businessProfileId,
+      'savesCount',
+      -1,
+    );
+  }
+
+  @OnEvent('message.sent')
+  async handleMessageSent(payload: { referenceType: string | null; referenceId: string | null }) {
+    if (!payload.referenceType || !payload.referenceId) return;
+    this.logger.log(`Handling message.sent for ${payload.referenceType} ${payload.referenceId}`);
+    const itemType = payload.referenceType as DiscoveryItemType;
+    await this.incrementCounter(itemType, payload.referenceId, 'messagesCount', 1);
+  }
+
+  @OnEvent('analytics.event.created')
+  async handleAnalyticsEvent(payload: {
+    eventType: string;
+    businessProfileId: string;
+    listingId?: string | null;
+  }) {
+    this.logger.log(`Handling analytics.event.created ${payload.eventType}`);
+    if (payload.eventType === 'LISTING_VIEW' && payload.listingId) {
+      await this.incrementCounter(DiscoveryItemType.LISTING, payload.listingId, 'clicksCount', 1);
+    } else if (payload.eventType === 'PROFILE_VIEW') {
+      await this.incrementCounter(
+        DiscoveryItemType.BUSINESS,
+        payload.businessProfileId,
+        'clicksCount',
+        1,
+      );
+    } else {
+      // Other events like PHONE_CLICK or WEBSITE_CLICK can also be considered clicks for the business
+      await this.incrementCounter(
+        DiscoveryItemType.BUSINESS,
+        payload.businessProfileId,
+        'clicksCount',
+        1,
+      );
+    }
+  }
+
+  private async incrementCounter(
+    itemType: DiscoveryItemType,
+    referenceId: string,
+    field:
+      | 'clicksCount'
+      | 'savesCount'
+      | 'messagesCount'
+      | 'sharesCount'
+      | 'hidesCount'
+      | 'reportsCount',
+    amount: number,
+  ) {
+    try {
+      await this.prisma.$executeRawUnsafe(
+        `
+        UPDATE "discovery_items"
+        SET "${field}" = GREATEST(0, "${field}" + $1)
+        WHERE "itemType" = $2 AND "referenceId" = $3
+      `,
+        amount,
+        itemType,
+        referenceId,
+      );
+    } catch (error) {
+      this.logger.error(`Failed to update ${field} for ${itemType} ${referenceId}`, error);
+    }
+  }
+
   private async upsertDiscoveryItem(
     itemType: DiscoveryItemType,
     businessProfileId: string,
