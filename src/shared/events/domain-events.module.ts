@@ -1,15 +1,16 @@
-import { Module } from '@nestjs/common';
+import { Module, Global } from '@nestjs/common';
 import { BullModule } from '@nestjs/bullmq';
 import { DomainEventsProcessor } from './domain-events.processor.js';
-import { DomainEventsListener } from './domain-events.listener.js';
+import { EventBusService } from './event-bus.service.js';
 
+@Global()
 @Module({
   imports: [
     BullModule.registerQueue({
       name: 'domain-events',
     }),
   ],
-  providers: [DomainEventsProcessor, DomainEventsListener],
-  exports: [BullModule],
+  providers: [DomainEventsProcessor, EventBusService],
+  exports: [BullModule, EventBusService],
 })
 export class DomainEventsModule {}

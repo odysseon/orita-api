@@ -1,14 +1,22 @@
 import { Processor, WorkerHost } from '@nestjs/bullmq';
 import { Logger } from '@nestjs/common';
 import { Job } from 'bullmq';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 
 @Processor('domain-events')
 export class DomainEventsProcessor extends WorkerHost {
   private readonly logger = new Logger(DomainEventsProcessor.name);
 
+  constructor(private readonly eventEmitter: EventEmitter2) {
+    super();
+  }
+
   async process(job: Job<any, any, string>): Promise<any> {
-    this.logger.log(`Processing ${job.name} job ${job.id} for payload: ${JSON.stringify(job.data)}`);
-    // Here we can eventually fanout to location-based email services, search indexers, etc.
+    this.logger.debug(`Processing domain event: ${job.name} (Job ${job.id})`);
+
+    // Fan-out locally to any feature module consumers (e.g., FeedConsumer)
+    await this.eventEmitter.emitAsync(job.name, job.data);
+
     return { success: true };
   }
 }
