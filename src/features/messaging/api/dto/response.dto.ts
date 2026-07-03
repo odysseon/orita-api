@@ -4,6 +4,7 @@ import {
   MessageView,
   MessageReadReceiptView,
 } from '../../domain/types/messaging.types.js';
+import type { MessageReferencePreview } from '../../domain/types/messaging.types.js';
 
 export class MessageReadReceiptResponseDto {
   @ApiProperty() messageId!: string;
@@ -26,6 +27,9 @@ export class MessageResponseDto {
   @ApiProperty() content!: string;
   @ApiPropertyOptional() mediaUrl!: string | null;
   @ApiPropertyOptional() mediaType!: string | null;
+  @ApiPropertyOptional() referenceType?: string | null;
+  @ApiPropertyOptional() referenceId?: string | null;
+  @ApiPropertyOptional() referencePreview?: MessageReferencePreview;
   @ApiProperty() createdAt!: Date;
   @ApiProperty({ type: [MessageReadReceiptResponseDto] })
   readReceipts!: MessageReadReceiptResponseDto[];
@@ -38,6 +42,11 @@ export class MessageResponseDto {
     dto.content = m.content;
     dto.mediaUrl = m.mediaUrl;
     dto.mediaType = m.mediaType;
+    dto.referenceType = m.referenceType;
+    dto.referenceId = m.referenceId;
+    if (m.referencePreview !== undefined) {
+      dto.referencePreview = m.referencePreview;
+    }
     dto.createdAt = m.createdAt;
     dto.readReceipts = m.readReceipts.map((r) => MessageReadReceiptResponseDto.from(r));
     return dto;
