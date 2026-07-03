@@ -2,6 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { OnEvent } from '@nestjs/event-emitter';
 import { PrismaService } from '../../../prisma/prisma.service.js';
 import { DiscoveryItemType } from '../../../../generated/prisma/client.js';
+import type { EnrichedDomainEvent } from '../../../shared/events/event-bus.service.js';
 
 @Injectable()
 export class FeedConsumer {
@@ -10,90 +11,110 @@ export class FeedConsumer {
   constructor(private readonly prisma: PrismaService) {}
 
   @OnEvent('business.created')
-  async handleBusinessCreated(payload: { businessProfileId: string }) {
-    this.logger.log(`Handling business.created for ${payload.businessProfileId}`);
+  async handleBusinessCreated(payload: EnrichedDomainEvent<{ businessProfileId: string }>) {
+    this.logger.log(`Handling business.created for ${payload.data.businessProfileId}`);
     await this.upsertDiscoveryItem(
       DiscoveryItemType.BUSINESS,
-      payload.businessProfileId,
-      payload.businessProfileId,
+      payload.data.businessProfileId,
+      payload.data.businessProfileId,
     );
   }
 
   @OnEvent('listing.published')
-  async handleListingPublished(payload: { businessProfileId: string; listingId: string }) {
-    this.logger.log(`Handling listing.published for ${payload.listingId}`);
+  async handleListingPublished(
+    payload: EnrichedDomainEvent<{ businessProfileId: string; listingId: string }>,
+  ) {
+    this.logger.log(`Handling listing.published for ${payload.data.listingId}`);
     await this.upsertDiscoveryItem(
       DiscoveryItemType.LISTING,
-      payload.businessProfileId,
-      payload.listingId,
+      payload.data.businessProfileId,
+      payload.data.listingId,
     );
   }
 
   @OnEvent('tour.uploaded')
-  async handleTourUploaded(payload: { businessProfileId: string; tourId: string }) {
-    this.logger.log(`Handling tour.uploaded for ${payload.tourId}`);
+  async handleTourUploaded(
+    payload: EnrichedDomainEvent<{ businessProfileId: string; tourId: string }>,
+  ) {
+    this.logger.log(`Handling tour.uploaded for ${payload.data.tourId}`);
     await this.upsertDiscoveryItem(
       DiscoveryItemType.TOUR,
-      payload.businessProfileId,
-      payload.tourId,
+      payload.data.businessProfileId,
+      payload.data.tourId,
     );
   }
 
   @OnEvent('listing.saved')
-  async handleListingSaved(payload: { listingId: string }) {
-    this.logger.log(`Handling listing.saved for ${payload.listingId}`);
-    await this.incrementCounter(DiscoveryItemType.LISTING, payload.listingId, 'savesCount', 1);
+  async handleListingSaved(payload: EnrichedDomainEvent<{ listingId: string }>) {
+    this.logger.log(`Handling listing.saved for ${payload.data.listingId}`);
+    await this.incrementCounter(DiscoveryItemType.LISTING, payload.data.listingId, 'savesCount', 1);
   }
 
   @OnEvent('listing.unsaved')
-  async handleListingUnsaved(payload: { listingId: string }) {
-    this.logger.log(`Handling listing.unsaved for ${payload.listingId}`);
-    await this.incrementCounter(DiscoveryItemType.LISTING, payload.listingId, 'savesCount', -1);
+  async handleListingUnsaved(payload: EnrichedDomainEvent<{ listingId: string }>) {
+    this.logger.log(`Handling listing.unsaved for ${payload.data.listingId}`);
+    await this.incrementCounter(
+      DiscoveryItemType.LISTING,
+      payload.data.listingId,
+      'savesCount',
+      -1,
+    );
   }
 
   @OnEvent('business.saved')
-  async handleBusinessSaved(payload: { businessProfileId: string }) {
-    this.logger.log(`Handling business.saved for ${payload.businessProfileId}`);
+  async handleBusinessSaved(payload: EnrichedDomainEvent<{ businessProfileId: string }>) {
+    this.logger.log(`Handling business.saved for ${payload.data.businessProfileId}`);
     await this.incrementCounter(
       DiscoveryItemType.BUSINESS,
-      payload.businessProfileId,
+      payload.data.businessProfileId,
       'savesCount',
       1,
     );
   }
 
   @OnEvent('business.unsaved')
-  async handleBusinessUnsaved(payload: { businessProfileId: string }) {
-    this.logger.log(`Handling business.unsaved for ${payload.businessProfileId}`);
+  async handleBusinessUnsaved(payload: EnrichedDomainEvent<{ businessProfileId: string }>) {
+    this.logger.log(`Handling business.unsaved for ${payload.data.businessProfileId}`);
     await this.incrementCounter(
       DiscoveryItemType.BUSINESS,
-      payload.businessProfileId,
+      payload.data.businessProfileId,
       'savesCount',
       -1,
     );
   }
 
   @OnEvent('message.sent')
-  async handleMessageSent(payload: { referenceType: string | null; referenceId: string | null }) {
-    if (!payload.referenceType || !payload.referenceId) return;
-    this.logger.log(`Handling message.sent for ${payload.referenceType} ${payload.referenceId}`);
-    const itemType = payload.referenceType as DiscoveryItemType;
-    await this.incrementCounter(itemType, payload.referenceId, 'messagesCount', 1);
+  async handleMessageSent(
+    payload: EnrichedDomainEvent<{ referenceType: string | null; referenceId: string | null }>,
+  ) {
+    if (!payload.data.referenceType || !payload.data.referenceId) return;
+    this.logger.log(
+      `Handling message.sent for ${payload.data.referenceType} ${payload.data.referenceId}`,
+    );
+    const itemType = payload.data.referenceType as DiscoveryItemType;
+    await this.incrementCounter(itemType, payload.data.referenceId, 'messagesCount', 1);
   }
 
   @OnEvent('analytics.event.created')
-  async handleAnalyticsEvent(payload: {
-    eventType: string;
-    businessProfileId: string;
-    listingId?: string | null;
-  }) {
-    this.logger.log(`Handling analytics.event.created ${payload.eventType}`);
-    if (payload.eventType === 'LISTING_VIEW' && payload.listingId) {
-      await this.incrementCounter(DiscoveryItemType.LISTING, payload.listingId, 'clicksCount', 1);
-    } else if (payload.eventType === 'PROFILE_VIEW') {
+  async handleAnalyticsEvent(
+    payload: EnrichedDomainEvent<{
+      eventType: string;
+      businessProfileId: string;
+      listingId?: string | null;
+    }>,
+  ) {
+    this.logger.log(`Handling analytics.event.created ${payload.data.eventType}`);
+    if (payload.data.eventType === 'LISTING_VIEW' && payload.data.listingId) {
+      await this.incrementCounter(
+        DiscoveryItemType.LISTING,
+        payload.data.listingId,
+        'clicksCount',
+        1,
+      );
+    } else if (payload.data.eventType === 'PROFILE_VIEW') {
       await this.incrementCounter(
         DiscoveryItemType.BUSINESS,
-        payload.businessProfileId,
+        payload.data.businessProfileId,
         'clicksCount',
         1,
       );
@@ -101,7 +122,7 @@ export class FeedConsumer {
       // Other events like PHONE_CLICK or WEBSITE_CLICK can also be considered clicks for the business
       await this.incrementCounter(
         DiscoveryItemType.BUSINESS,
-        payload.businessProfileId,
+        payload.data.businessProfileId,
         'clicksCount',
         1,
       );
