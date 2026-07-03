@@ -1,5 +1,5 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { EventEmitter2 } from '@nestjs/event-emitter';
+import { EventBusService } from '../../../../shared/events/event-bus.service.js';
 import { PrismaService } from '../../../../prisma/prisma.service.js';
 import { BusinessTourCreatedEvent } from '../../../../shared/events/business-tour.events.js';
 import { IBusinessTourRepository } from '../../domain/ports/business-tour.repository.port.js';
@@ -11,7 +11,7 @@ export class CreateBusinessTourUseCase {
   constructor(
     private readonly businessTourRepo: IBusinessTourRepository,
     private readonly prisma: PrismaService,
-    private readonly eventEmitter: EventEmitter2,
+    private readonly eventBus: EventBusService,
   ) {}
 
   async execute(input: CreateBusinessTourInput): Promise<BusinessTour> {
@@ -26,9 +26,9 @@ export class CreateBusinessTourUseCase {
 
     const tour = await this.businessTourRepo.create(input);
 
-    this.eventEmitter.emit(
-      'tour.created',
-      new BusinessTourCreatedEvent(tour.id, tour.businessProfileId)
+    await this.eventBus.publish(
+      'tour.uploaded',
+      new BusinessTourCreatedEvent(tour.id, tour.businessProfileId),
     );
 
     return tour;
