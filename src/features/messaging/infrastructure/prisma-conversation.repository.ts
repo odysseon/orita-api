@@ -9,6 +9,7 @@ import {
   SendMessageInput,
   MarkMessagesReadInput,
   ConversationStatus,
+  MessageReferencePreview,
 } from '../domain/types/messaging.types.js';
 
 @Injectable()
@@ -22,6 +23,8 @@ export class PrismaConversationRepository implements IConversationRepository {
     content: string;
     mediaUrl: string | null;
     mediaType: string | null;
+    referenceType?: string | null;
+    referenceId?: string | null;
     createdAt: Date;
     readReceipts: { messageId: string; userId: string; readAt: Date }[];
   }): MessageView {
@@ -32,6 +35,8 @@ export class PrismaConversationRepository implements IConversationRepository {
       content: m.content,
       mediaUrl: m.mediaUrl,
       mediaType: m.mediaType as MessageView['mediaType'],
+      referenceType: m.referenceType as MessageView['referenceType'] | null,
+      referenceId: m.referenceId ?? null,
       createdAt: m.createdAt,
       readReceipts: m.readReceipts.map((r): MessageReadReceiptView => ({
         messageId: r.messageId,
@@ -93,6 +98,8 @@ export class PrismaConversationRepository implements IConversationRepository {
         content: input.content,
         mediaUrl: input.mediaUrl ?? null,
         mediaType: input.mediaType ?? null,
+        referenceType: input.referenceType ?? null,
+        referenceId: input.referenceId ?? null,
       },
       include: { readReceipts: true },
     });
@@ -102,7 +109,17 @@ export class PrismaConversationRepository implements IConversationRepository {
       data: { updatedAt: new Date() },
     });
 
-    return this.mapMessage(message);
+    const mapped = this.mapMessage(message);
+    if (mapped.referenceType && mapped.referenceId) {
+      const previewMap = await this.fetchReferencePreviews([
+        { type: mapped.referenceType, id: mapped.referenceId },
+      ]);
+      const preview = previewMap.get(mapped.referenceId);
+      if (preview) {
+        mapped.referencePreview = preview;
+      }
+    }
+    return mapped;
   }
 
   async findById(id: string): Promise<ConversationView | null> {
@@ -132,13 +149,81 @@ export class PrismaConversationRepository implements IConversationRepository {
     return conversations.map((c) => this.mapConversation(c));
   }
 
+  private async fetchReferencePreviews(
+    refs: { type: string; id: string }[],
+  ): Promise<Map<string, MessageReferencePreview>> {
+    const map = new Map<string, MessageReferencePreview>();
+    const businessIds = refs.filter((r) => r.type === 'BUSINESS').map((r) => r.id);
+    const listingIds = refs.filter((r) => r.type === 'LISTING').map((r) => r.id);
+    const tourIds = refs.filter((r) => r.type === 'TOUR').map((r) => r.id);
+
+    if (businessIds.length) {
+      const b = await this.prisma.businessProfile.findMany({
+        where: { id: { in: businessIds } },
+        include: { media: { take: 1, orderBy: { createdAt: 'asc' } } },
+      });
+      b.forEach((item) =>
+        map.set(item.id, {
+          title: item.name,
+          subtitle: item.description,
+          ...(item.media[0]?.url && { coverUrl: item.media[0]?.url }),
+        }),
+      );
+    }
+    if (listingIds.length) {
+      const l = await this.prisma.listing.findMany({
+        where: { id: { in: listingIds } },
+        include: { businessProfile: true, media: { take: 1, orderBy: { createdAt: 'asc' } } },
+      });
+      l.forEach((item) =>
+        map.set(item.id, {
+          title: item.title,
+          subtitle: item.businessProfile?.name,
+          ...(item.media[0]?.url && { coverUrl: item.media[0]?.url }),
+        }),
+      );
+    }
+    if (tourIds.length) {
+      const t = await this.prisma.businessTour.findMany({
+        where: { id: { in: tourIds } },
+        include: { businessProfile: true, media: { take: 1, orderBy: { createdAt: 'asc' } } },
+      });
+      t.forEach((item) =>
+        map.set(item.id, {
+          title: item.title,
+          subtitle: item.businessProfile?.name,
+          ...(item.media[0]?.url && { coverUrl: item.media[0]?.url }),
+        }),
+      );
+    }
+    return map;
+  }
+
   async getMessages(conversationId: string): Promise<MessageView[]> {
     const messages = await this.prisma.message.findMany({
       where: { conversationId },
       include: { readReceipts: true },
       orderBy: { createdAt: 'asc' },
     });
-    return messages.map((m) => this.mapMessage(m));
+
+    const refs = messages
+      .filter((m) => m.referenceType && m.referenceId)
+      .map((m) => ({ type: m.referenceType as string, id: m.referenceId as string }));
+
+    const previewMap = refs.length
+      ? await this.fetchReferencePreviews(refs)
+      : new Map<string, MessageReferencePreview>();
+
+    return messages.map((m) => {
+      const mapped = this.mapMessage(m);
+      if (mapped.referenceId) {
+        const preview = previewMap.get(mapped.referenceId);
+        if (preview) {
+          mapped.referencePreview = preview;
+        }
+      }
+      return mapped;
+    });
   }
 
   async updateStatus(id: string, status: ConversationStatus): Promise<ConversationView> {
