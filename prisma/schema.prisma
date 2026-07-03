@@ -689,6 +689,14 @@ model DiscoveryItem {
   // Polymorphic reference
   referenceId String
 
+  // Pre-aggregated raw signals
+  clicksCount   Int @default(0)
+  savesCount    Int @default(0)
+  messagesCount Int @default(0)
+  sharesCount   Int @default(0)
+  hidesCount    Int @default(0)
+  reportsCount  Int @default(0)
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
