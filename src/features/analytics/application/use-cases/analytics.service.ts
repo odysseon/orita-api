@@ -2,6 +2,8 @@ import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../../../prisma/prisma.service.js';
 import { AnalyticsEventType } from '../../../../../generated/prisma/client.js';
 
+import { EventBusService } from '../../../../shared/events/event-bus.service.js';
+
 export interface TrackEventDto {
   businessProfileId: string;
   eventType: AnalyticsEventType;
@@ -11,10 +13,13 @@ export interface TrackEventDto {
 
 @Injectable()
 export class AnalyticsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly eventBus: EventBusService,
+  ) {}
 
   async trackEvent(payload: TrackEventDto) {
-    return this.prisma.analyticsEvent.create({
+    const event = await this.prisma.analyticsEvent.create({
       data: {
         businessProfileId: payload.businessProfileId,
         eventType: payload.eventType,
@@ -22,6 +27,14 @@ export class AnalyticsService {
         userId: payload.userId ?? null,
       },
     });
+
+    await this.eventBus.publish('analytics.event.created', {
+      eventType: event.eventType,
+      businessProfileId: event.businessProfileId,
+      listingId: event.listingId,
+    });
+
+    return event;
   }
 
   async getDashboardAnalytics(businessId: string) {
