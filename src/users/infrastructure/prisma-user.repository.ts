@@ -3,6 +3,7 @@ import { PrismaService } from '../../prisma/prisma.service.js';
 import { RedisService } from '../../shared/redis/redis.service.js';
 import { IUserRepository } from '../core/ports/user.repository.interface.js';
 import { UpdateUserProfileDto } from '../delivery/http/dto/update-user-profile.dto.js';
+import { UpdateLocationDto } from '../delivery/http/dto/update-location.dto.js';
 import { UserEntity } from '../core/domain/user.types.js';
 
 @Injectable()
@@ -122,6 +123,43 @@ export class PrismaUserRepository implements IUserRepository {
         throw new NotFoundException('User profile not found for this account.');
       }
       throw error;
+    }
+  }
+
+  async updateLocation(accountId: string, payload: UpdateLocationDto): Promise<void> {
+    const user = await this.prisma.user.findUnique({
+      where: { accountId },
+      select: { id: true, locationId: true },
+    });
+    if (!user) throw new NotFoundException('User not found');
+
+    if (user.locationId) {
+      await this.prisma.$executeRaw`
+        UPDATE "Location"
+        SET coordinates = ST_SetSRID(ST_MakePoint(${payload.lng}, ${payload.lat}), 4326),
+            name = COALESCE(${payload.name ?? null}, name),
+            "formattedAddress" = COALESCE(${payload.formattedAddress ?? null}, "formattedAddress")
+        WHERE id = ${user.locationId}
+      `;
+    } else {
+      const result = await this.prisma.$queryRaw<{ id: string }[]>`
+        INSERT INTO "Location" (id, name, "formattedAddress", coordinates)
+        VALUES (
+          gen_random_uuid()::text,
+          COALESCE(${payload.name ?? null}, 'Current Location'),
+          COALESCE(${payload.formattedAddress ?? null}, 'Unknown'),
+          ST_SetSRID(ST_MakePoint(${payload.lng}, ${payload.lat}), 4326)
+        )
+        RETURNING id;
+      `;
+      const first = result[0];
+      if (first) {
+        const newLocId = first.id;
+        await this.prisma.user.update({
+          where: { id: user.id },
+          data: { locationId: newLocId },
+        });
+      }
     }
   }
 }
