@@ -98,9 +98,9 @@ model User {
   accountId String  @unique
   account   Account @relation(fields: [accountId], references: [id], onDelete: Cascade)
 
-  username    String  @unique
-  avatarUrl   String?
-  avatarId    String?
+  username  String  @unique
+  avatarUrl String?
+  avatarId  String?
 
   locationId String?
   location   Location? @relation(fields: [locationId], references: [id])
@@ -110,14 +110,14 @@ model User {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  businessProfile               BusinessProfile?
-  reviewsGiven                  Review[]                    @relation("ReviewsGiven")
-  businessToursCreated          BusinessTour[]
-  conversationsParticipated     ConversationParticipant[]
-  messagesSent                  Message[]                   @relation("MessageSender")
-  messageReadReceipts           MessageReadReceipt[]         @relation("MessageReadBy")
-  savedListings                 SavedListing[]              @relation("SavedListings")
-  savedBusinesses               SavedBusiness[]             @relation("SavedBusinesses")
+  businessProfile           BusinessProfile?
+  reviewsGiven              Review[]                  @relation("ReviewsGiven")
+  businessToursCreated      BusinessTour[]
+  conversationsParticipated ConversationParticipant[]
+  messagesSent              Message[]                 @relation("MessageSender")
+  messageReadReceipts       MessageReadReceipt[]      @relation("MessageReadBy")
+  savedListings             SavedListing[]            @relation("SavedListings")
+  savedBusinesses           SavedBusiness[]           @relation("SavedBusinesses")
 
   @@index([accountId])
 }
@@ -168,7 +168,7 @@ model BusinessProfile {
   geoEntity   Location? @relation(fields: [locationId], references: [id])
 
   // Commercial identity — many-to-many relations with Category
-  categories Category[] @relation("BusinessCategories")
+  categories    Category[]     @relation("BusinessCategories")
   businessTours BusinessTour[]
 
   createdAt DateTime @default(now())
@@ -181,6 +181,7 @@ model BusinessProfile {
   conversations   Conversation[]
   savedByUsers    SavedBusiness[]      @relation("SavedByUsers")
   analyticsEvents AnalyticsEvent[]
+  discoveryItems  DiscoveryItem[]
 
   @@index([slug])
   @@index([verificationStatus])
@@ -520,9 +521,9 @@ enum ConversationStatus {
 }
 
 model Conversation {
-  id                String             @id @default(cuid())
+  id                String          @id @default(cuid())
   businessProfileId String
-  businessProfile   BusinessProfile    @relation(fields: [businessProfileId], references: [id], onDelete: Cascade)
+  businessProfile   BusinessProfile @relation(fields: [businessProfileId], references: [id], onDelete: Cascade)
 
   listingId String?
   listing   Listing? @relation(fields: [listingId], references: [id], onDelete: SetNull)
@@ -557,6 +558,12 @@ model ConversationParticipant {
   @@map("conversation_participants")
 }
 
+enum MessageReferenceType {
+  BUSINESS
+  LISTING
+  TOUR
+}
+
 model Message {
   id             String       @id @default(cuid())
   conversationId String
@@ -570,6 +577,10 @@ model Message {
   // Optional media attachment
   mediaUrl  String?
   mediaType MediaType?
+
+  // Generic content attachment
+  referenceType MessageReferenceType?
+  referenceId   String?
 
   createdAt DateTime @default(now())
 
@@ -654,4 +665,34 @@ model AnalyticsEvent {
   @@index([eventType])
   @@index([createdAt])
   @@map("analytics_events")
+}
+
+// ============================================
+// Discovery Feed
+// ============================================
+
+enum DiscoveryItemType {
+  BUSINESS
+  LISTING
+  TOUR
+  PROMOTION
+}
+
+model DiscoveryItem {
+  id       String            @id @default(cuid())
+  itemType DiscoveryItemType
+
+  // The business this item belongs to
+  businessProfileId String
+  businessProfile   BusinessProfile @relation(fields: [businessProfileId], references: [id], onDelete: Cascade)
+
+  // Polymorphic reference
+  referenceId String
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([itemType, referenceId])
+  @@index([businessProfileId])
+  @@map("discovery_items")
 }
