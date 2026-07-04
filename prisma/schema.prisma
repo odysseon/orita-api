@@ -118,7 +118,8 @@ model User {
   messageReadReceipts       MessageReadReceipt[]      @relation("MessageReadBy")
   savedListings             SavedListing[]            @relation("SavedListings")
   savedBusinesses           SavedBusiness[]           @relation("SavedBusinesses")
-
+  notificationPreferences   NotificationPreference?
+  inAppNotifications        InAppNotification[]
   @@index([accountId])
 }
 
@@ -703,4 +704,36 @@ model DiscoveryItem {
   @@unique([itemType, referenceId])
   @@index([businessProfileId])
   @@map("discovery_items")
+}
+
+model NotificationPreference {
+  id                String   @id @default(cuid())
+  userId            String   @unique
+  messages          Boolean  @default(true)
+  nearbyDiscoveries Boolean  @default(true)
+  following         Boolean  @default(true)
+  security          Boolean  @default(true)
+  marketing         Boolean  @default(false)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model InAppNotification {
+  id            String    @id @default(cuid())
+  userId        String
+  type          String
+  actorId       String?
+  referenceType String?
+  referenceId   String?
+  payload       Json      @default("{}")
+  readAt        DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt(sort: Desc)])
+  @@index([userId, readAt])
 }

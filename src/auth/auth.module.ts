@@ -11,8 +11,10 @@ import { MailModule } from '../mail/mail.module.js';
 import { UsersModule } from '../users/users.module.js';
 import { GoogleAuthController } from './controllers/google-auth.controller.js';
 
+import { PrismaModule } from '../prisma/prisma.module.js';
+
 @Module({
-  imports: [WhoamiModule.registerAsync(whoamiConfig), MailModule, UsersModule],
+  imports: [WhoamiModule.registerAsync(whoamiConfig), MailModule, UsersModule, PrismaModule],
   controllers: [
     AccountsController,
     PasswordAuthController,
