@@ -26,6 +26,7 @@ import { MailModule } from './mail/mail.module.js';
 import { RedisModule } from './shared/redis/redis.module.js';
 import { EventEmitterModule } from '@nestjs/event-emitter';
 import { DomainEventsModule } from './shared/events/domain-events.module.js';
+import { SearchModule } from './features/search/search.module.js';
 
 @Module({
   imports: [
@@ -80,6 +81,7 @@ import { DomainEventsModule } from './shared/events/domain-events.module.js';
     FeedModule,
     MailModule,
     RedisModule,
+    SearchModule,
   ],
   controllers: [HealthController],
   providers: [
