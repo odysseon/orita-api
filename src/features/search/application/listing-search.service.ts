@@ -35,7 +35,7 @@ export class ListingSearchService {
     const where: Prisma.ListingWhereInput = {
       status: 'PUBLISHED',
       businessProfile: {
-        verificationStatus: { in: ['VERIFIED', 'PENDING'] },
+        isPublic: true,
       },
     };
 
