@@ -253,6 +253,7 @@ export class PrismaListingRepository extends IListingRepository {
         JOIN business_profiles bp ON l."businessProfileId" = bp.id
         JOIN "Location" loc ON bp."locationId" = loc.id
         WHERE l.status = ${input.status ?? ListingStatus.PUBLISHED}::"ListingStatus"
+          AND bp."isPublic" = true
           AND ST_DWithin(loc.coordinates::geography, ST_SetSRID(ST_MakePoint(${input.lng}, ${input.lat}), 4326)::geography, ${radiusMeters})
           ${input.businessProfileId ? Prisma.sql`AND l."businessProfileId" = ${input.businessProfileId}` : Prisma.empty}
           ${input.currencyCode ? Prisma.sql`AND l."currencyCode" = ${input.currencyCode}` : Prisma.empty}
@@ -280,6 +281,7 @@ export class PrismaListingRepository extends IListingRepository {
         JOIN business_profiles bp ON l."businessProfileId" = bp.id
         JOIN "Location" loc ON bp."locationId" = loc.id
         WHERE l.status = ${input.status ?? ListingStatus.PUBLISHED}::"ListingStatus"
+          AND bp."isPublic" = true
           AND ST_DWithin(loc.coordinates::geography, ST_SetSRID(ST_MakePoint(${input.lng}, ${input.lat}), 4326)::geography, ${radiusMeters})
           ${input.businessProfileId ? Prisma.sql`AND l."businessProfileId" = ${input.businessProfileId}` : Prisma.empty}
           ${input.currencyCode ? Prisma.sql`AND l."currencyCode" = ${input.currencyCode}` : Prisma.empty}
@@ -325,6 +327,9 @@ export class PrismaListingRepository extends IListingRepository {
 
     const where: Prisma.ListingWhereInput = {
       status: input.status ?? ListingStatus.PUBLISHED,
+      businessProfile: {
+        isPublic: true,
+      },
       ...(input.businessProfileId && { businessProfileId: input.businessProfileId }),
       ...(input.currencyCode && { currencyCode: input.currencyCode }),
       ...(input.isNegotiable !== undefined && { isNegotiable: input.isNegotiable }),

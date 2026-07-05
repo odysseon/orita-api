@@ -25,7 +25,7 @@ export class CloudinaryStorageProvider implements StorageProvider {
         {
           public_id: publicIdBase,
           folder: params.destination,
-          resource_type: 'image',
+          resource_type: 'auto',
         },
         (error, result) => {
           if (error || !result) {
