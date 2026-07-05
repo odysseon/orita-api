@@ -3,7 +3,11 @@ import { ListingStatus } from '../../features/listing/domain/types/listing-statu
 export class ListingCreatedEvent {
   constructor(
     public readonly listingId: string,
+    public readonly listingSlug: string,
+    public readonly listingTitle: string,
     public readonly businessProfileId: string,
+    public readonly businessName: string,
+    public readonly actorId?: string,
   ) {}
 }
 
