@@ -18,7 +18,7 @@ export class GetPrivateListingUseCase {
     }
 
     const profile = await this.businessRepo.findById(listing.businessProfileId);
-    
+
     if (!profile || profile.ownerId !== requesterId) {
       throw new ForbiddenException('You do not own this listing.');
     }

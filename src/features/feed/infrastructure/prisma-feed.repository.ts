@@ -145,11 +145,13 @@ export class PrismaFeedRepository {
         : [],
     ]);
 
-    const businessMap = new Map(businesses.map((b) => {
-      const logo = b.media?.find(m => m.role === 'LOGO')?.url;
-      const cover = b.media?.find(m => m.role === 'COVER')?.url;
-      return [b.id, { ...b, logoUrl: logo, coverUrl: cover }];
-    }));
+    const businessMap = new Map(
+      businesses.map((b) => {
+        const logo = b.media?.find((m) => m.role === 'LOGO')?.url;
+        const cover = b.media?.find((m) => m.role === 'COVER')?.url;
+        return [b.id, { ...b, logoUrl: logo, coverUrl: cover }];
+      }),
+    );
     const listingMap = new Map(listings.map((l) => [l.id, l]));
     const tourMap = new Map(tours.map((t) => [t.id, t]));
 
