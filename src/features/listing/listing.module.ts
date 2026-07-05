@@ -10,6 +10,7 @@ import { TransitionListingStatusUseCase } from './application/use-cases/transiti
 import { DeleteListingUseCase } from './application/use-cases/delete-listing.use-case.js';
 import { GetPublicListingUseCase } from './application/use-cases/get-public-listing.use-case.js';
 import { GetBusinessListingsUseCase } from './application/use-cases/get-business-listings.use-case.js';
+import { GetPrivateListingUseCase } from './application/use-cases/get-private-listing.use-case.js';
 import { DiscoverListingsUseCase } from './application/use-cases/discover-listings.use-case.js';
 import { ValidateListingAttributesService } from './application/services/validate-listing-attributes.service.js';
 import { CategoryModule } from '../category/category.module.js';
@@ -30,6 +31,7 @@ import { ListingController } from './api/controllers/listing.controller.js';
     GetPublicListingUseCase,
     GetBusinessListingsUseCase,
     DiscoverListingsUseCase,
+    GetPrivateListingUseCase,
   ],
 })
 export class ListingModule {}
