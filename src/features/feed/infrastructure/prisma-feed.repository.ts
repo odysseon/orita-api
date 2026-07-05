@@ -7,7 +7,8 @@ export interface FeedQueryParams {
   userLat: number;
   userLng: number;
   limit?: number;
-  offset?: number;
+  cursorScore?: number;
+  cursorId?: string;
 }
 
 export interface FeedItemView {
@@ -18,6 +19,9 @@ export interface FeedItemView {
   score: number;
   distanceMeters: number;
   createdAt: Date;
+  business?: any;
+  listing?: any;
+  tour?: any;
 }
 
 @Injectable()
@@ -26,14 +30,11 @@ export class PrismaFeedRepository {
 
   async getFeed(params: FeedQueryParams): Promise<FeedItemView[]> {
     const limit = params.limit ?? 20;
-    const offset = params.offset ?? 0;
     const maxDistance = 15000; // 15km
 
-    // Raw SQL for ranking
-    // 1. Distance (50%): ST_Distance
-    // 2. Freshness (25%): 14-day decay
-    // 3. Quality (15%): basic checks
-    // 4. Popularity (10%): hardcoded to 0 for MVP if no analytics table join is ready
+    const hasCursor = params.cursorScore !== undefined && params.cursorId !== undefined;
+    const cursorScore = hasCursor ? params.cursorScore : 0;
+    const cursorId = hasCursor ? params.cursorId : '';
 
     const results = await this.prisma.$queryRaw<
       {
@@ -56,6 +57,12 @@ export class PrismaFeedRepository {
           d."referenceId",
           d."businessProfileId",
           d."createdAt",
+          d."clicksCount",
+          d."savesCount",
+          d."messagesCount",
+          d."sharesCount",
+          d."hidesCount",
+          d."reportsCount",
           bp."verificationStatus",
           ST_Distance(loc.coordinates::geography, user_loc.pt) AS dist_meters
         FROM "discovery_items" d
@@ -72,15 +79,8 @@ export class PrismaFeedRepository {
           "businessProfileId",
           "createdAt",
           dist_meters,
-          -- Distance Score (50 points max). 0m = 50, 15000m = 0
           GREATEST(0, 50 * (1 - (dist_meters / 15000))) AS score_distance,
-          
-          -- Freshness Score (25 points max). 14-day exponential-ish decay
-          -- Day 0 = 25, Day 7 = 10 (40%), Day 14 = 2.5 (10%)
-          -- Using linear decay for MVP simplicity: GREATEST(0, 25 * (1 - (days_old / 14)))
           GREATEST(0, 25 * (1 - (EXTRACT(EPOCH FROM (NOW() - "createdAt")) / 86400) / 14)) AS score_freshness,
-
-          -- Derived Popularity Score from pre-aggregated signals
           (
             ("clicksCount" * 1) 
             + ("savesCount" * 10) 
@@ -89,21 +89,69 @@ export class PrismaFeedRepository {
             - ("hidesCount" * 15)
             - ("reportsCount" * 50)
           ) AS score_popularity
-
         FROM feed_candidates
+      ),
+      ranked AS (
+        SELECT 
+          id,
+          "itemType",
+          "referenceId",
+          "businessProfileId",
+          "createdAt",
+          dist_meters AS "distanceMeters",
+          (score_distance + score_freshness + score_popularity) AS score
+        FROM scored_candidates
       )
-      SELECT 
-        id,
-        "itemType",
-        "referenceId",
-        "businessProfileId",
-        "createdAt",
-        dist_meters AS "distanceMeters",
-        (score_distance + score_freshness + score_quality + score_popularity) AS score
-      FROM scored_candidates
-      ORDER BY score DESC
-      LIMIT ${limit} OFFSET ${offset};
+      SELECT * FROM ranked
+      WHERE 
+        (${hasCursor} = false) 
+        OR (score < ${cursorScore}) 
+        OR (score = ${cursorScore} AND id < ${cursorId})
+      ORDER BY score DESC, id DESC
+      LIMIT ${limit};
     `;
+
+    if (results.length === 0) {
+      return [];
+    }
+
+    // Hydration
+    const businessIds = [...new Set(results.map((r) => r.businessProfileId))];
+    const listingIds = results.filter((r) => r.itemType === 'LISTING').map((r) => r.referenceId);
+    const tourIds = results.filter((r) => r.itemType === 'TOUR').map((r) => r.referenceId);
+
+    const [businesses, listings, tours] = await Promise.all([
+      this.prisma.businessProfile.findMany({
+        where: { id: { in: businessIds } },
+        select: {
+          id: true,
+          name: true,
+          slug: true,
+          media: true,
+          categories: true,
+        },
+      }),
+      listingIds.length > 0
+        ? this.prisma.listing.findMany({
+            where: { id: { in: listingIds } },
+            include: { media: true },
+          })
+        : [],
+      tourIds.length > 0
+        ? this.prisma.businessTour.findMany({
+            where: { id: { in: tourIds } },
+            include: { media: true },
+          })
+        : [],
+    ]);
+
+    const businessMap = new Map(businesses.map((b) => {
+      const logo = b.media?.find(m => m.role === 'LOGO')?.url;
+      const cover = b.media?.find(m => m.role === 'COVER')?.url;
+      return [b.id, { ...b, logoUrl: logo, coverUrl: cover }];
+    }));
+    const listingMap = new Map(listings.map((l) => [l.id, l]));
+    const tourMap = new Map(tours.map((t) => [t.id, t]));
 
     return results.map((r) => ({
       id: r.id,
@@ -113,6 +161,9 @@ export class PrismaFeedRepository {
       score: Number(r.score),
       distanceMeters: Number(r.distanceMeters),
       createdAt: r.createdAt,
+      business: businessMap.get(r.businessProfileId),
+      listing: r.itemType === 'LISTING' ? listingMap.get(r.referenceId) : undefined,
+      tour: r.itemType === 'TOUR' ? tourMap.get(r.referenceId) : undefined,
     }));
   }
 }
