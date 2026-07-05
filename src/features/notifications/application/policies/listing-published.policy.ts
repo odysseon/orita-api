@@ -6,14 +6,9 @@ import { NotificationEngine } from '../engine/notification.engine.js';
 import { PrismaService } from '../../../../prisma/prisma.service.js';
 import { EnrichedDomainEvent } from '../../../../shared/events/event-bus.service.js';
 
-export interface ListingPublishedEventData {
-  listingId: string;
-  actorId?: string;
-  businessName: string;
-  listingTitle: string;
-}
+import { ListingCreatedEvent } from '../../../../shared/events/listing.events.js';
 
-type EventType = EnrichedDomainEvent<ListingPublishedEventData>;
+type EventType = EnrichedDomainEvent<ListingCreatedEvent>;
 
 @Injectable()
 export class ListingPublishedPolicy extends BaseNotificationPolicy<EventType> {
@@ -67,7 +62,7 @@ export class ListingPublishedPolicy extends BaseNotificationPolicy<EventType> {
       type: 'NEW_LISTING',
       ...(event.data.actorId ? { actorId: event.data.actorId } : {}),
       referenceType: 'LISTING',
-      referenceId: event.data.listingId,
+      referenceId: event.data.listingSlug,
       payload: {
         businessName: event.data.businessName,
         listingTitle: event.data.listingTitle,

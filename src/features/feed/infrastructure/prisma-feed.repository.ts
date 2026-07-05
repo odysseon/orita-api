@@ -155,17 +155,27 @@ export class PrismaFeedRepository {
     const listingMap = new Map(listings.map((l) => [l.id, l]));
     const tourMap = new Map(tours.map((t) => [t.id, t]));
 
-    return results.map((r) => ({
-      id: r.id,
-      itemType: r.itemType,
-      referenceId: r.referenceId,
-      businessProfileId: r.businessProfileId,
-      score: Number(r.score),
-      distanceMeters: Number(r.distanceMeters),
-      createdAt: r.createdAt,
-      business: businessMap.get(r.businessProfileId),
-      listing: r.itemType === 'LISTING' ? listingMap.get(r.referenceId) : undefined,
-      tour: r.itemType === 'TOUR' ? tourMap.get(r.referenceId) : undefined,
-    }));
+    return results.map((r) => {
+      const listing = r.itemType === 'LISTING' ? listingMap.get(r.referenceId) : undefined;
+      const tour = r.itemType === 'TOUR' ? tourMap.get(r.referenceId) : undefined;
+      const business = businessMap.get(r.businessProfileId);
+
+      let refSlug = r.referenceId;
+      if (r.itemType === 'LISTING' && listing) refSlug = listing.slug;
+      if (r.itemType === 'BUSINESS' && business) refSlug = business.slug;
+
+      return {
+        id: r.id,
+        itemType: r.itemType,
+        referenceId: refSlug,
+        businessProfileId: business?.slug || r.businessProfileId,
+        score: Number(r.score),
+        distanceMeters: Number(r.distanceMeters),
+        createdAt: r.createdAt,
+        business: business,
+        listing: listing,
+        tour: tour,
+      };
+    });
   }
 }
