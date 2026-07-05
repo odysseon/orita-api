@@ -18,6 +18,7 @@ import { UpdateListingUseCase } from '../../application/use-cases/update-listing
 import { TransitionListingStatusUseCase } from '../../application/use-cases/transition-listing-status.use-case.js';
 import { DeleteListingUseCase } from '../../application/use-cases/delete-listing.use-case.js';
 import { GetBusinessListingsUseCase } from '../../application/use-cases/get-business-listings.use-case.js';
+import { GetPrivateListingUseCase } from '../../application/use-cases/get-private-listing.use-case.js';
 import {
   CreateListingDto,
   UpdateListingDto,
@@ -36,6 +37,7 @@ export class ListingController {
     private readonly transitionStatus: TransitionListingStatusUseCase,
     private readonly deleteListing: DeleteListingUseCase,
     private readonly getBusinessListings: GetBusinessListingsUseCase,
+    private readonly getPrivateListing: GetPrivateListingUseCase,
   ) {}
 
   @Post('businesses/:businessProfileId/listings')
@@ -117,6 +119,16 @@ export class ListingController {
     const userId = await this.resolveUserId(identity.accountId);
     const listings = await this.getBusinessListings.execute(businessProfileId, userId);
     return listings.map((l) => ListingResponseDto.from(l));
+  }
+
+  @Get('listings/mine/:id')
+  async getMyListingById(
+    @CurrentIdentity() identity: RequestIdentity,
+    @Param('id') id: string,
+  ): Promise<ListingResponseDto> {
+    const userId = await this.resolveUserId(identity.accountId);
+    const listing = await this.getPrivateListing.execute(id, userId);
+    return ListingResponseDto.from(listing);
   }
 
   private async resolveUserId(accountId: string): Promise<string> {
