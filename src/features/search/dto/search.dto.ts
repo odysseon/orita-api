@@ -1,4 +1,4 @@
-import { IsOptional, IsString, IsNumber, IsEnum, IsArray } from 'class-validator';
+import { IsOptional, IsString, IsNumber, IsEnum, IsArray, Min, Max } from 'class-validator';
 import { Type, Transform } from 'class-transformer';
 
 export enum ListingSortOption {
@@ -34,6 +34,8 @@ export class SearchListingsDto {
   @IsOptional()
   @Type(() => Number)
   @IsNumber()
+  @Min(100)
+  @Max(50000)
   radius?: number = 15000;
 
   @IsOptional()
@@ -63,11 +65,15 @@ export class SearchListingsDto {
   @IsOptional()
   @Type(() => Number)
   @IsNumber()
+  @Min(1)
+  @Max(100)
   limit?: number = 20;
 
   @IsOptional()
   @Type(() => Number)
   @IsNumber()
+  @Min(0)
+  @Max(10000)
   offset?: number = 0;
 }
 
@@ -89,6 +95,8 @@ export class SearchBusinessesDto {
   @IsOptional()
   @Type(() => Number)
   @IsNumber()
+  @Min(100)
+  @Max(50000)
   radius?: number = 15000;
 
   @IsOptional()
@@ -108,10 +116,14 @@ export class SearchBusinessesDto {
   @IsOptional()
   @Type(() => Number)
   @IsNumber()
+  @Min(1)
+  @Max(100)
   limit?: number = 20;
 
   @IsOptional()
   @Type(() => Number)
   @IsNumber()
+  @Min(0)
+  @Max(10000)
   offset?: number = 0;
 }
