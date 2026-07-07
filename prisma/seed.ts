@@ -140,6 +140,41 @@ const taxonomy: {
       { name: "Agro-processing", slug: "agro-processing", order: 2 },
     ],
   },
+  {
+    name: "Beauty & Salons",
+    slug: "beauty-and-salons",
+    description: "Hair salons, barbershops, makeup artists, and spas",
+    order: 10,
+    children: [
+      { name: "Hair Stylists & Salons", slug: "hair-stylists-and-salons", order: 0 },
+      { name: "Barbershops", slug: "barbershops", order: 1 },
+      { name: "Makeup Artists & Studios", slug: "makeup-artists-and-studios", order: 2 },
+      { name: "Spas & Wellness", slug: "spas-and-wellness", order: 3 },
+    ],
+  },
+  {
+    name: "Home & Repair Services",
+    slug: "home-and-repair-services",
+    description: "Plumbers, electricians, cleaners, mechanics, and handymen",
+    order: 11,
+    children: [
+      { name: "Plumbing & Electrical", slug: "plumbing-and-electrical", order: 0 },
+      { name: "Cleaning & Janitorial", slug: "cleaning-and-janitorial", order: 1 },
+      { name: "Carpentry & Furniture", slug: "carpentry-and-furniture", order: 2 },
+      { name: "Auto Repair & Mechanics", slug: "auto-repair-and-mechanics", order: 3 },
+    ],
+  },
+  {
+    name: "Creative & Media",
+    slug: "creative-and-media",
+    description: "Photographers, videographers, designers, and printers",
+    order: 12,
+    children: [
+      { name: "Photography & Videography", slug: "photography-and-videography", order: 0 },
+      { name: "Graphic Design & Arts", slug: "graphic-design-and-arts", order: 1 },
+      { name: "Printing Services", slug: "printing-services", order: 2 },
+    ],
+  },
 ];
 
 async function main() {
