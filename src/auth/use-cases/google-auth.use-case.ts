@@ -66,6 +66,9 @@ export class GoogleAuthUseCase {
       );
 
       // Rollback orphaned account if domain user creation fails
+      // NOTE: We use a manual rollback here instead of a single Prisma $transaction 
+      // because the @odysseon/whoami-core adapter does not currently support passing 
+      // a Prisma transaction client (tx) down to the authenticateWithOAuth method.
       if (isNewAccount) {
         await this.prisma.account
           .delete({ where: { id: account.id } })

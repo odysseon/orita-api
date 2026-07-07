@@ -22,6 +22,7 @@ import { SavesModule } from './features/saves/saves.module.js';
 import { AnalyticsModule } from './features/analytics/analytics.module.js';
 import { AdminModule } from './features/admin/admin.module.js';
 import { FeedModule } from './features/feed/feed.module.js';
+import { GeocodeModule } from './features/geocode/geocode.module.js';
 import { MailModule } from './mail/mail.module.js';
 import { RedisModule } from './shared/redis/redis.module.js';
 import { EventEmitterModule } from '@nestjs/event-emitter';
@@ -80,6 +81,7 @@ import { NotificationsModule } from './features/notifications/notifications.modu
     AnalyticsModule,
     AdminModule,
     FeedModule,
+    GeocodeModule,
     MailModule,
     RedisModule,
     SearchModule,
