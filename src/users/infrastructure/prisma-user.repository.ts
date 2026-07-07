@@ -5,6 +5,7 @@ import { IUserRepository } from '../core/ports/user.repository.interface.js';
 import { UpdateUserProfileDto } from '../delivery/http/dto/update-user-profile.dto.js';
 import { UpdateLocationDto } from '../delivery/http/dto/update-location.dto.js';
 import { UserEntity } from '../core/domain/user.types.js';
+import * as crypto from 'crypto';
 
 @Injectable()
 export class PrismaUserRepository implements IUserRepository {
@@ -142,10 +143,11 @@ export class PrismaUserRepository implements IUserRepository {
         WHERE id = ${user.locationId}
       `;
     } else {
+      const newId = crypto.randomUUID();
       const result = await this.prisma.$queryRaw<{ id: string }[]>`
         INSERT INTO "Location" (id, name, "formattedAddress", coordinates)
         VALUES (
-          gen_random_uuid()::text,
+          ${newId},
           COALESCE(${payload.name ?? null}, 'Current Location'),
           COALESCE(${payload.formattedAddress ?? null}, 'Unknown'),
           ST_SetSRID(ST_MakePoint(${payload.lng}, ${payload.lat}), 4326)

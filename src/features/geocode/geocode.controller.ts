@@ -32,8 +32,8 @@ export class GeocodeController {
         throw new InternalServerErrorException('Geocoding service unavailable');
       }
 
-      return await response.json();
-    } catch (error) {
+      return (await response.json()) as unknown;
+    } catch {
       throw new InternalServerErrorException('Failed to search location');
     }
   }
@@ -63,8 +63,8 @@ export class GeocodeController {
         throw new InternalServerErrorException('Geocoding service unavailable');
       }
 
-      return await response.json();
-    } catch (error) {
+      return (await response.json()) as unknown;
+    } catch {
       throw new InternalServerErrorException('Failed to reverse geocode coordinates');
     }
   }

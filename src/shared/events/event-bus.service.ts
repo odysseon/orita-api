@@ -51,6 +51,7 @@ export class EventBusService {
       this.logger.debug(`Published event ${eventName} v${version}`);
     } catch (error) {
       this.logger.error(`Failed to publish event ${eventName}`, error);
+      throw error;
     }
   }
 }

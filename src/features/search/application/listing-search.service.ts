@@ -12,7 +12,7 @@ export class ListingSearchService {
 
     // Step 1: Geospatial pre-filter
     if (dto.lat !== undefined && dto.lng !== undefined) {
-      const radius = dto.radius ?? 15000;
+      const radius = Math.min(Math.max(100, dto.radius ?? 15000), 50000);
       const locations = await this.prisma.$queryRaw<{ id: string }[]>`
         SELECT bp.id
         FROM "business_profiles" bp
@@ -108,8 +108,8 @@ export class ListingSearchService {
       this.prisma.listing.findMany({
         where,
         orderBy,
-        skip: dto.offset ?? 0,
-        take: dto.limit ?? 20,
+        skip: Math.max(0, dto.offset ?? 0),
+        take: Math.min(Math.max(1, dto.limit ?? 20), 100),
         include: {
           businessProfile: {
             select: {

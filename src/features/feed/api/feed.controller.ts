@@ -24,8 +24,12 @@ export class FeedController {
     @Query('cursorScore') cursorScoreStr?: string,
     @Query('cursorId') cursorId?: string,
   ) {
-    const limit = limitStr ? parseInt(limitStr, 10) : 20;
-    const cursorScore = cursorScoreStr ? parseFloat(cursorScoreStr) : undefined;
+    let limit = limitStr ? parseInt(limitStr, 10) : 20;
+    if (Number.isNaN(limit) || limit < 1) limit = 20;
+    if (limit > 100) limit = 100;
+
+    let cursorScore = cursorScoreStr ? parseFloat(cursorScoreStr) : undefined;
+    if (cursorScore !== undefined && Number.isNaN(cursorScore)) cursorScore = undefined;
 
     // Get the user's location
     const user = await this.prisma.user.findUnique({
