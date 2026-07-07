@@ -360,14 +360,41 @@ async function main() {
           ],
         },
         categories: { connect: bData.category ? [{ id: bData.category.id }] : [] },
+        media: {
+          create: [
+            {
+              url: `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(bData.name)}`,
+              fileId: `${bData.slug}-logo`,
+              mediaType: MediaType.IMAGE,
+              role: MediaRole.LOGO,
+            },
+            {
+              url: `https://picsum.photos/seed/${bData.slug}-banner/800/400`,
+              fileId: `${bData.slug}-banner`,
+              mediaType: MediaType.IMAGE,
+              role: MediaRole.BANNER,
+            }
+          ]
+        }
       },
+    });
+
+    await prisma.discoveryItem.upsert({
+      where: { itemType_referenceId: { itemType: "BUSINESS", referenceId: business.id } },
+      update: {},
+      create: {
+        itemType: "BUSINESS",
+        businessProfileId: business.id,
+        referenceId: business.id,
+        clicksCount: Math.floor(Math.random() * 100),
+      }
     });
     createdBusinesses.push(business);
 
     // 4. 10 Listings per business
     for (let j = 1; j <= 10; j++) {
       const listingSlug = `${bData.slug}-item-${j}`;
-      await prisma.listing.upsert({
+      const listing = await prisma.listing.upsert({
         where: { businessProfileId_slug: { businessProfileId: business.id, slug: listingSlug } },
         update: {},
         create: {
@@ -379,7 +406,35 @@ async function main() {
           minPrice: Math.floor(Math.random() * 1000) + 10,
           currencyCode: "USD",
           categoryId: bData.category?.id || null,
+          media: {
+            create: [
+              {
+                url: `https://picsum.photos/seed/${listingSlug}-cover/600/400`,
+                fileId: `${listingSlug}-cover`,
+                mediaType: MediaType.IMAGE,
+                role: MediaRole.COVER,
+              },
+              {
+                url: `https://picsum.photos/seed/${listingSlug}-gallery1/600/400`,
+                fileId: `${listingSlug}-gallery1`,
+                mediaType: MediaType.IMAGE,
+                role: MediaRole.GALLERY,
+                order: 0,
+              }
+            ]
+          }
         },
+      });
+
+      await prisma.discoveryItem.upsert({
+        where: { itemType_referenceId: { itemType: "LISTING", referenceId: listing.id } },
+        update: {},
+        create: {
+          itemType: "LISTING",
+          businessProfileId: business.id,
+          referenceId: listing.id,
+          clicksCount: Math.floor(Math.random() * 50),
+        }
       });
     }
   }
@@ -458,7 +513,7 @@ async function main() {
     const business = createdBusinesses[i];
     if (!business) continue;
 
-    await prisma.businessTour.upsert({
+    const tour = await prisma.businessTour.upsert({
       where: { id: `test-tour-${i + 1}` },
       update: {},
       create: {
@@ -491,6 +546,17 @@ async function main() {
           ],
         },
       },
+    });
+
+    await prisma.discoveryItem.upsert({
+      where: { itemType_referenceId: { itemType: "TOUR", referenceId: tour.id } },
+      update: {},
+      create: {
+        itemType: "TOUR",
+        businessProfileId: business.id,
+        referenceId: tour.id,
+        clicksCount: Math.floor(Math.random() * 200),
+      }
     });
   }
 
