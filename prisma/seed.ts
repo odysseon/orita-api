@@ -250,6 +250,11 @@ async function main() {
 
   console.log("\n✅ Category taxonomy seeded successfully.");
 
+  if (process.env.NODE_ENV === "production") {
+    console.log("🌲 Production environment detected. Skipping tags and dummy data.");
+    return;
+  }
+
   // -------------------------------------------------------------------------
   // Tags — idempotent (upsert by slug)
   // -------------------------------------------------------------------------
