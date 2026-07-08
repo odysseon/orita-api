@@ -3,7 +3,6 @@ import { PrismaService } from '../../../prisma/prisma.service.js';
 import { DiscoveryItemType } from '../../../../generated/prisma/client.js';
 
 export interface FeedQueryParams {
-  userId: string;
   userLat: number;
   userLng: number;
   limit?: number;
