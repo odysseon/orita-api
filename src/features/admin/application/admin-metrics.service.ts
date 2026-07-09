@@ -52,7 +52,7 @@ export class AdminMetricsService {
       // Engagement
       this.prisma.conversation.count(),
       this.prisma.savedListing.count(),
-      this.prisma.savedBusiness.count(),
+      this.prisma.follow.count({ where: { businessId: { not: null } } }),
 
       // Analytics
       this.prisma.analyticsEvent.count(),
