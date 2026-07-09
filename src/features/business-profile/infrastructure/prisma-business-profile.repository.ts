@@ -528,7 +528,13 @@ export class PrismaBusinessProfileRepository extends IBusinessProfileRepository 
         distanceKm: Number(r.distance),
       }));
 
-      return this.enrichWithSavedStatus(items, total, input.page, input.limit, input.currentUserId);
+      return this.enrichWithFollowedStatus(
+        items,
+        total,
+        input.page,
+        input.limit,
+        input.currentUserId,
+      );
     }
 
     const [items, total] = await this.prisma.$transaction([
@@ -567,7 +573,7 @@ export class PrismaBusinessProfileRepository extends IBusinessProfileRepository 
       categoryIds: r.categories?.map((c) => c.id) ?? [],
     }));
 
-    return this.enrichWithSavedStatus(
+    return this.enrichWithFollowedStatus(
       itemsMapped,
       total,
       input.page,
@@ -576,7 +582,7 @@ export class PrismaBusinessProfileRepository extends IBusinessProfileRepository 
     );
   }
 
-  private async enrichWithSavedStatus(
+  private async enrichWithFollowedStatus(
     items: BusinessSummary[],
     total: number,
     page: number,
@@ -588,20 +594,20 @@ export class PrismaBusinessProfileRepository extends IBusinessProfileRepository 
     }
 
     const businessIds = items.map((i) => i.id);
-    const saves = await this.prisma.savedBusiness.findMany({
+    const follows = await this.prisma.follow.findMany({
       where: {
-        userId: currentUserId,
-        businessProfileId: { in: businessIds },
+        followerId: currentUserId,
+        businessId: { in: businessIds },
       },
-      select: { businessProfileId: true },
+      select: { businessId: true },
     });
 
-    const savedSet = new Set(saves.map((s) => s.businessProfileId));
+    const followedSet = new Set(follows.map((s) => s.businessId));
 
     return {
       items: items.map((i: BusinessSummary) => ({
         ...i,
-        isSaved: savedSet.has(i.id),
+        isFollowed: followedSet.has(i.id),
       })),
       total,
       page,

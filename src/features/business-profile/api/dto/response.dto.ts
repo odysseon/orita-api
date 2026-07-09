@@ -33,9 +33,14 @@ export class BusinessProfileResponseDto {
   @ApiPropertyOptional({ type: [TagDto] }) tags?: TagDto[];
   @ApiPropertyOptional() avatarUrl?: string;
   @ApiPropertyOptional() coverUrl?: string;
-  @ApiPropertyOptional() isSaved?: boolean;
+  @ApiProperty({
+    example: true,
+    description: 'Whether the current user follows this business',
+    required: false,
+  })
+  isFollowed?: boolean;
 
-  private constructor(r: BusinessProfileView & { isSaved?: boolean }) {
+  private constructor(r: BusinessProfileView & { isFollowed?: boolean }) {
     this.id = r.id;
     this.ownerId = r.ownerId;
     this.name = r.name;
@@ -65,8 +70,8 @@ export class BusinessProfileResponseDto {
     if (r.tags) {
       this.tags = r.tags.map((t) => TagDto.from(t));
     }
-    if (r.isSaved !== undefined) {
-      this.isSaved = r.isSaved;
+    if (r.isFollowed !== undefined) {
+      this.isFollowed = r.isFollowed;
     }
   }
 
@@ -86,7 +91,7 @@ export class BusinessSummaryResponseDto {
   longitude: number | null;
   categoryIds: string[];
   distanceKm?: number;
-  @ApiPropertyOptional() isSaved?: boolean;
+  @ApiPropertyOptional() isFollowed?: boolean;
 
   private constructor(summary: BusinessSummary) {
     this.id = summary.id;
@@ -101,8 +106,8 @@ export class BusinessSummaryResponseDto {
     if (summary.distanceKm !== undefined) {
       this.distanceKm = summary.distanceKm;
     }
-    if (summary.isSaved !== undefined) {
-      this.isSaved = summary.isSaved;
+    if (summary.isFollowed !== undefined) {
+      this.isFollowed = summary.isFollowed;
     }
   }
 
