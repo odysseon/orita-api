@@ -30,8 +30,8 @@ export class GetDashboardStatsUseCase {
       where: { businessProfileId: businessId, eventType: 'PROFILE_VIEW' },
     });
 
-    const totalSaves = await this.prisma.savedBusiness.count({
-      where: { businessProfileId: businessId },
+    const totalSaves = await this.prisma.follow.count({
+      where: { businessId },
     });
 
     const totalContactClicks = await this.prisma.analyticsEvent.count({

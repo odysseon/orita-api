@@ -13,21 +13,21 @@ export class GetPublicBusinessProfileUseCase {
   async execute(
     slug: string,
     currentUserId?: string,
-  ): Promise<BusinessProfileView & { isSaved?: boolean }> {
+  ): Promise<BusinessProfileView & { isFollowed?: boolean }> {
     const profile = await this.repo.findBySlug(slug);
 
     if (!profile || !profile.isPublic) {
       throw new NotFoundException('Business profile not found.');
     }
 
-    let isSaved = false;
+    let isFollowed = false;
     if (currentUserId) {
-      const saveCount = await this.prisma.savedBusiness.count({
-        where: { userId: currentUserId, businessProfileId: profile.id },
+      const followCount = await this.prisma.follow.count({
+        where: { followerId: currentUserId, businessId: profile.id },
       });
-      isSaved = saveCount > 0;
+      isFollowed = followCount > 0;
     }
 
-    return { ...profile, isSaved };
+    return { ...profile, isFollowed };
   }
 }
