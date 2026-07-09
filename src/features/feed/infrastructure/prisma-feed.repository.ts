@@ -1,8 +1,10 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../../prisma/prisma.service.js';
 import { DiscoveryItemType } from '../../../../generated/prisma/client.js';
+import { FeedWeights } from '../feed.weights.js';
 
 export interface FeedQueryParams {
+  userId?: string;
   userLat: number;
   userLng: number;
   limit?: number;
@@ -63,11 +65,15 @@ export class PrismaFeedRepository {
           d."hidesCount",
           d."reportsCount",
           bp."verificationStatus",
-          ST_Distance(loc.coordinates::geography, user_loc.pt) AS dist_meters
+          ST_Distance(loc.coordinates::geography, user_loc.pt) AS dist_meters,
+          CASE WHEN fb."businessId" IS NOT NULL THEN 1 ELSE 0 END AS is_followed_business,
+          CASE WHEN fl."locationId" IS NOT NULL THEN 1 ELSE 0 END AS is_followed_location
         FROM "discovery_items" d
         JOIN "business_profiles" bp ON d."businessProfileId" = bp.id
-        JOIN "Location" loc ON bp."locationId" = loc.id
+        JOIN "locations" loc ON bp."locationId" = loc.id
         CROSS JOIN user_loc
+        LEFT JOIN "follows" fb ON fb."businessId" = bp.id AND fb."followerId" = ${params.userId ?? ''}
+        LEFT JOIN "follows" fl ON fl."locationId" = loc.id AND fl."followerId" = ${params.userId ?? ''}
         WHERE ST_DWithin(loc.coordinates::geography, user_loc.pt, ${maxDistance})
       ),
       scored_candidates AS (
@@ -78,8 +84,10 @@ export class PrismaFeedRepository {
           "businessProfileId",
           "createdAt",
           dist_meters,
-          GREATEST(0, 50 * (1 - (dist_meters / 15000))) AS score_distance,
-          GREATEST(0, 25 * (1 - (EXTRACT(EPOCH FROM (NOW() - "createdAt")) / 86400) / 14)) AS score_freshness,
+          GREATEST(0, ${FeedWeights.distance} * (1 - (dist_meters / 15000))) AS score_distance,
+          GREATEST(0, ${FeedWeights.freshness} * (1 - (EXTRACT(EPOCH FROM (NOW() - "createdAt")) / 86400) / 14)) AS score_freshness,
+          (is_followed_business * ${FeedWeights.followedBusiness}) AS score_followed_business,
+          (is_followed_location * ${FeedWeights.followedLocation}) AS score_followed_location,
           (
             ("clicksCount" * 1) 
             + ("savesCount" * 10) 
@@ -98,7 +106,7 @@ export class PrismaFeedRepository {
           "businessProfileId",
           "createdAt",
           dist_meters AS "distanceMeters",
-          (score_distance + score_freshness + score_popularity) AS score
+          (score_distance + score_freshness + score_followed_business + score_followed_location + score_popularity) AS score
         FROM scored_candidates
       )
       SELECT * FROM ranked
