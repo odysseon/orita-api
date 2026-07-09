@@ -1,13 +1,12 @@
 import { Controller, Get, Query } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiQuery } from '@nestjs/swagger';
 import { PrismaFeedRepository, FeedQueryParams } from '../infrastructure/prisma-feed.repository.js';
+import { Public, CurrentIdentity, type RequestIdentity } from '@odysseon/whoami-adapter-nestjs';
 
 @ApiTags('Feed')
 @Controller('feed')
 export class FeedController {
-  constructor(
-    private readonly feedRepository: PrismaFeedRepository,
-  ) {}
+  constructor(private readonly feedRepository: PrismaFeedRepository) {}
 
   @ApiOperation({ summary: 'Get a personalized neighborhood feed' })
   @ApiQuery({ name: 'limit', required: false, type: Number })
@@ -15,8 +14,10 @@ export class FeedController {
   @ApiQuery({ name: 'cursorId', required: false, type: String })
   @ApiQuery({ name: 'lat', required: false, type: Number })
   @ApiQuery({ name: 'lng', required: false, type: Number })
+  @Public()
   @Get()
   async getFeed(
+    @CurrentIdentity() identity?: RequestIdentity,
     @Query('limit') limitStr?: string,
     @Query('cursorScore') cursorScoreStr?: string,
     @Query('cursorId') cursorId?: string,
@@ -43,6 +44,7 @@ export class FeedController {
     }
 
     const params: FeedQueryParams = {
+      ...(identity?.accountId ? { userId: identity.accountId } : {}),
       userLat: reqLat,
       userLng: reqLng,
       limit,
