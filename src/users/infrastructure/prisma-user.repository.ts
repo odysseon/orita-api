@@ -3,9 +3,8 @@ import { PrismaService } from '../../prisma/prisma.service.js';
 import { RedisService } from '../../shared/redis/redis.service.js';
 import { IUserRepository } from '../core/ports/user.repository.interface.js';
 import { UpdateUserProfileDto } from '../delivery/http/dto/update-user-profile.dto.js';
-import { UpdateLocationDto } from '../delivery/http/dto/update-location.dto.js';
+
 import { UserEntity } from '../core/domain/user.types.js';
-import * as crypto from 'crypto';
 
 @Injectable()
 export class PrismaUserRepository implements IUserRepository {
@@ -59,7 +58,6 @@ export class PrismaUserRepository implements IUserRepository {
     const user = await this.prisma.user.findUnique({
       where: { accountId },
       include: {
-        location: true,
         account: {
           select: {
             email: true,
@@ -127,41 +125,4 @@ export class PrismaUserRepository implements IUserRepository {
     }
   }
 
-  async updateLocation(accountId: string, payload: UpdateLocationDto): Promise<void> {
-    const user = await this.prisma.user.findUnique({
-      where: { accountId },
-      select: { id: true, locationId: true },
-    });
-    if (!user) throw new NotFoundException('User not found');
-
-    if (user.locationId) {
-      await this.prisma.$executeRaw`
-        UPDATE "Location"
-        SET coordinates = ST_SetSRID(ST_MakePoint(${payload.lng}, ${payload.lat}), 4326),
-            name = COALESCE(${payload.name ?? null}, name),
-            "formattedAddress" = COALESCE(${payload.formattedAddress ?? null}, "formattedAddress")
-        WHERE id = ${user.locationId}
-      `;
-    } else {
-      const newId = crypto.randomUUID();
-      const result = await this.prisma.$queryRaw<{ id: string }[]>`
-        INSERT INTO "Location" (id, name, "formattedAddress", coordinates)
-        VALUES (
-          ${newId},
-          COALESCE(${payload.name ?? null}, 'Current Location'),
-          COALESCE(${payload.formattedAddress ?? null}, 'Unknown'),
-          ST_SetSRID(ST_MakePoint(${payload.lng}, ${payload.lat}), 4326)
-        )
-        RETURNING id;
-      `;
-      const first = result[0];
-      if (first) {
-        const newLocId = first.id;
-        await this.prisma.user.update({
-          where: { id: user.id },
-          data: { locationId: newLocId },
-        });
-      }
-    }
-  }
 }

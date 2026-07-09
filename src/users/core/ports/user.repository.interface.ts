@@ -1,5 +1,4 @@
 import { UpdateUserProfileDto } from '../../delivery/http/dto/update-user-profile.dto.js';
-import { UpdateLocationDto } from '../../delivery/http/dto/update-location.dto.js';
 import { UserEntity } from '../domain/user.types.js';
 
 export const USER_REPOSITORY_TOKEN = Symbol('USER_REPOSITORY_TOKEN');
@@ -23,5 +22,4 @@ export interface IUserRepository {
   /**
    * Updates a user's location via PostGIS coordinates.
    */
-  updateLocation(accountId: string, payload: UpdateLocationDto): Promise<void>;
-}
+  }
