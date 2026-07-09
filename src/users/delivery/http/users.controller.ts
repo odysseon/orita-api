@@ -4,7 +4,6 @@ import {
   Controller,
   Get,
   Patch,
-  Put,
   Post,
   UploadedFile,
   UseInterceptors,
@@ -15,7 +14,6 @@ import { CurrentIdentity, type RequestIdentity } from '@odysseon/whoami-adapter-
 import { UsersService } from '../../use-cases/users.service.js';
 import { UploadUserAvatarUseCase } from '../../use-cases/upload-user-avatar.use-case.js';
 import { UpdateUserProfileDto } from './dto/update-user-profile.dto.js';
-import { UpdateLocationDto } from './dto/update-location.dto.js';
 import { avatarUploadOptions } from './avatar-upload.options.js';
 import 'multer';
 
@@ -54,12 +52,5 @@ export class UsersController {
     return this.uploadAvatarUseCase.execute(identity.accountId, file);
   }
 
-  @ApiOperation({ summary: 'Update the user location' })
-  @Put('me/location')
-  async updateLocation(
-    @CurrentIdentity() identity: RequestIdentity,
-    @Body() payload: UpdateLocationDto,
-  ) {
-    return this.usersService.updateLocation(identity.accountId, payload);
-  }
+
 }

@@ -4,7 +4,6 @@ import {
   USER_REPOSITORY_TOKEN,
 } from '../core/ports/user.repository.interface.js';
 import { UpdateUserProfileDto } from '../delivery/http/dto/update-user-profile.dto.js';
-import { UpdateLocationDto } from '../delivery/http/dto/update-location.dto.js';
 import { MediaStorageService } from '../../storage/media-storage.service.js';
 
 @Injectable()
@@ -40,8 +39,5 @@ export class UsersService {
     }
 
     return updatedProfile;
-  }
-  async updateLocation(accountId: string, payload: UpdateLocationDto) {
-    return this.userRepository.updateLocation(accountId, payload);
   }
 }
