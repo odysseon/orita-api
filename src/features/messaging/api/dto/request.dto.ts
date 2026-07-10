@@ -1,33 +1,59 @@
-import { IsString, IsOptional, IsNotEmpty, IsEnum } from 'class-validator';
+import { IsString, IsOptional, IsNotEmpty, IsEnum, IsArray, ValidateNested, ArrayMinSize } from 'class-validator';
+import { Type } from 'class-transformer';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
+export class AnchorDto {
+  @ApiProperty()
+  @IsString()
+  @IsNotEmpty()
+  type!: string;
+
+  @ApiProperty()
+  @IsString()
+  @IsNotEmpty()
+  targetId!: string;
+}
+
+export class MessageEmbedDto {
+  @ApiProperty()
+  @IsString()
+  @IsNotEmpty()
+  embedType!: string;
+
+  @ApiProperty()
+  @IsString()
+  @IsNotEmpty()
+  targetId!: string;
+}
+
 export class CreateConversationDto {
-  @ApiProperty()
-  @IsString()
-  @IsNotEmpty()
-  businessProfileId!: string;
+  @ApiProperty({ enum: ['DIRECT', 'GROUP'] })
+  @IsEnum(['DIRECT', 'GROUP'])
+  type!: 'DIRECT' | 'GROUP';
+
+  @ApiProperty({ type: [String] })
+  @IsArray()
+  @IsString({ each: true })
+  @ArrayMinSize(1)
+  invitedParticipantIds!: string[];
+
+  @ApiPropertyOptional({ type: AnchorDto })
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => AnchorDto)
+  anchor?: AnchorDto;
 
   @ApiPropertyOptional()
   @IsOptional()
   @IsString()
-  listingId?: string;
-
-  @ApiPropertyOptional()
-  @IsOptional()
-  @IsString()
-  subject?: string;
-
-  @ApiProperty()
-  @IsString()
-  @IsNotEmpty()
-  initialMessage!: string;
+  initialMessage?: string;
 }
 
 export class SendMessageDto {
-  @ApiProperty()
+  @ApiPropertyOptional()
+  @IsOptional()
   @IsString()
-  @IsNotEmpty()
-  content!: string;
+  content?: string;
 
   @ApiPropertyOptional()
   @IsOptional()
@@ -38,6 +64,13 @@ export class SendMessageDto {
   @IsOptional()
   @IsEnum(['IMAGE', 'VIDEO'])
   mediaType?: 'IMAGE' | 'VIDEO';
+
+  @ApiPropertyOptional({ type: [MessageEmbedDto] })
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => MessageEmbedDto)
+  embeds?: MessageEmbedDto[];
 }
 
 export class UpdateConversationStatusDto {
