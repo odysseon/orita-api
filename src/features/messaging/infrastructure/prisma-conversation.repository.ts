@@ -9,99 +9,121 @@ import {
   SendMessageInput,
   MarkMessagesReadInput,
   ConversationStatus,
-  MessageReferencePreview,
+  MessageEmbedView,
+  ConversationAnchorView,
+  ConversationType,
 } from '../domain/types/messaging.types.js';
+import type { ConversationAnchor } from '../../../../generated/prisma/client.js';
 
 @Injectable()
 export class PrismaConversationRepository implements IConversationRepository {
   constructor(private readonly prisma: PrismaService) {}
 
-  private mapMessage(m: {
-    id: string;
-    conversationId: string;
-    senderId: string;
-    content: string;
-    mediaUrl: string | null;
-    mediaType: string | null;
-    referenceType?: string | null;
-    referenceId?: string | null;
-    createdAt: Date;
-    readReceipts: { messageId: string; userId: string; readAt: Date }[];
-  }): MessageView {
+  private mapMessage(m: any): MessageView {
     return {
       id: m.id,
       conversationId: m.conversationId,
-      senderId: m.senderId,
+      participantId: m.participantId,
+      senderDisplayName: m.senderDisplayName,
+      senderAvatarUrl: m.senderAvatarUrl,
       content: m.content,
       mediaUrl: m.mediaUrl,
-      mediaType: m.mediaType as MessageView['mediaType'],
-      referenceType: m.referenceType as MessageView['referenceType'] | null,
-      referenceId: m.referenceId ?? null,
+      mediaType: m.mediaType,
+      embeds: (m.embeds || []).map((e: any): MessageEmbedView => ({
+        id: e.id,
+        embedType: e.embedType,
+        targetId: e.targetId,
+        title: e.title,
+        subtitle: e.subtitle,
+        imageUrl: e.imageUrl,
+        ctaLabel: e.ctaLabel,
+        ctaPath: e.ctaPath,
+      })),
       createdAt: m.createdAt,
-      readReceipts: m.readReceipts.map((r): MessageReadReceiptView => ({
+      readReceipts: (m.readReceipts || []).map((r: any): MessageReadReceiptView => ({
         messageId: r.messageId,
-        userId: r.userId,
+        participantId: r.participantId,
         readAt: r.readAt,
       })),
     };
   }
 
-  private mapConversation(c: {
-    id: string;
-    businessProfileId: string;
-    listingId: string | null;
-    subject: string | null;
-    status: string;
-    participants: { userId: string }[];
-    createdAt: Date;
-    updatedAt: Date;
-  }): ConversationView {
+  private mapConversation(c: any): ConversationView {
+    let anchorView: ConversationAnchorView | null = null;
+    if (c.anchor) {
+      anchorView = {
+        id: c.anchor.id,
+        title: c.anchor.title,
+        subtitle: c.anchor.subtitle,
+        imageUrl: c.anchor.imageUrl,
+        businessId: c.anchor.businessId,
+        listingId: c.anchor.listingId,
+        tourId: c.anchor.tourId,
+        locationId: c.anchor.locationId,
+      };
+    }
+
     return {
       id: c.id,
-      businessProfileId: c.businessProfileId,
-      listingId: c.listingId,
-      subject: c.subject,
+      type: c.type as ConversationType,
       status: c.status as ConversationStatus,
-      participantIds: c.participants.map((p) => p.userId),
+      title: c.title,
+      anchorId: c.anchorId,
+      anchor: anchorView,
+      participantIds: c.participants.map((p: any) => p.participantId),
       createdAt: c.createdAt,
       updatedAt: c.updatedAt,
     };
   }
 
-  async create(input: CreateConversationInput): Promise<ConversationView> {
+  async create(input: CreateConversationInput, anchor?: ConversationAnchor): Promise<ConversationView> {
+    const participantIds = [input.participantId, ...input.invitedParticipantIds];
+    const uniqueParticipants = Array.from(new Set(participantIds));
+
     const conversation = await this.prisma.conversation.create({
       data: {
-        businessProfileId: input.businessProfileId,
-        listingId: input.listingId ?? null,
-        subject: input.subject ?? null,
+        type: input.type,
+        anchorId: anchor?.id ?? null,
         participants: {
-          create: { userId: input.userId },
-        },
-        messages: {
-          create: {
-            senderId: input.userId,
-            content: input.initialMessage,
-          },
+          create: uniqueParticipants.map((pid) => ({
+            participantId: pid,
+            role: pid === input.participantId ? 'OWNER' : 'MEMBER',
+          })),
         },
       },
-      include: { participants: true },
+      include: { participants: true, anchor: true },
     });
 
     return this.mapConversation(conversation);
   }
 
-  async addMessage(input: SendMessageInput): Promise<MessageView> {
+  async addMessage(
+    input: SendMessageInput,
+    senderDisplayName: string,
+    senderAvatarUrl: string | null,
+  ): Promise<MessageView> {
+    const embedsData = input.embeds?.map((e) => ({
+      embedType: e.embedType,
+      targetId: e.targetId,
+      title: 'Embed Snapshot', // In a full implementation, AnchorService logic would resolve these per-embed
+      subtitle: null,
+      imageUrl: null,
+    })) || [];
+
     const message = await this.prisma.message.create({
       data: {
         conversationId: input.conversationId,
-        senderId: input.senderId,
-        content: input.content,
+        participantId: input.participantId,
+        senderDisplayName,
+        senderAvatarUrl,
+        content: input.content ?? null,
         mediaUrl: input.mediaUrl ?? null,
         mediaType: input.mediaType ?? null,
-        referenceType: input.referenceType ?? null,
-        referenceId: input.referenceId ?? null,
+        embeds: {
+          create: embedsData,
+        },
       },
-      include: { readReceipts: true },
+      include: { readReceipts: true, embeds: true },
     });
 
     await this.prisma.conversation.update({
@@ -109,128 +131,42 @@ export class PrismaConversationRepository implements IConversationRepository {
       data: { updatedAt: new Date() },
     });
 
-    const mapped = this.mapMessage(message);
-    if (mapped.referenceType && mapped.referenceId) {
-      const previewMap = await this.fetchReferencePreviews([
-        { type: mapped.referenceType, id: mapped.referenceId },
-      ]);
-      const preview = previewMap.get(mapped.referenceId);
-      if (preview) {
-        mapped.referencePreview = preview;
-      }
-    }
-    return mapped;
+    return this.mapMessage(message);
   }
 
   async findById(id: string): Promise<ConversationView | null> {
     const conversation = await this.prisma.conversation.findUnique({
       where: { id },
-      include: { participants: true },
+      include: { participants: true, anchor: true },
     });
     if (!conversation) return null;
     return this.mapConversation(conversation);
   }
 
-  async findByBusinessProfile(businessProfileId: string): Promise<ConversationView[]> {
+  async findByParticipantIds(participantIds: string[]): Promise<ConversationView[]> {
     const conversations = await this.prisma.conversation.findMany({
-      where: { businessProfileId },
-      include: { participants: true },
+      where: { participants: { some: { participantId: { in: participantIds } } } },
+      include: { participants: true, anchor: true },
       orderBy: { updatedAt: 'desc' },
     });
     return conversations.map((c) => this.mapConversation(c));
-  }
-
-  async findByParticipant(userId: string): Promise<ConversationView[]> {
-    const conversations = await this.prisma.conversation.findMany({
-      where: { participants: { some: { userId } } },
-      include: { participants: true },
-      orderBy: { updatedAt: 'desc' },
-    });
-    return conversations.map((c) => this.mapConversation(c));
-  }
-
-  private async fetchReferencePreviews(
-    refs: { type: string; id: string }[],
-  ): Promise<Map<string, MessageReferencePreview>> {
-    const map = new Map<string, MessageReferencePreview>();
-    const businessIds = refs.filter((r) => r.type === 'BUSINESS').map((r) => r.id);
-    const listingIds = refs.filter((r) => r.type === 'LISTING').map((r) => r.id);
-    const tourIds = refs.filter((r) => r.type === 'TOUR').map((r) => r.id);
-
-    if (businessIds.length) {
-      const b = await this.prisma.businessProfile.findMany({
-        where: { id: { in: businessIds } },
-        include: { media: { take: 1, orderBy: { createdAt: 'asc' } } },
-      });
-      b.forEach((item) =>
-        map.set(item.id, {
-          title: item.name,
-          subtitle: item.description,
-          ...(item.media[0]?.url && { coverUrl: item.media[0]?.url }),
-        }),
-      );
-    }
-    if (listingIds.length) {
-      const l = await this.prisma.listing.findMany({
-        where: { id: { in: listingIds } },
-        include: { businessProfile: true, media: { take: 1, orderBy: { createdAt: 'asc' } } },
-      });
-      l.forEach((item) =>
-        map.set(item.id, {
-          title: item.title,
-          subtitle: item.businessProfile?.name,
-          ...(item.media[0]?.url && { coverUrl: item.media[0]?.url }),
-        }),
-      );
-    }
-    if (tourIds.length) {
-      const t = await this.prisma.businessTour.findMany({
-        where: { id: { in: tourIds } },
-        include: { businessProfile: true, media: { take: 1, orderBy: { createdAt: 'asc' } } },
-      });
-      t.forEach((item) =>
-        map.set(item.id, {
-          title: item.title,
-          subtitle: item.businessProfile?.name,
-          ...(item.media[0]?.url && { coverUrl: item.media[0]?.url }),
-        }),
-      );
-    }
-    return map;
   }
 
   async getMessages(conversationId: string): Promise<MessageView[]> {
     const messages = await this.prisma.message.findMany({
       where: { conversationId },
-      include: { readReceipts: true },
+      include: { readReceipts: true, embeds: true },
       orderBy: { createdAt: 'asc' },
     });
 
-    const refs = messages
-      .filter((m) => m.referenceType && m.referenceId)
-      .map((m) => ({ type: m.referenceType as string, id: m.referenceId as string }));
-
-    const previewMap = refs.length
-      ? await this.fetchReferencePreviews(refs)
-      : new Map<string, MessageReferencePreview>();
-
-    return messages.map((m) => {
-      const mapped = this.mapMessage(m);
-      if (mapped.referenceId) {
-        const preview = previewMap.get(mapped.referenceId);
-        if (preview) {
-          mapped.referencePreview = preview;
-        }
-      }
-      return mapped;
-    });
+    return messages.map((m) => this.mapMessage(m));
   }
 
   async updateStatus(id: string, status: ConversationStatus): Promise<ConversationView> {
     const conversation = await this.prisma.conversation.update({
       where: { id },
       data: { status },
-      include: { participants: true },
+      include: { participants: true, anchor: true },
     });
     return this.mapConversation(conversation);
   }
@@ -239,18 +175,29 @@ export class PrismaConversationRepository implements IConversationRepository {
     await this.prisma.$transaction(
       input.messageIds.map((messageId) =>
         this.prisma.messageReadReceipt.upsert({
-          where: { messageId_userId: { messageId, userId: input.userId } },
-          create: { messageId, userId: input.userId },
+          where: { messageId_participantId: { messageId, participantId: input.participantId } },
+          create: { messageId, participantId: input.participantId },
           update: {},
         }),
       ),
     );
   }
 
-  async isParticipant(conversationId: string, userId: string): Promise<boolean> {
+  async isParticipant(conversationId: string, participantId: string): Promise<boolean> {
     const participant = await this.prisma.conversationParticipant.findUnique({
-      where: { conversationId_userId: { conversationId, userId } },
+      where: { conversationId_participantId: { conversationId, participantId } },
     });
     return participant !== null;
+  }
+
+  async addParticipants(conversationId: string, participantIds: string[]): Promise<void> {
+    await this.prisma.conversationParticipant.createMany({
+      data: participantIds.map((pid) => ({
+        conversationId,
+        participantId: pid,
+        role: 'MEMBER',
+      })),
+      skipDuplicates: true,
+    });
   }
 }
