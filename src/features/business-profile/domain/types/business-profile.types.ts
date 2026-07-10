@@ -16,7 +16,8 @@ export interface CreateBusinessProfileInput {
   readonly latitude?: number;
   readonly longitude?: number;
   readonly isPublic?: boolean;
-  readonly categoryIds?: string[];
+  readonly primaryCategoryId?: string;
+  readonly secondaryCategoryIds?: string[];
 }
 
 export interface UpdateBusinessProfileInput {
@@ -31,7 +32,8 @@ export interface UpdateBusinessProfileInput {
   readonly latitude?: number;
   readonly longitude?: number;
   readonly isPublic?: boolean;
-  readonly categoryIds?: string[];
+  readonly primaryCategoryId?: string;
+  readonly secondaryCategoryIds?: string[];
   readonly isEmailVerified?: boolean;
   readonly isPhoneVerified?: boolean;
   readonly verificationStatus?: VerificationStatus;
@@ -56,7 +58,8 @@ export interface BusinessProfileView {
   readonly location: string | null;
   readonly latitude: number | null;
   readonly longitude: number | null;
-  readonly categoryIds: string[];
+  readonly primaryCategoryId: string | null;
+  readonly secondaryCategoryIds: string[];
   readonly createdAt: Date;
   readonly updatedAt: Date;
   readonly operatingHours?: OperatingHours[];
@@ -76,7 +79,8 @@ export interface BusinessSummary {
   readonly location: string | null;
   readonly latitude: number | null;
   readonly longitude: number | null;
-  readonly categoryIds: string[];
+  readonly primaryCategoryId: string | null;
+  readonly secondaryCategoryIds: string[];
   readonly distanceKm?: number; // Added dynamically during proximity queries
   readonly isFollowed?: boolean;
 }
