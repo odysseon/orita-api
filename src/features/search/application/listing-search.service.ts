@@ -16,7 +16,7 @@ export class ListingSearchService {
       const locations = await this.prisma.$queryRaw<{ id: string }[]>`
         SELECT bp.id
         FROM "business_profiles" bp
-        JOIN "Location" loc ON bp."locationId" = loc.id
+        JOIN "locations" loc ON bp."locationId" = loc.id
         WHERE ST_DWithin(
           loc.coordinates::geography,
           ST_SetSRID(ST_MakePoint(${dto.lng}, ${dto.lat}), 4326)::geography,

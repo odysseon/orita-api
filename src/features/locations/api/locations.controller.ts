@@ -23,13 +23,13 @@ class EnsureLocationDto {
 
 @ApiTags("Locations")
 @Controller("v1/locations")
-@Public()
 export class LocationsController {
   constructor(private readonly locationsService: LocationsService) {}
 
   @Get("search")
   @ApiOperation({ summary: "Search for locations" })
   @ApiQuery({ name: "q", required: true, description: "Search query" })
+  @Public()
   async search(@Query("q") q: string) {
     if (!q || !q.trim()) {
       return [];
