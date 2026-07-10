@@ -7,7 +7,7 @@ export class MarkMessagesReadUseCase {
   constructor(private readonly repo: IConversationRepository) {}
 
   async execute(input: MarkMessagesReadInput): Promise<void> {
-    const allowed = await this.repo.isParticipant(input.conversationId, input.userId);
+    const allowed = await this.repo.isParticipant(input.conversationId, input.participantId);
     if (!allowed) {
       throw new ForbiddenException('You are not a participant of this conversation.');
     }
