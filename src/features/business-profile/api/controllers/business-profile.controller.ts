@@ -30,14 +30,14 @@ import {
 import { BusinessProfileResponseDto, DashboardStatsResponseDto } from '../dto/response.dto.js';
 import { SetOperatingHoursDto } from '../dto/operating-hours.dto.js';
 import { SetTagsDto } from '../dto/tag.dto.js';
-import { PrismaService } from '../../../../prisma/prisma.service.js';
+import { IdentityService } from '../../../../shared/identity/identity.service.js';
 import { ApiTags } from '@nestjs/swagger';
 
 @ApiTags('business management')
 @Controller()
 export class BusinessProfileController {
   constructor(
-    private readonly prisma: PrismaService,
+    private readonly identityService: IdentityService,
     private readonly createBusinessProfile: CreateBusinessProfileUseCase,
     private readonly requestContactVerification: RequestContactVerificationUseCase,
     private readonly verifyContactOtp: VerifyContactOtpUseCase,
@@ -54,9 +54,9 @@ export class BusinessProfileController {
     @CurrentIdentity() identity: RequestIdentity,
     @Body() dto: CreateBusinessProfileDto,
   ): Promise<BusinessProfileResponseDto> {
-    const { id: userId } = await this.resolveUser(identity.accountId);
+    const user = await this.identityService.resolveUserOrThrow(identity.accountId);
     const profile = await this.createBusinessProfile.execute({
-      ownerId: userId,
+      ownerId: user.id,
       ...dto,
     });
     return BusinessProfileResponseDto.from(profile);
@@ -69,8 +69,8 @@ export class BusinessProfileController {
     @Param('id') id: string,
     @Body() dto: RequestContactVerificationDto,
   ): Promise<void> {
-    const { id: userId } = await this.resolveUser(identity.accountId);
-    await this.requestContactVerification.execute(id, userId, dto.method);
+    const user = await this.identityService.resolveUserOrThrow(identity.accountId);
+    await this.requestContactVerification.execute(id, user.id, dto.method);
   }
 
   @Post('business/:id/contacts/verify')
@@ -80,8 +80,8 @@ export class BusinessProfileController {
     @Param('id') id: string,
     @Body() dto: VerifyContactOtpDto,
   ): Promise<BusinessProfileResponseDto> {
-    const { id: userId } = await this.resolveUser(identity.accountId);
-    const profile = await this.verifyContactOtp.execute(id, userId, dto.method, dto.otp);
+    const user = await this.identityService.resolveUserOrThrow(identity.accountId);
+    const profile = await this.verifyContactOtp.execute(id, user.id, dto.method, dto.otp);
     return BusinessProfileResponseDto.from(profile);
   }
 
@@ -91,9 +91,9 @@ export class BusinessProfileController {
     @Param('id') id: string,
     @Body() dto: UpdateBusinessProfileDto,
   ): Promise<BusinessProfileResponseDto> {
-    const { id: userId } = await this.resolveUser(identity.accountId);
+    const user = await this.identityService.resolveUserOrThrow(identity.accountId);
 
-    const profile = await this.updateBusinessProfile.execute(id, userId, {
+    const profile = await this.updateBusinessProfile.execute(id, user.id, {
       ...dto,
     });
 
@@ -106,16 +106,16 @@ export class BusinessProfileController {
     @CurrentIdentity() identity: RequestIdentity,
     @Param('id') id: string,
   ): Promise<void> {
-    const { id: userId } = await this.resolveUser(identity.accountId);
-    await this.deleteBusinessProfile.execute(id, userId);
+    const user = await this.identityService.resolveUserOrThrow(identity.accountId);
+    await this.deleteBusinessProfile.execute(id, user.id);
   }
 
   @Get('users/me/business')
   async getMyProfile(
     @CurrentIdentity() identity: RequestIdentity,
   ): Promise<BusinessProfileResponseDto> {
-    const { id: userId } = await this.resolveUser(identity.accountId);
-    const profile = await this.getMyBusinessProfile.execute(userId);
+    const user = await this.identityService.resolveUserOrThrow(identity.accountId);
+    const profile = await this.getMyBusinessProfile.execute(user.id);
     if (!profile) {
       throw new NotFoundException('You do not have a business profile.');
     }
@@ -127,8 +127,8 @@ export class BusinessProfileController {
     @CurrentIdentity() identity: RequestIdentity,
     @Param('id') id: string,
   ): Promise<DashboardStatsResponseDto> {
-    const { id: userId } = await this.resolveUser(identity.accountId);
-    const stats = await this.getDashboardStats.execute(id, userId);
+    const user = await this.identityService.resolveUserOrThrow(identity.accountId);
+    const stats = await this.getDashboardStats.execute(id, user.id);
     return stats;
   }
 
@@ -139,8 +139,9 @@ export class BusinessProfileController {
     @Param('id') id: string,
     @Body() dto: SetOperatingHoursDto,
   ): Promise<void> {
-    const { id: userId, isAdmin } = await this.resolveUser(identity.accountId);
-    await this.setOperatingHours.execute(id, dto.hours, userId, isAdmin);
+    const user = await this.identityService.resolveUserOrThrow(identity.accountId);
+    const isAdmin = user.role === 'ADMIN';
+    await this.setOperatingHours.execute(id, dto.hours, user.id, isAdmin);
   }
 
   @Put('business/:id/tags')
@@ -150,23 +151,8 @@ export class BusinessProfileController {
     @Param('id') id: string,
     @Body() dto: SetTagsDto,
   ): Promise<void> {
-    const { id: userId, isAdmin } = await this.resolveUser(identity.accountId);
-    await this.setBusinessTags.execute(id, dto.tagIds, userId, isAdmin);
-  }
-
-  private async resolveUser(accountId: string): Promise<{ id: string; isAdmin: boolean }> {
-    const user = await this.prisma.user.findUnique({
-      where: { accountId },
-      select: { id: true, role: true },
-    });
-
-    if (!user) {
-      throw new NotFoundException('User profile not found.');
-    }
-
-    return {
-      id: user.id,
-      isAdmin: user.role === 'ADMIN',
-    };
+    const user = await this.identityService.resolveUserOrThrow(identity.accountId);
+    const isAdmin = user.role === 'ADMIN';
+    await this.setBusinessTags.execute(id, dto.tagIds, user.id, isAdmin);
   }
 }

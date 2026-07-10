@@ -16,7 +16,7 @@ import { IRealtimeGateway } from '../../domain/ports/realtime.gateway.port.js';
 import { SendMessageUseCase } from '../../application/use-cases/send-message.use-case.js';
 import { MarkMessagesReadUseCase } from '../../application/use-cases/mark-messages-read.use-case.js';
 import { ParticipantService } from '../../application/services/participant.service.js';
-import { PrismaService } from '../../../../prisma/prisma.service.js';
+import { IdentityService } from '../../../../shared/identity/identity.service.js';
 import {
   WsSendMessagePayload,
   WsJoinConversationPayload,
@@ -34,7 +34,7 @@ export class MessagingGateway
   private readonly logger = new Logger(MessagingGateway.name);
 
   constructor(
-    private readonly prisma: PrismaService,
+    private readonly identityService: IdentityService,
     private readonly conversationRepo: IConversationRepository,
     private readonly sendMessageUseCase: SendMessageUseCase,
     private readonly markReadUseCase: MarkMessagesReadUseCase,
@@ -54,7 +54,7 @@ export class MessagingGateway
   // ─── Helpers ──────────────────────────────────────────────────────────────
 
   private async resolveParticipantId(accountId: string): Promise<string> {
-    const user = await this.prisma.user.findUnique({ where: { accountId } });
+    const user = await this.identityService.resolveUser(accountId);
     if (!user) throw new WsException('User not found.');
     const participant = await this.participantService.ensurePersonalParticipant(user.id);
     return participant.id;
