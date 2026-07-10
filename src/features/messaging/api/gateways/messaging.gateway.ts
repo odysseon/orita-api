@@ -15,6 +15,7 @@ import { IConversationRepository } from '../../domain/ports/conversation.reposit
 import { IRealtimeGateway } from '../../domain/ports/realtime.gateway.port.js';
 import { SendMessageUseCase } from '../../application/use-cases/send-message.use-case.js';
 import { MarkMessagesReadUseCase } from '../../application/use-cases/mark-messages-read.use-case.js';
+import { ParticipantService } from '../../application/services/participant.service.js';
 import { PrismaService } from '../../../../prisma/prisma.service.js';
 import {
   WsSendMessagePayload,
@@ -37,6 +38,7 @@ export class MessagingGateway
     private readonly conversationRepo: IConversationRepository,
     private readonly sendMessageUseCase: SendMessageUseCase,
     private readonly markReadUseCase: MarkMessagesReadUseCase,
+    private readonly participantService: ParticipantService,
   ) {}
 
   // ─── Lifecycle ────────────────────────────────────────────────────────────
@@ -51,10 +53,11 @@ export class MessagingGateway
 
   // ─── Helpers ──────────────────────────────────────────────────────────────
 
-  private async resolveUserId(accountId: string): Promise<string> {
+  private async resolveParticipantId(accountId: string): Promise<string> {
     const user = await this.prisma.user.findUnique({ where: { accountId } });
     if (!user) throw new WsException('User not found.');
-    return user.id;
+    const participant = await this.participantService.ensurePersonalParticipant(user.id);
+    return participant.id;
   }
 
   private roomFor(conversationId: string): string {
@@ -71,10 +74,10 @@ export class MessagingGateway
   broadcastReadReceipt(
     conversationId: string,
     messageId: string,
-    userId: string,
+    participantId: string,
     readAt: Date,
   ): void {
-    const event: WsReadReceiptEvent = { conversationId, messageId, userId, readAt };
+    const event: WsReadReceiptEvent = { conversationId, messageId, participantId, readAt };
     this.server.to(this.roomFor(conversationId)).emit('message:read', event);
   }
 
@@ -88,10 +91,9 @@ export class MessagingGateway
   ): Promise<void> {
     const data = client.data as { identity?: { accountId: string } };
     if (!data.identity) throw new WsException('Unauthorized');
-    const identity = data.identity;
-    const userId = await this.resolveUserId(identity.accountId);
-
-    const isParticipant = await this.conversationRepo.isParticipant(payload.conversationId, userId);
+    
+    const participantId = await this.resolveParticipantId(data.identity.accountId);
+    const isParticipant = await this.conversationRepo.isParticipant(payload.conversationId, participantId);
     if (!isParticipant) {
       throw new WsException('You are not a participant of this conversation.');
     }
@@ -108,15 +110,16 @@ export class MessagingGateway
   ): Promise<void> {
     const data = client.data as { identity?: { accountId: string } };
     if (!data.identity) throw new WsException('Unauthorized');
-    const identity = data.identity;
-    const senderId = await this.resolveUserId(identity.accountId);
+    
+    const participantId = await this.resolveParticipantId(data.identity.accountId);
 
     const input: SendMessageInput = {
       conversationId: payload.conversationId,
-      senderId,
-      content: payload.content,
-      ...(payload.mediaUrl !== undefined && { mediaUrl: payload.mediaUrl }),
-      ...(payload.mediaType !== undefined && { mediaType: payload.mediaType }),
+      participantId,
+      ...(payload.content ? { content: payload.content } : {}),
+      ...(payload.mediaUrl ? { mediaUrl: payload.mediaUrl } : {}),
+      ...(payload.mediaType ? { mediaType: payload.mediaType } : {}),
+      ...(payload.embeds ? { embeds: payload.embeds } : {}),
     };
 
     const message = await this.sendMessageUseCase.execute(input);
@@ -131,18 +134,18 @@ export class MessagingGateway
   ): Promise<void> {
     const data = client.data as { identity?: { accountId: string } };
     if (!data.identity) throw new WsException('Unauthorized');
-    const identity = data.identity;
-    const userId = await this.resolveUserId(identity.accountId);
+    
+    const participantId = await this.resolveParticipantId(data.identity.accountId);
 
     await this.markReadUseCase.execute({
       conversationId: payload.conversationId,
       messageIds: payload.messageIds,
-      userId,
+      participantId,
     });
 
     const readAt = new Date();
     for (const messageId of payload.messageIds) {
-      this.broadcastReadReceipt(payload.conversationId, messageId, userId, readAt);
+      this.broadcastReadReceipt(payload.conversationId, messageId, participantId, readAt);
     }
   }
 }
