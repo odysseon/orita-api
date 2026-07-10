@@ -1,12 +1,17 @@
 import { Controller, Get, Query } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiQuery } from '@nestjs/swagger';
 import { PrismaFeedRepository, FeedQueryParams } from '../infrastructure/prisma-feed.repository.js';
-import { Public, CurrentIdentity, type RequestIdentity } from '@odysseon/whoami-adapter-nestjs';
+import { OptionalAuth, CurrentIdentity, type RequestIdentity } from '@odysseon/whoami-adapter-nestjs';
+import { IdentityService } from '../../../shared/identity/identity.service.js';
+import { BadRequestException } from '@nestjs/common';
 
 @ApiTags('Feed')
 @Controller('feed')
 export class FeedController {
-  constructor(private readonly feedRepository: PrismaFeedRepository) {}
+  constructor(
+    private readonly feedRepository: PrismaFeedRepository,
+    private readonly identityService: IdentityService,
+  ) {}
 
   @ApiOperation({ summary: 'Get a personalized neighborhood feed' })
   @ApiQuery({ name: 'limit', required: false, type: Number })
@@ -14,7 +19,7 @@ export class FeedController {
   @ApiQuery({ name: 'cursorId', required: false, type: String })
   @ApiQuery({ name: 'lat', required: false, type: Number })
   @ApiQuery({ name: 'lng', required: false, type: Number })
-  @Public()
+  @OptionalAuth()
   @Get()
   async getFeed(
     @CurrentIdentity() identity?: RequestIdentity,
@@ -31,8 +36,8 @@ export class FeedController {
     let cursorScore = cursorScoreStr ? parseFloat(cursorScoreStr) : undefined;
     if (cursorScore !== undefined && Number.isNaN(cursorScore)) cursorScore = undefined;
 
-    const reqLat = latStr ? parseFloat(latStr) : undefined;
-    const reqLng = lngStr ? parseFloat(lngStr) : undefined;
+    let reqLat = latStr ? parseFloat(latStr) : undefined;
+    let reqLng = lngStr ? parseFloat(lngStr) : undefined;
 
     if (
       reqLat === undefined ||
@@ -40,13 +45,24 @@ export class FeedController {
       reqLng === undefined ||
       Number.isNaN(reqLng)
     ) {
-      return [];
+      if (identity?.accountId) {
+        // Fallback to active exploration context
+        const user = await this.identityService.resolveUser(identity.accountId);
+        if (user && user.activeExplorationLat && user.activeExplorationLng) {
+          reqLat = user.activeExplorationLat;
+          reqLng = user.activeExplorationLng;
+        } else {
+          throw new BadRequestException('Exploration context is required to load the feed.');
+        }
+      } else {
+        throw new BadRequestException('Exploration context is required to load the feed.');
+      }
     }
 
     const params: FeedQueryParams = {
       ...(identity?.accountId ? { userId: identity.accountId } : {}),
-      userLat: reqLat,
-      userLng: reqLng,
+      userLat: reqLat!,
+      userLng: reqLng!,
       limit,
     };
 
