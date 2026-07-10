@@ -4,6 +4,7 @@ import {
   USER_REPOSITORY_TOKEN,
 } from '../core/ports/user.repository.interface.js';
 import { UpdateUserProfileDto } from '../delivery/http/dto/update-user-profile.dto.js';
+import { UpdateExplorationContextDto } from '../delivery/http/dto/update-exploration-context.dto.js';
 import { MediaStorageService } from '../../storage/media-storage.service.js';
 
 @Injectable()
@@ -39,5 +40,9 @@ export class UsersService {
     }
 
     return updatedProfile;
+  }
+
+  async updateExplorationContext(accountId: string, payload: UpdateExplorationContextDto) {
+    return this.userRepository.updateExplorationContext(accountId, payload);
   }
 }
