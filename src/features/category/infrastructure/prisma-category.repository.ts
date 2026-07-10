@@ -216,7 +216,7 @@ export class PrismaCategoryRepository implements ICategoryRepository {
 
   async hasAssignments(id: string): Promise<boolean> {
     const [bpCount, listingCount] = await Promise.all([
-      this.prisma.businessProfile.count({ where: { categories: { some: { id } } } }),
+      this.prisma.businessProfile.count({ where: { categories: { some: { categoryId: id } } } }),
       this.prisma.listing.count({ where: { categoryId: id } }),
     ]);
     return bpCount > 0 || listingCount > 0;
