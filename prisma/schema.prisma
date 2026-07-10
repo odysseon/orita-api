@@ -168,8 +168,8 @@ model BusinessProfile {
   locationId  String?
   geoEntity   Location? @relation(fields: [locationId], references: [id])
 
-  // Commercial identity — many-to-many relations with Category
-  categories    Category[]     @relation("BusinessCategories")
+  // Commercial identity — explicit many-to-many relations with Category
+  categories    BusinessCategory[]     @relation("BusinessCategories")
   businessTours BusinessTour[]
 
   createdAt DateTime @default(now())
@@ -321,6 +321,24 @@ model Media {
 }
 
 // ============================================
+// BusinessCategory
+// ============================================
+
+model BusinessCategory {
+  businessId String
+  categoryId String
+  isPrimary  Boolean @default(false)
+
+  business BusinessProfile @relation("BusinessCategories", fields: [businessId], references: [id], onDelete: Cascade)
+  category Category        @relation("BusinessCategories", fields: [categoryId], references: [id], onDelete: Cascade)
+
+  @@id([businessId, categoryId])
+  @@index([businessId])
+  @@index([categoryId])
+  @@map("business_categories")
+}
+
+// ============================================
 // Category
 // ============================================
 
@@ -347,7 +365,7 @@ model Category {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  businessProfiles BusinessProfile[]   @relation("BusinessCategories")
+  businessProfiles BusinessCategory[]   @relation("BusinessCategories")
   listings         Listing[]           @relation("ListingCategory")
   attributes       CategoryAttribute[]
 

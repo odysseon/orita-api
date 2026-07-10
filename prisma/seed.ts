@@ -359,7 +359,9 @@ async function main() {
             { day: "TUE", openTime: "09:00", closeTime: "17:00" },
           ],
         },
-        categories: { connect: bData.category ? [{ id: bData.category.id }] : [] },
+        categories: { 
+          create: bData.category ? [{ categoryId: bData.category.id, isPrimary: true }] : [] 
+        },
         media: {
           create: [
             {
