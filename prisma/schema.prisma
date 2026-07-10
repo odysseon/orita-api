@@ -107,6 +107,10 @@ model User {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  activeExplorationLat  Float?
+  activeExplorationLng  Float?
+  activeExplorationName String?
+
   businessProfile         BusinessProfile?
   reviewsGiven            Review[]                @relation("ReviewsGiven")
   businessToursCreated    BusinessTour[]
