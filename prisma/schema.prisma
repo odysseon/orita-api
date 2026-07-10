@@ -102,9 +102,6 @@ model User {
   avatarUrl String?
   avatarId  String?
 
-  locationId String?
-  location   Location? @relation(fields: [locationId], references: [id])
-
   role PlatformRole @default(USER)
 
   createdAt DateTime @default(now())
@@ -117,9 +114,10 @@ model User {
   messagesSent              Message[]                 @relation("MessageSender")
   messageReadReceipts       MessageReadReceipt[]      @relation("MessageReadBy")
   savedListings             SavedListing[]            @relation("SavedListings")
-  savedBusinesses           SavedBusiness[]           @relation("SavedBusinesses")
+  follows                   Follow[]                  @relation("UserFollows")
   notificationPreferences   NotificationPreference?
   inAppNotifications        InAppNotification[]
+
   @@index([accountId])
 }
 
@@ -180,7 +178,7 @@ model BusinessProfile {
   tags            BusinessProfileTag[]
   media           Media[]
   conversations   Conversation[]
-  savedByUsers    SavedBusiness[]      @relation("SavedByUsers")
+  followers       Follow[]
   analyticsEvents AnalyticsEvent[]
   discoveryItems  DiscoveryItem[]
 
@@ -194,15 +192,22 @@ model BusinessProfile {
 model Location {
   id               String                               @id @default(cuid())
   name             String
-  formattedAddress String
-  placeId          String?
-  city             String?
-  state            String?
-  country          String?
+  formattedAddress String?
+  searchText       String?
+  provider         String?
+  externalId       String?
+  latitude         Float
+  longitude        Float
   coordinates      Unsupported("geometry(Point, 4326)")
 
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
   businessProfiles BusinessProfile[]
-  users            User[]
+  followers        Follow[]
+
+  @@unique([provider, externalId])
+  @@map("locations")
 }
 
 // ============================================
@@ -625,18 +630,28 @@ model SavedListing {
   @@map("saved_listings")
 }
 
-model SavedBusiness {
-  id                String          @id @default(cuid())
-  userId            String
-  user              User            @relation("SavedBusinesses", fields: [userId], references: [id], onDelete: Cascade)
-  businessProfileId String
-  businessProfile   BusinessProfile @relation("SavedByUsers", fields: [businessProfileId], references: [id], onDelete: Cascade)
-  createdAt         DateTime        @default(now())
+model Follow {
+  id String @id @default(cuid())
 
-  @@unique([userId, businessProfileId])
-  @@index([userId])
-  @@index([businessProfileId])
-  @@map("saved_businesses")
+  followerId String
+  follower   User   @relation("UserFollows", fields: [followerId], references: [id], onDelete: Cascade)
+
+  businessId String?
+  business   BusinessProfile? @relation(fields: [businessId], references: [id], onDelete: Cascade)
+
+  locationId String?
+  location   Location? @relation(fields: [locationId], references: [id], onDelete: Cascade)
+
+  notificationsEnabled Boolean @default(true)
+
+  createdAt DateTime @default(now())
+
+  @@unique([followerId, businessId])
+  @@unique([followerId, locationId])
+  @@index([followerId])
+  @@index([businessId])
+  @@index([locationId])
+  @@map("follows")
 }
 
 // ============================================
@@ -717,7 +732,7 @@ model NotificationPreference {
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
 
-  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model InAppNotification {
@@ -732,7 +747,7 @@ model InAppNotification {
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
-  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId, createdAt(sort: Desc)])
   @@index([userId, readAt])
