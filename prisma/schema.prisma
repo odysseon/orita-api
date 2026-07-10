@@ -107,16 +107,14 @@ model User {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  businessProfile           BusinessProfile?
-  reviewsGiven              Review[]                  @relation("ReviewsGiven")
-  businessToursCreated      BusinessTour[]
-  conversationsParticipated ConversationParticipant[]
-  messagesSent              Message[]                 @relation("MessageSender")
-  messageReadReceipts       MessageReadReceipt[]      @relation("MessageReadBy")
-  savedListings             SavedListing[]            @relation("SavedListings")
-  follows                   Follow[]                  @relation("UserFollows")
-  notificationPreferences   NotificationPreference?
-  inAppNotifications        InAppNotification[]
+  businessProfile         BusinessProfile?
+  reviewsGiven            Review[]                @relation("ReviewsGiven")
+  businessToursCreated    BusinessTour[]
+  participant             Participant?
+  savedListings           SavedListing[]          @relation("SavedListings")
+  follows                 Follow[]                @relation("UserFollows")
+  notificationPreferences NotificationPreference?
+  inAppNotifications      InAppNotification[]
 
   @@index([accountId])
 }
@@ -173,14 +171,15 @@ model BusinessProfile {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  listings        Listing[]
-  hours           OperatingHours[]
-  tags            BusinessProfileTag[]
-  media           Media[]
-  conversations   Conversation[]
-  followers       Follow[]
-  analyticsEvents AnalyticsEvent[]
-  discoveryItems  DiscoveryItem[]
+  listings            Listing[]
+  hours               OperatingHours[]
+  tags                BusinessProfileTag[]
+  media               Media[]
+  participant         Participant?
+  conversationAnchors ConversationAnchor[]
+  followers           Follow[]
+  analyticsEvents     AnalyticsEvent[]
+  discoveryItems      DiscoveryItem[]
 
   @@index([slug])
   @@index([verificationStatus])
@@ -203,8 +202,9 @@ model Location {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  businessProfiles BusinessProfile[]
-  followers        Follow[]
+  businessProfiles    BusinessProfile[]
+  followers           Follow[]
+  conversationAnchors ConversationAnchor[]
 
   @@unique([provider, externalId])
   @@map("locations")
@@ -250,9 +250,9 @@ model Listing {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  reviews       Review[]
-  conversations Conversation[]
-  savedByUsers  SavedListing[] @relation("SavedByUsers")
+  reviews             Review[]
+  conversationAnchors ConversationAnchor[]
+  savedByUsers        SavedListing[]       @relation("SavedByUsers")
 
   @@unique([businessProfileId, slug])
   @@index([businessProfileId])
@@ -440,7 +440,8 @@ model BusinessTour {
 
   highlights BusinessTourHighlight[]
 
-  media Media[]
+  conversationAnchors ConversationAnchor[]
+  media               Media[]
 
   @@index([businessProfileId])
   @@index([status])
@@ -518,24 +519,80 @@ model OperatingHours {
 // Messaging
 // ============================================
 
-// Purpose: explicit inbox management only.
-// CLOSED means a party deliberately resolved/archived the conversation.
-// Read state is tracked separately via MessageReadReceipt.
+// ============================================
+// Participant — a living identity, not a snapshot
+// ============================================
+model Participant {
+  id String @id @default(cuid())
+
+  userId String? @unique
+  user   User?   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  businessProfileId String?          @unique
+  business          BusinessProfile? @relation(fields: [businessProfileId], references: [id], onDelete: Cascade)
+
+  conversationParticipants ConversationParticipant[]
+  messagesSent             Message[]
+  readReceipts             MessageReadReceipt[]
+
+  @@map("participants")
+}
+
+// ============================================
+// ConversationAnchor — first-class, immutable
+// ============================================
+model ConversationAnchor {
+  id String @id @default(cuid())
+
+  businessId String?
+  business   BusinessProfile? @relation(fields: [businessId], references: [id], onDelete: SetNull)
+
+  listingId String?
+  listing   Listing? @relation(fields: [listingId], references: [id], onDelete: SetNull)
+
+  tourId String?
+  tour   BusinessTour? @relation(fields: [tourId], references: [id], onDelete: SetNull)
+
+  locationId String?
+  location   Location? @relation(fields: [locationId], references: [id], onDelete: SetNull)
+
+  // Immutable snapshot
+  title    String
+  subtitle String?
+  imageUrl String?
+
+  conversation Conversation?
+
+  @@map("conversation_anchors")
+}
+
+// ============================================
+// ConversationType — what kind of conversation
+// ============================================
+enum ConversationType {
+  DIRECT // 1-to-1 DM between any two participants
+  GROUP // Open group
+}
+
 enum ConversationStatus {
   ACTIVE
   CLOSED
 }
 
+// ============================================
+// Conversation
+// ============================================
 model Conversation {
-  id                String          @id @default(cuid())
-  businessProfileId String
-  businessProfile   BusinessProfile @relation(fields: [businessProfileId], references: [id], onDelete: Cascade)
+  id     String             @id @default(cuid())
+  type   ConversationType   @default(DIRECT)
+  status ConversationStatus @default(ACTIVE)
 
-  listingId String?
-  listing   Listing? @relation(fields: [listingId], references: [id], onDelete: SetNull)
+  // Only meaningful for GROUP
+  title String?
 
-  subject String?
-  status  ConversationStatus @default(ACTIVE)
+  // Anchor is optional
+  anchorId String?             @unique
+  anchor   ConversationAnchor? @relation(fields: [anchorId], references: [id])
 
   participants ConversationParticipant[]
   messages     Message[]
@@ -543,72 +600,106 @@ model Conversation {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  @@index([businessProfileId])
   @@index([status])
+  @@index([type])
   @@map("conversations")
 }
 
-// Replaces the hard-coded userId on Inquiry.
-// Supports adding more participants in the future without schema changes.
+// ============================================
+// ConversationParticipantRole
+// ============================================
+enum ConversationParticipantRole {
+  OWNER
+  MEMBER
+}
+
+// ============================================
+// ConversationParticipant
+// ============================================
 model ConversationParticipant {
   conversationId String
   conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
 
-  userId String
-  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  participantId String
+  participant   Participant @relation(fields: [participantId], references: [id], onDelete: Cascade)
+
+  role ConversationParticipantRole @default(MEMBER)
 
   joinedAt DateTime @default(now())
 
-  @@id([conversationId, userId])
-  @@index([userId])
+  @@id([conversationId, participantId])
+  @@index([participantId])
   @@map("conversation_participants")
 }
 
-enum MessageReferenceType {
-  BUSINESS
-  LISTING
-  TOUR
-}
-
+// ============================================
+// Message
+// ============================================
 model Message {
   id             String       @id @default(cuid())
   conversationId String
   conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
 
-  senderId String
-  sender   User   @relation("MessageSender", fields: [senderId], references: [id])
+  participantId String
+  participant   Participant @relation(fields: [participantId], references: [id])
 
-  content String @db.Text
+  // Identity snapshot at time of sending
+  senderDisplayName String
+  senderAvatarUrl   String?
+
+  content String? @db.Text
 
   // Optional media attachment
   mediaUrl  String?
   mediaType MediaType?
 
-  // Generic content attachment
-  referenceType MessageReferenceType?
-  referenceId   String?
+  embeds       MessageEmbed[]
+  readReceipts MessageReadReceipt[]
 
   createdAt DateTime @default(now())
 
-  readReceipts MessageReadReceipt[]
-
-  @@index([conversationId])
-  @@index([senderId])
+  @@index([conversationId, createdAt(sort: Asc)])
+  @@index([participantId])
   @@map("messages")
 }
 
+// ============================================
+// MessageEmbed — rich object attachments
+// ============================================
+model MessageEmbed {
+  id String @id @default(cuid())
+
+  messageId String
+  message   Message @relation(fields: [messageId], references: [id], onDelete: Cascade)
+
+  embedType String // 'BUSINESS' | 'LISTING' | 'TOUR' | 'LOCATION'
+  targetId  String
+
+  // Snapshot
+  title    String
+  subtitle String?
+  imageUrl String?
+  ctaLabel String?
+  ctaPath  String?
+
+  @@index([messageId])
+  @@map("message_embeds")
+}
+
+// ============================================
+// MessageReadReceipt
+// ============================================
 model MessageReadReceipt {
   messageId String
   message   Message @relation(fields: [messageId], references: [id], onDelete: Cascade)
 
-  userId String
-  user   User   @relation("MessageReadBy", fields: [userId], references: [id], onDelete: Cascade)
+  participantId String
+  participant   Participant @relation(fields: [participantId], references: [id], onDelete: Cascade)
 
   readAt DateTime @default(now())
 
-  @@id([messageId, userId])
-  @@index([messageId])
-  @@index([userId])
+  @@id([messageId, participantId])
+  @@index([participantId])
   @@map("message_read_receipts")
 }
 
