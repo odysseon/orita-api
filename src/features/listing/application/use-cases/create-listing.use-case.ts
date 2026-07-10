@@ -79,7 +79,11 @@ export class CreateListingUseCase {
                 lng: businessProfile.longitude,
               }
             : undefined,
-        categoryIds: [...businessProfile.categoryIds, category.id],
+        categoryIds: [
+          ...(businessProfile.primaryCategoryId ? [businessProfile.primaryCategoryId] : []),
+          ...(businessProfile.secondaryCategoryIds ?? []),
+          category.id,
+        ],
       },
     );
 
