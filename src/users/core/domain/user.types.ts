@@ -9,6 +9,9 @@ export interface UserEntity {
   avatarUrl: string | null;
   avatarId: string | null;
   businessId?: string | null;
+  activeExplorationLat?: number | null;
+  activeExplorationLng?: number | null;
+  activeExplorationName?: string | null;
   createdAt: Date;
   updatedAt: Date;
 }
