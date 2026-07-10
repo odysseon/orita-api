@@ -3,19 +3,44 @@ import {
   ConversationView,
   MessageView,
   MessageReadReceiptView,
+  ConversationAnchorView,
+  MessageEmbedView,
 } from '../../domain/types/messaging.types.js';
-import type { MessageReferencePreview } from '../../domain/types/messaging.types.js';
 
 export class MessageReadReceiptResponseDto {
   @ApiProperty() messageId!: string;
-  @ApiProperty() userId!: string;
+  @ApiProperty() participantId!: string;
   @ApiProperty() readAt!: Date;
 
   static from(r: MessageReadReceiptView): MessageReadReceiptResponseDto {
     const dto = new MessageReadReceiptResponseDto();
     dto.messageId = r.messageId;
-    dto.userId = r.userId;
+    dto.participantId = r.participantId;
     dto.readAt = r.readAt;
+    return dto;
+  }
+}
+
+export class MessageEmbedResponseDto {
+  @ApiProperty() id!: string;
+  @ApiProperty() embedType!: string;
+  @ApiProperty() targetId!: string;
+  @ApiProperty() title!: string;
+  @ApiPropertyOptional() subtitle!: string | null;
+  @ApiPropertyOptional() imageUrl!: string | null;
+  @ApiPropertyOptional() ctaLabel!: string | null;
+  @ApiPropertyOptional() ctaPath!: string | null;
+
+  static from(e: MessageEmbedView): MessageEmbedResponseDto {
+    const dto = new MessageEmbedResponseDto();
+    dto.id = e.id;
+    dto.embedType = e.embedType;
+    dto.targetId = e.targetId;
+    dto.title = e.title;
+    dto.subtitle = e.subtitle;
+    dto.imageUrl = e.imageUrl;
+    dto.ctaLabel = e.ctaLabel;
+    dto.ctaPath = e.ctaPath;
     return dto;
   }
 }
@@ -23,13 +48,13 @@ export class MessageReadReceiptResponseDto {
 export class MessageResponseDto {
   @ApiProperty() id!: string;
   @ApiProperty() conversationId!: string;
-  @ApiProperty() senderId!: string;
-  @ApiProperty() content!: string;
+  @ApiProperty() participantId!: string;
+  @ApiProperty() senderDisplayName!: string;
+  @ApiPropertyOptional() senderAvatarUrl!: string | null;
+  @ApiPropertyOptional() content!: string | null;
   @ApiPropertyOptional() mediaUrl!: string | null;
   @ApiPropertyOptional() mediaType!: string | null;
-  @ApiPropertyOptional() referenceType?: string | null;
-  @ApiPropertyOptional() referenceId?: string | null;
-  @ApiPropertyOptional() referencePreview?: MessageReferencePreview;
+  @ApiProperty({ type: [MessageEmbedResponseDto] }) embeds!: MessageEmbedResponseDto[];
   @ApiProperty() createdAt!: Date;
   @ApiProperty({ type: [MessageReadReceiptResponseDto] })
   readReceipts!: MessageReadReceiptResponseDto[];
@@ -38,27 +63,50 @@ export class MessageResponseDto {
     const dto = new MessageResponseDto();
     dto.id = m.id;
     dto.conversationId = m.conversationId;
-    dto.senderId = m.senderId;
+    dto.participantId = m.participantId;
+    dto.senderDisplayName = m.senderDisplayName;
+    dto.senderAvatarUrl = m.senderAvatarUrl;
     dto.content = m.content;
     dto.mediaUrl = m.mediaUrl;
     dto.mediaType = m.mediaType;
-    dto.referenceType = m.referenceType;
-    dto.referenceId = m.referenceId;
-    if (m.referencePreview !== undefined) {
-      dto.referencePreview = m.referencePreview;
-    }
+    dto.embeds = m.embeds.map((e) => MessageEmbedResponseDto.from(e));
     dto.createdAt = m.createdAt;
     dto.readReceipts = m.readReceipts.map((r) => MessageReadReceiptResponseDto.from(r));
     return dto;
   }
 }
 
+export class ConversationAnchorResponseDto {
+  @ApiProperty() id!: string;
+  @ApiProperty() title!: string;
+  @ApiPropertyOptional() subtitle!: string | null;
+  @ApiPropertyOptional() imageUrl!: string | null;
+  @ApiPropertyOptional() businessId!: string | null;
+  @ApiPropertyOptional() listingId!: string | null;
+  @ApiPropertyOptional() tourId!: string | null;
+  @ApiPropertyOptional() locationId!: string | null;
+
+  static from(a: ConversationAnchorView): ConversationAnchorResponseDto {
+    const dto = new ConversationAnchorResponseDto();
+    dto.id = a.id;
+    dto.title = a.title;
+    dto.subtitle = a.subtitle;
+    dto.imageUrl = a.imageUrl;
+    dto.businessId = a.businessId;
+    dto.listingId = a.listingId;
+    dto.tourId = a.tourId;
+    dto.locationId = a.locationId;
+    return dto;
+  }
+}
+
 export class ConversationResponseDto {
   @ApiProperty() id!: string;
-  @ApiProperty() businessProfileId!: string;
-  @ApiPropertyOptional() listingId!: string | null;
-  @ApiPropertyOptional() subject!: string | null;
+  @ApiProperty() type!: string;
   @ApiProperty() status!: string;
+  @ApiPropertyOptional() title!: string | null;
+  @ApiPropertyOptional() anchorId!: string | null;
+  @ApiPropertyOptional({ type: ConversationAnchorResponseDto }) anchor?: ConversationAnchorResponseDto | null;
   @ApiProperty({ type: [String] }) participantIds!: string[];
   @ApiProperty() createdAt!: Date;
   @ApiProperty() updatedAt!: Date;
@@ -67,10 +115,15 @@ export class ConversationResponseDto {
   static from(c: ConversationView, messages?: MessageView[]): ConversationResponseDto {
     const dto = new ConversationResponseDto();
     dto.id = c.id;
-    dto.businessProfileId = c.businessProfileId;
-    dto.listingId = c.listingId;
-    dto.subject = c.subject;
+    dto.type = c.type;
     dto.status = c.status;
+    dto.title = c.title;
+    dto.anchorId = c.anchorId;
+    if (c.anchor) {
+      dto.anchor = ConversationAnchorResponseDto.from(c.anchor);
+    } else {
+      dto.anchor = null;
+    }
     dto.participantIds = c.participantIds;
     dto.createdAt = c.createdAt;
     dto.updatedAt = c.updatedAt;

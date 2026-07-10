@@ -1,15 +1,21 @@
-import { IsString, IsNotEmpty, IsOptional, IsEnum, IsArray } from 'class-validator';
+import { IsString, IsNotEmpty, IsOptional, IsEnum, IsArray, ValidateNested } from 'class-validator';
+import { Type } from 'class-transformer';
+import { MessageEmbedDto } from './request.dto.js';
+import { MessageView } from '../../domain/types/messaging.types.js';
 
 // Client → Server
 
 export class WsSendMessagePayload {
   @IsString() @IsNotEmpty() conversationId!: string;
-  @IsString() @IsNotEmpty() content!: string;
+  @IsOptional() @IsString() content?: string;
   @IsOptional() @IsString() mediaUrl?: string;
   @IsOptional() @IsEnum(['IMAGE', 'VIDEO']) mediaType?: 'IMAGE' | 'VIDEO';
-  @IsOptional() @IsEnum(['BUSINESS', 'LISTING', 'TOUR']) referenceType?:
-    'BUSINESS' | 'LISTING' | 'TOUR';
-  @IsOptional() @IsString() referenceId?: string;
+  
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => MessageEmbedDto)
+  embeds?: MessageEmbedDto[];
 }
 
 export class WsJoinConversationPayload {
@@ -25,24 +31,12 @@ export class WsMarkReadPayload {
 
 export interface WsMessageNewEvent {
   conversationId: string;
-  message: {
-    id: string;
-    conversationId: string;
-    senderId: string;
-    content: string;
-    mediaUrl: string | null;
-    mediaType: string | null;
-    referenceType?: string | null;
-    referenceId?: string | null;
-    referencePreview?: any;
-    createdAt: Date;
-    readReceipts: { messageId: string; userId: string; readAt: Date }[];
-  };
+  message: MessageView;
 }
 
 export interface WsReadReceiptEvent {
   conversationId: string;
   messageId: string;
-  userId: string;
+  participantId: string;
   readAt: Date;
 }

@@ -1,64 +1,97 @@
+export type ConversationType = 'DIRECT' | 'GROUP';
 export type ConversationStatus = 'ACTIVE' | 'CLOSED';
+export type ConversationParticipantRole = 'OWNER' | 'MEMBER';
 export type MessageMediaType = 'IMAGE' | 'VIDEO';
-export type MessageReferenceType = 'BUSINESS' | 'LISTING' | 'TOUR';
+
+export interface ParticipantView {
+  id: string;
+  userId: string | null;
+  businessProfileId: string | null;
+  // Resolved display info
+  displayName: string;
+  avatarUrl: string | null;
+}
+
+export interface ConversationAnchorView {
+  id: string;
+  title: string;
+  subtitle: string | null;
+  imageUrl: string | null;
+  // Optional live entity references
+  businessId: string | null;
+  listingId: string | null;
+  tourId: string | null;
+  locationId: string | null;
+}
 
 export interface ConversationView {
   id: string;
-  businessProfileId: string;
-  listingId: string | null;
-  subject: string | null;
+  type: ConversationType;
   status: ConversationStatus;
+  title: string | null;
+  anchorId: string | null;
+  anchor?: ConversationAnchorView | null;
   participantIds: string[];
   createdAt: Date;
   updatedAt: Date;
 }
 
-export interface MessageReferencePreview {
+export interface MessageEmbedView {
+  id: string;
+  embedType: string;
+  targetId: string;
   title: string;
-  subtitle?: string | null;
-  coverUrl?: string | null;
+  subtitle: string | null;
+  imageUrl: string | null;
+  ctaLabel: string | null;
+  ctaPath: string | null;
 }
 
 export interface MessageView {
   id: string;
   conversationId: string;
-  senderId: string;
-  content: string;
+  participantId: string;
+  senderDisplayName: string;
+  senderAvatarUrl: string | null;
+  content: string | null;
   mediaUrl: string | null;
   mediaType: MessageMediaType | null;
-  referenceType: MessageReferenceType | null;
-  referenceId: string | null;
-  referencePreview?: MessageReferencePreview;
-  createdAt: Date;
+  embeds: MessageEmbedView[];
   readReceipts: MessageReadReceiptView[];
+  createdAt: Date;
 }
 
 export interface MessageReadReceiptView {
   messageId: string;
-  userId: string;
+  participantId: string;
   readAt: Date;
 }
 
 export interface CreateConversationInput {
-  businessProfileId: string;
-  userId: string;
-  listingId?: string;
-  subject?: string;
-  initialMessage: string;
+  type: ConversationType;
+  participantId: string;
+  invitedParticipantIds: string[];
+  anchor?: {
+    type: string;
+    targetId: string;
+  };
+  initialMessage?: string;
 }
 
 export interface SendMessageInput {
   conversationId: string;
-  senderId: string;
-  content: string;
+  participantId: string;
+  content?: string;
   mediaUrl?: string;
   mediaType?: MessageMediaType;
-  referenceType?: MessageReferenceType;
-  referenceId?: string;
+  embeds?: {
+    embedType: string;
+    targetId: string;
+  }[];
 }
 
 export interface MarkMessagesReadInput {
   conversationId: string;
   messageIds: string[];
-  userId: string;
+  participantId: string;
 }
