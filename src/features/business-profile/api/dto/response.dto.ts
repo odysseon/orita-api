@@ -23,7 +23,8 @@ export class BusinessProfileResponseDto {
   @ApiPropertyOptional({ nullable: true }) location: string | null;
   @ApiPropertyOptional({ nullable: true }) latitude: number | null;
   @ApiPropertyOptional({ nullable: true }) longitude: number | null;
-  @ApiProperty({ type: [String] }) categoryIds: string[];
+  @ApiPropertyOptional() primaryCategoryId: string | null;
+  @ApiProperty({ type: [String] }) secondaryCategoryIds: string[];
   @ApiProperty() isEmailVerified: boolean;
   @ApiProperty() isPhoneVerified: boolean;
   @ApiProperty() createdAt: string;
@@ -55,7 +56,8 @@ export class BusinessProfileResponseDto {
     this.location = r.location;
     this.latitude = r.latitude;
     this.longitude = r.longitude;
-    this.categoryIds = r.categoryIds;
+    this.primaryCategoryId = r.primaryCategoryId;
+    this.secondaryCategoryIds = r.secondaryCategoryIds;
     this.isEmailVerified = r.isEmailVerified;
     this.isPhoneVerified = r.isPhoneVerified;
     this.createdAt = new Date(r.createdAt).toISOString();
@@ -89,7 +91,8 @@ export class BusinessSummaryResponseDto {
   location: string | null;
   latitude: number | null;
   longitude: number | null;
-  categoryIds: string[];
+  primaryCategoryId: string | null;
+  secondaryCategoryIds: string[];
   distanceKm?: number;
   @ApiPropertyOptional() isFollowed?: boolean;
 
@@ -102,7 +105,8 @@ export class BusinessSummaryResponseDto {
     this.location = summary.location;
     this.latitude = summary.latitude;
     this.longitude = summary.longitude;
-    this.categoryIds = summary.categoryIds;
+    this.primaryCategoryId = summary.primaryCategoryId;
+    this.secondaryCategoryIds = summary.secondaryCategoryIds;
     if (summary.distanceKm !== undefined) {
       this.distanceKm = summary.distanceKm;
     }

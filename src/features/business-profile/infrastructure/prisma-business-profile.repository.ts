@@ -31,7 +31,7 @@ type PrismaBusinessProfileExtended = {
   whatsapp: string | null;
   email: string | null;
   locationId: string | null;
-  categories?: { id: string }[];
+  categories?: { categoryId: string; isPrimary: boolean }[];
   createdAt: Date;
   updatedAt: Date;
   hours?: {
@@ -88,7 +88,8 @@ function toDomain(raw: HydratedProfile): BusinessProfileView {
     location: raw.locationName,
     latitude: raw.latitude,
     longitude: raw.longitude,
-    categoryIds: raw.categories?.map((c) => c.id) ?? [],
+    primaryCategoryId: raw.categories?.find(c => c.isPrimary)?.categoryId ?? null,
+    secondaryCategoryIds: raw.categories?.filter(c => !c.isPrimary).map(c => c.categoryId) ?? [],
     createdAt: raw.createdAt,
     updatedAt: raw.updatedAt,
     ...(raw.hours && {
@@ -208,13 +209,16 @@ export class PrismaBusinessProfileRepository extends IBusinessProfileRepository 
         ...(input.email !== undefined && { email: input.email }),
         ...(locationId !== undefined && { locationId }),
         ...(input.isPublic !== undefined && { isPublic: input.isPublic }),
-        ...(input.categoryIds && {
+        ...(input.primaryCategoryId && {
           categories: {
-            connect: input.categoryIds.map((id) => ({ id })),
+            create: [
+              { categoryId: input.primaryCategoryId, isPrimary: true },
+              ...(input.secondaryCategoryIds?.map(id => ({ categoryId: id, isPrimary: false })) ?? []),
+            ],
           },
         }),
       },
-      include: { geoEntity: true, categories: { select: { id: true } } },
+      include: { geoEntity: true, categories: { select: { categoryId: true, isPrimary: true } } },
     });
 
     const hydratedArray = await this.hydrate([raw]);
@@ -242,7 +246,7 @@ export class PrismaBusinessProfileRepository extends IBusinessProfileRepository 
         hours: true,
         tags: { include: { tag: true } },
         geoEntity: true,
-        categories: { select: { id: true } },
+        categories: { select: { categoryId: true, isPrimary: true } },
         media: { select: { role: true, url: true } },
       },
     });
@@ -263,7 +267,7 @@ export class PrismaBusinessProfileRepository extends IBusinessProfileRepository 
         hours: true,
         tags: { include: { tag: true } },
         geoEntity: true,
-        categories: { select: { id: true } },
+        categories: { select: { categoryId: true, isPrimary: true } },
         media: { select: { role: true, url: true } },
       },
     });
@@ -286,7 +290,7 @@ export class PrismaBusinessProfileRepository extends IBusinessProfileRepository 
         hours: true,
         tags: { include: { tag: true } },
         geoEntity: true,
-        categories: { select: { id: true } },
+        categories: { select: { categoryId: true, isPrimary: true } },
       },
     });
     if (!raw) return null;
@@ -349,9 +353,13 @@ export class PrismaBusinessProfileRepository extends IBusinessProfileRepository 
         ...(input.verificationStatus !== undefined && {
           verificationStatus: input.verificationStatus,
         }),
-        ...(input.categoryIds !== undefined && {
+        ...(input.primaryCategoryId !== undefined && {
           categories: {
-            set: input.categoryIds.map((id) => ({ id })),
+            deleteMany: {},
+            create: [
+              { categoryId: input.primaryCategoryId, isPrimary: true },
+              ...(input.secondaryCategoryIds?.map(id => ({ categoryId: id, isPrimary: false })) ?? []),
+            ],
           },
         }),
       },
@@ -359,7 +367,7 @@ export class PrismaBusinessProfileRepository extends IBusinessProfileRepository 
         hours: true,
         tags: { include: { tag: true } },
         geoEntity: true,
-        categories: { select: { id: true } },
+        categories: { select: { categoryId: true, isPrimary: true } },
       },
     });
 
@@ -431,10 +439,10 @@ export class PrismaBusinessProfileRepository extends IBusinessProfileRepository 
       isPublic: true,
       ...(input.verificationStatus && { verificationStatus: input.verificationStatus }),
       // Category filter: exact leaf or root-slug relation filter
-      ...(input.categoryId && { categories: { some: { id: input.categoryId } } }),
+      ...(input.categoryId && { categories: { some: { categoryId: input.categoryId } } }),
       ...(input.rootSlug &&
         !input.categoryId && {
-          categories: { some: { parent: { slug: input.rootSlug } } },
+          categories: { some: { category: { parent: { slug: input.rootSlug } } } },
         }),
       ...(input.search && {
         OR: [
@@ -468,9 +476,9 @@ export class PrismaBusinessProfileRepository extends IBusinessProfileRepository 
         SELECT bp.id, bp.name, bp.slug, bp."verificationStatus", bp."businessType", bp.description, loc.name as location, 
                ST_Y(loc.coordinates::geometry) as latitude, ST_X(loc.coordinates::geometry) as longitude,
                COALESCE((
-                 SELECT json_agg(bc."B")
-                 FROM "_BusinessCategories" bc
-                 WHERE bc."A" = bp.id
+                 SELECT json_agg(json_build_object('categoryId', bc."categoryId", 'isPrimary', bc."isPrimary"))
+                 FROM "business_categories" bc
+                 WHERE bc."businessId" = bp.id
                ), '[]'::json) as categories_json,
                (ST_Distance(loc.coordinates::geography, ST_SetSRID(ST_MakePoint(${input.lng}, ${input.lat}), 4326)::geography) / 1000) AS distance
         FROM "business_profiles" bp
@@ -478,7 +486,7 @@ export class PrismaBusinessProfileRepository extends IBusinessProfileRepository 
         WHERE bp."isPublic" = true
           AND ST_DWithin(loc.coordinates::geography, ST_SetSRID(ST_MakePoint(${input.lng}, ${input.lat}), 4326)::geography, ${radiusMeters})
           ${input.verificationStatus ? Prisma.sql`AND bp."verificationStatus" = ${input.verificationStatus}::"VerificationStatus"` : Prisma.empty}
-          ${input.categoryId ? Prisma.sql`AND EXISTS (SELECT 1 FROM "_BusinessCategories" bc WHERE bc."A" = bp.id AND bc."B" = ${input.categoryId})` : Prisma.empty}
+          ${input.categoryId ? Prisma.sql`AND EXISTS (SELECT 1 FROM "business_categories" bc WHERE bc."businessId" = bp.id AND bc."categoryId" = ${input.categoryId})` : Prisma.empty}
           ${
             input.search
               ? Prisma.sql`AND (
@@ -500,7 +508,7 @@ export class PrismaBusinessProfileRepository extends IBusinessProfileRepository 
         WHERE bp."isPublic" = true
           AND ST_DWithin(loc.coordinates::geography, ST_SetSRID(ST_MakePoint(${input.lng}, ${input.lat}), 4326)::geography, ${radiusMeters})
           ${input.verificationStatus ? Prisma.sql`AND bp."verificationStatus" = ${input.verificationStatus}::"VerificationStatus"` : Prisma.empty}
-          ${input.categoryId ? Prisma.sql`AND EXISTS (SELECT 1 FROM "_BusinessCategories" bc WHERE bc."A" = bp.id AND bc."B" = ${input.categoryId})` : Prisma.empty}
+          ${input.categoryId ? Prisma.sql`AND EXISTS (SELECT 1 FROM "business_categories" bc WHERE bc."businessId" = bp.id AND bc."categoryId" = ${input.categoryId})` : Prisma.empty}
           ${
             input.search
               ? Prisma.sql`AND (
@@ -524,7 +532,8 @@ export class PrismaBusinessProfileRepository extends IBusinessProfileRepository 
         location: r.location,
         latitude: r.latitude,
         longitude: r.longitude,
-        categoryIds: r.categories_json ?? [],
+        primaryCategoryId: (r.categories_json as any[])?.find(c => c.isPrimary)?.categoryId ?? null,
+        secondaryCategoryIds: (r.categories_json as any[])?.filter(c => !c.isPrimary).map(c => c.categoryId) ?? [],
         distanceKm: Number(r.distance),
       }));
 
@@ -551,7 +560,7 @@ export class PrismaBusinessProfileRepository extends IBusinessProfileRepository 
           businessType: true,
           description: true,
           locationId: true,
-          categories: { select: { id: true } },
+          categories: { select: { categoryId: true, isPrimary: true } },
           geoEntity: true,
         },
       }),
@@ -570,7 +579,8 @@ export class PrismaBusinessProfileRepository extends IBusinessProfileRepository 
       location: r.locationName,
       latitude: r.latitude,
       longitude: r.longitude,
-      categoryIds: r.categories?.map((c) => c.id) ?? [],
+      primaryCategoryId: r.categories?.find((c) => c.isPrimary)?.categoryId ?? null,
+      secondaryCategoryIds: r.categories?.filter((c) => !c.isPrimary).map((c) => c.categoryId) ?? [],
     }));
 
     return this.enrichWithFollowedStatus(

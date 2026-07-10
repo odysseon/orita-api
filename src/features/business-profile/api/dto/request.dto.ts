@@ -7,6 +7,7 @@ import {
   IsArray,
   MaxLength,
   MinLength,
+  ArrayMaxSize,
 } from 'class-validator';
 import { BusinessType } from '../../../../../generated/prisma/client.js';
 
@@ -59,10 +60,14 @@ export class CreateBusinessProfileDto {
   @IsBoolean()
   isPublic?: boolean;
 
+  @IsString()
+  primaryCategoryId!: string;
+
   @IsOptional()
   @IsArray()
+  @ArrayMaxSize(5)
   @IsString({ each: true })
-  categoryIds?: string[];
+  secondaryCategoryIds?: string[];
 }
 
 export class UpdateBusinessProfileDto {
@@ -114,6 +119,16 @@ export class UpdateBusinessProfileDto {
   @IsOptional()
   @IsBoolean()
   isPublic?: boolean;
+
+  @IsOptional()
+  @IsString()
+  primaryCategoryId?: string;
+
+  @IsOptional()
+  @IsArray()
+  @ArrayMaxSize(5)
+  @IsString({ each: true })
+  secondaryCategoryIds?: string[];
 }
 
 export class GetBusinessesQueryDto {
