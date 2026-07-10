@@ -43,7 +43,7 @@ export class AnalyticsService {
 
     // Get total conversations
     const totalInquiries = await this.prisma.conversation.count({
-      where: { businessProfileId: businessId },
+      where: { anchor: { businessId } },
     });
 
     // Get total saves
