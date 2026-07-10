@@ -48,7 +48,7 @@ export class BusinessSearchService {
     }
 
     if (dto.categoryId) {
-      where.categories = { some: { id: dto.categoryId } };
+      where.categories = { some: { categoryId: dto.categoryId } };
     }
 
     // Parse filters: ?filter=VerificationStatus:VERIFIED
@@ -103,7 +103,7 @@ export class BusinessSearchService {
         skip: Math.max(0, dto.offset ?? 0),
         take: Math.min(Math.max(1, dto.limit ?? 20), 100),
         include: {
-          categories: { select: { id: true, name: true, slug: true } },
+          categories: { include: { category: { select: { id: true, name: true, slug: true } } } },
           tags: { select: { tag: true } },
         },
       }),
