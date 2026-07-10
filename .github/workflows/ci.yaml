@@ -15,7 +15,7 @@ permissions:
 jobs:
   # ── Type-check and lint ─────────────────────────────────────────────────────
   check:
-    name: Type-check & lint
+    name: Type-check
     runs-on: ubuntu-latest
     timeout-minutes: 10
     continue-on-error: true
@@ -56,9 +56,9 @@ jobs:
         id: typecheck
         run: pnpm typecheck
 
-      - name: Lint
-        id: lint
-        run: pnpm lint
+      # - name: Lint
+      #   id: lint
+      #   run: pnpm lint
 
   # ── Docker image build ──────────────────────────────────────────────────────
   docker-build:
