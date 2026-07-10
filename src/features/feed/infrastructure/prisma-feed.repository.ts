@@ -58,6 +58,7 @@ export class PrismaFeedRepository {
           d."referenceId",
           d."businessProfileId",
           d."createdAt",
+          d."updatedAt",
           d."clicksCount",
           d."savesCount",
           d."messagesCount",
@@ -84,18 +85,40 @@ export class PrismaFeedRepository {
           "businessProfileId",
           "createdAt",
           dist_meters,
-          GREATEST(0, ${FeedWeights.distance} * (1 - (dist_meters / 15000))) AS score_distance,
-          GREATEST(0, ${FeedWeights.freshness} * (1 - (EXTRACT(EPOCH FROM (NOW() - "createdAt")) / 86400) / 14)) AS score_freshness,
-          (is_followed_business * ${FeedWeights.followedBusiness}) AS score_followed_business,
-          (is_followed_location * ${FeedWeights.followedLocation}) AS score_followed_location,
+          
+          -- Proximity
+          (50.0 * EXP(-dist_meters / ${FeedWeights.distanceScale}::numeric)) AS score_proximity,
+          
+          -- Trust
+          CASE 
+            WHEN "verificationStatus"::text = 'VERIFIED' THEN ${FeedWeights.verification.VERIFIED}::numeric
+            WHEN "verificationStatus"::text = 'PENDING' THEN ${FeedWeights.verification.PENDING}::numeric
+            WHEN "verificationStatus"::text = 'REJECTED' THEN ${FeedWeights.verification.REJECTED}::numeric
+            ELSE ${FeedWeights.verification.UNVERIFIED}::numeric
+          END AS score_trust_multiplier,
+          
+          -- Popularity (Logarithmic)
           (
-            ("clicksCount" * 1) 
-            + ("savesCount" * 10) 
-            + ("messagesCount" * 15) 
-            + ("sharesCount" * 5)
-            - ("hidesCount" * 15)
-            - ("reportsCount" * 50)
-          ) AS score_popularity
+            ${FeedWeights.engagement.clicks}::numeric * LN(1 + "clicksCount") +
+            ${FeedWeights.engagement.saves}::numeric * LN(1 + "savesCount") +
+            ${FeedWeights.engagement.messages}::numeric * LN(1 + "messagesCount") +
+            ${FeedWeights.engagement.shares}::numeric * LN(1 + "sharesCount") +
+            ${FeedWeights.engagement.hides}::numeric * LN(1 + "hidesCount") +
+            ${FeedWeights.engagement.reports}::numeric * LN(1 + "reportsCount")
+          ) AS score_popularity_raw,
+          
+          -- Gravity Decay based on freshness (updatedAt)
+          POWER(GREATEST(0, EXTRACT(EPOCH FROM (NOW() - "updatedAt")) / 3600) + 2, ${FeedWeights.gravity}::numeric) AS gravity_penalty,
+          
+          -- Personalization
+          ((is_followed_business + is_followed_location) * ${FeedWeights.followBonus}::numeric) AS score_personalization,
+          
+          -- Exploration
+          CASE WHEN (EXTRACT(EPOCH FROM (NOW() - "createdAt")) / 86400) < ${FeedWeights.exploration.newDaysThreshold}::numeric 
+            THEN ${FeedWeights.exploration.newBonus}::numeric 
+            ELSE 0 
+          END + (random() * ${FeedWeights.exploration.randomJitter}::numeric) AS score_exploration
+
         FROM feed_candidates
       ),
       ranked AS (
@@ -106,7 +129,14 @@ export class PrismaFeedRepository {
           "businessProfileId",
           "createdAt",
           dist_meters AS "distanceMeters",
-          (score_distance + score_freshness + score_followed_business + score_followed_location + score_popularity) AS score
+          
+          -- Final Score Composition
+          (
+            (score_proximity * score_trust_multiplier) 
+            + (score_popularity_raw / gravity_penalty) 
+            + score_personalization 
+            + score_exploration
+          ) AS score
         FROM scored_candidates
       )
       SELECT * FROM ranked
