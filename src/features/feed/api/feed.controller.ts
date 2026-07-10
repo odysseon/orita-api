@@ -22,7 +22,7 @@ export class FeedController {
   @OptionalAuth()
   @Get()
   async getFeed(
-    @CurrentIdentity() identity?: RequestIdentity,
+    @CurrentIdentity({ required: false }) identity?: RequestIdentity,
     @Query('limit') limitStr?: string,
     @Query('cursorScore') cursorScoreStr?: string,
     @Query('cursorId') cursorId?: string,
