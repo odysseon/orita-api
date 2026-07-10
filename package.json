@@ -8,7 +8,7 @@
   "type": "module",
   "scripts": {
     "db:seed": "tsx prisma/seed.ts",
-    "build": "nest build",
+    "build": "tsc",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\" \"**/*.md\"",
     "start": "nest start",
     "dev": "nest start --watch",
