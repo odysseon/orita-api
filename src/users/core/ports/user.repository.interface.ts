@@ -1,4 +1,5 @@
 import { UpdateUserProfileDto } from '../../delivery/http/dto/update-user-profile.dto.js';
+import { UpdateExplorationContextDto } from '../../delivery/http/dto/update-exploration-context.dto.js';
 import { UserEntity } from '../domain/user.types.js';
 
 export const USER_REPOSITORY_TOKEN = Symbol('USER_REPOSITORY_TOKEN');
@@ -22,4 +23,9 @@ export interface IUserRepository {
   /**
    * Updates a user's location via PostGIS coordinates.
    */
-  }
+
+  /**
+   * Updates the user's active exploration context.
+   */
+  updateExplorationContext(accountId: string, payload: UpdateExplorationContextDto): Promise<UserEntity>;
+}

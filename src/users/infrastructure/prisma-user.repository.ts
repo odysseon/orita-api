@@ -3,6 +3,7 @@ import { PrismaService } from '../../prisma/prisma.service.js';
 import { RedisService } from '../../shared/redis/redis.service.js';
 import { IUserRepository } from '../core/ports/user.repository.interface.js';
 import { UpdateUserProfileDto } from '../delivery/http/dto/update-user-profile.dto.js';
+import { UpdateExplorationContextDto } from '../delivery/http/dto/update-exploration-context.dto.js';
 
 import { UserEntity } from '../core/domain/user.types.js';
 
@@ -125,4 +126,46 @@ export class PrismaUserRepository implements IUserRepository {
     }
   }
 
+  async updateExplorationContext(accountId: string, payload: UpdateExplorationContextDto): Promise<UserEntity> {
+    try {
+      const updatedUser = await this.prisma.user.update({
+        where: { accountId },
+        data: {
+          activeExplorationLat: payload.latitude,
+          activeExplorationLng: payload.longitude,
+          activeExplorationName: payload.name,
+        },
+        include: {
+          account: {
+            select: {
+              email: true,
+            },
+          },
+          businessProfile: {
+            select: { id: true },
+          },
+        },
+      });
+
+      const { account, businessProfile, ...rest } = updatedUser;
+      const domain = {
+        ...rest,
+        email: account.email,
+        role: updatedUser.role,
+        businessId: businessProfile?.id || null,
+      };
+      this.updateCacheAsync(domain);
+      return domain;
+    } catch (error: unknown) {
+      if (
+        error &&
+        typeof error === 'object' &&
+        'code' in error &&
+        error.code === 'P2025' // Prisma "Record to update not found" code
+      ) {
+        throw new NotFoundException('User profile not found for this account.');
+      }
+      throw error;
+    }
+  }
 }
