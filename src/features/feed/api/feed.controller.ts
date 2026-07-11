@@ -39,6 +39,8 @@ export class FeedController {
     let reqLat = latStr ? parseFloat(latStr) : undefined;
     let reqLng = lngStr ? parseFloat(lngStr) : undefined;
 
+    let userId: string | undefined;
+
     if (
       reqLat === undefined ||
       Number.isNaN(reqLat) ||
@@ -48,19 +50,40 @@ export class FeedController {
       if (identity?.accountId) {
         // Fallback to active exploration context
         const user = await this.identityService.resolveUser(identity.accountId);
-        if (user && user.activeExplorationLat && user.activeExplorationLng) {
-          reqLat = user.activeExplorationLat;
-          reqLng = user.activeExplorationLng;
+        if (user) {
+          userId = user.id;
+          if (user.activeExplorationLat != null && user.activeExplorationLng != null) {
+            reqLat = user.activeExplorationLat;
+            reqLng = user.activeExplorationLng;
+          } else {
+            throw new BadRequestException('Exploration context is required to load the feed.');
+          }
         } else {
           throw new BadRequestException('Exploration context is required to load the feed.');
         }
       } else {
         throw new BadRequestException('Exploration context is required to load the feed.');
       }
+    } else if (identity?.accountId) {
+      const user = await this.identityService.resolveUser(identity.accountId);
+      if (user) {
+        userId = user.id;
+      }
+    }
+
+    if (
+      reqLat === undefined ||
+      !Number.isFinite(reqLat) ||
+      reqLat < -90 || reqLat > 90 ||
+      reqLng === undefined ||
+      !Number.isFinite(reqLng) ||
+      reqLng < -180 || reqLng > 180
+    ) {
+      throw new BadRequestException('Valid coordinates are required to load the feed.');
     }
 
     const params: FeedQueryParams = {
-      ...(identity?.accountId ? { userId: identity.accountId } : {}),
+      ...(userId ? { userId } : {}),
       userLat: reqLat!,
       userLng: reqLng!,
       limit,

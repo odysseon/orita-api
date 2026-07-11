@@ -1,6 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../../prisma/prisma.service.js';
 import { GeocoderCandidate } from './geocoder.interface.js';
+import { randomUUID } from 'crypto';
+import { Prisma } from '../../../../generated/prisma/client.js';
 
 export interface LocationRecord {
   id: string;
@@ -15,7 +17,7 @@ export class PrismaLocationRepository {
   constructor(private readonly prisma: PrismaService) {}
 
   async searchByText(query: string, limit = 6): Promise<LocationRecord[]> {
-    const term = `%${query.toLowerCase()}%`;
+    const term = query.toLowerCase();
     return this.prisma.location.findMany({
       where: {
         OR: [
@@ -60,21 +62,13 @@ export class PrismaLocationRepository {
       .join(' ')
       .toLowerCase();
 
-    const coordinatesRaw = `ST_SetSRID(ST_MakePoint(${candidate.lng}, ${candidate.lat}), 4326)`;
-
-    // Check if already exists by provider+externalId
-    const existing = await this.prisma.location.findFirst({
-      where: { provider: candidate.provider, externalId: candidate.externalId },
-      select: { id: true, name: true, formattedAddress: true, latitude: true, longitude: true },
-    });
-
-    if (existing) return existing;
+    const newId = randomUUID();
 
     // Create using raw SQL to set geometry column
-    await this.prisma.$executeRaw`
+    await this.prisma.$executeRaw(Prisma.sql`
       INSERT INTO locations (id, "externalId", provider, name, "formattedAddress", "searchText", latitude, longitude, coordinates, "createdAt", "updatedAt")
       VALUES (
-        gen_random_uuid()::text,
+        ${newId},
         ${candidate.externalId},
         ${candidate.provider},
         ${candidate.name},
@@ -82,7 +76,7 @@ export class PrismaLocationRepository {
         ${searchText},
         ${candidate.lat},
         ${candidate.lng},
-        ${coordinatesRaw}::geometry,
+        ST_SetSRID(ST_MakePoint(${candidate.lng}, ${candidate.lat}), 4326),
         NOW(),
         NOW()
       )
@@ -92,8 +86,9 @@ export class PrismaLocationRepository {
         "searchText" = EXCLUDED."searchText",
         latitude = EXCLUDED.latitude,
         longitude = EXCLUDED.longitude,
+        coordinates = EXCLUDED.coordinates,
         "updatedAt" = NOW()
-    `;
+    `);
 
     const created = await this.prisma.location.findFirst({
       where: { provider: candidate.provider, externalId: candidate.externalId },

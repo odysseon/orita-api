@@ -66,8 +66,13 @@ export class ConversationsController {
   @Get(':id')
   @ApiOperation({ summary: 'Get conversation details and messages' })
   @ApiResponse({ status: 200, type: ConversationResponseDto })
-  async getDetails(@Param('id') id: string): Promise<ConversationResponseDto> {
-    const details = await this.getConversationDetails.execute(id);
+  async getDetails(
+    @CurrentIdentity() identity: RequestIdentity,
+    @Param('id') id: string,
+  ): Promise<ConversationResponseDto> {
+    const user = await this.prisma.user.findUniqueOrThrow({ where: { accountId: identity.accountId } });
+    const personalParticipant = await this.participantService.ensurePersonalParticipant(user.id);
+    const details = await this.getConversationDetails.execute(id, personalParticipant.id);
     return ConversationResponseDto.from(details.conversation, details.messages);
   }
 
@@ -99,10 +104,13 @@ export class ConversationsController {
   @ApiOperation({ summary: 'Update conversation status' })
   @ApiResponse({ status: 200, type: ConversationResponseDto })
   async setStatus(
+    @CurrentIdentity() identity: RequestIdentity,
     @Param('id') id: string,
     @Body() dto: UpdateConversationStatusDto,
   ): Promise<ConversationResponseDto> {
-    const conversation = await this.updateStatus.execute(id, dto.status);
+    const user = await this.prisma.user.findUniqueOrThrow({ where: { accountId: identity.accountId } });
+    const personalParticipant = await this.participantService.ensurePersonalParticipant(user.id);
+    const conversation = await this.updateStatus.execute(id, personalParticipant.id, dto.status);
     return ConversationResponseDto.from(conversation);
   }
 
