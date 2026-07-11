@@ -1,4 +1,5 @@
-import { Body, Controller, Post, Delete, HttpCode, HttpStatus, Inject } from '@nestjs/common';
+import { Body, Controller, Post, Get, Delete, HttpCode, HttpStatus, Inject } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import {
   ApiTags,
   ApiOperation,
@@ -25,7 +26,19 @@ export class GoogleAuthController {
     private readonly googleAuthUseCase: GoogleAuthUseCase,
     @Inject(moduleToken('oauth'))
     private readonly oauth: OAuthMethods,
+    private readonly configService: ConfigService,
   ) {}
+
+  @ApiOperation({ summary: 'Get Google Client ID' })
+  @ApiOkResponse({ description: 'Returns the Google Client ID' })
+  @Public()
+  @Get('client-id')
+  getClientId(): { clientId: string } {
+    // We get this safely from the environment; since it's a public client ID, 
+    // exposing it to the frontend via API is perfectly safe.
+    const clientId = this.configService.getOrThrow<string>('GOOGLE_CLIENT_ID');
+    return { clientId };
+  }
 
   @ApiOperation({ summary: 'Authenticate using a Google ID token' })
   @ApiBody({ type: AuthenticateGoogleDto })
