@@ -91,9 +91,12 @@ export class MessagingGateway
   ): Promise<void> {
     const data = client.data as { identity?: { accountId: string } };
     if (!data.identity) throw new WsException('Unauthorized');
-    
+
     const participantId = await this.resolveParticipantId(data.identity.accountId);
-    const isParticipant = await this.conversationRepo.isParticipant(payload.conversationId, participantId);
+    const isParticipant = await this.conversationRepo.isParticipant(
+      payload.conversationId,
+      participantId,
+    );
     if (!isParticipant) {
       throw new WsException('You are not a participant of this conversation.');
     }
@@ -110,7 +113,7 @@ export class MessagingGateway
   ): Promise<void> {
     const data = client.data as { identity?: { accountId: string } };
     if (!data.identity) throw new WsException('Unauthorized');
-    
+
     const participantId = await this.resolveParticipantId(data.identity.accountId);
 
     const input: SendMessageInput = {
@@ -134,7 +137,7 @@ export class MessagingGateway
   ): Promise<void> {
     const data = client.data as { identity?: { accountId: string } };
     if (!data.identity) throw new WsException('Unauthorized');
-    
+
     const participantId = await this.resolveParticipantId(data.identity.accountId);
 
     await this.markReadUseCase.execute({

@@ -14,7 +14,9 @@ export class CreateConversationUseCase {
 
   async execute(input: CreateConversationInput): Promise<ConversationView> {
     if (input.type === 'DIRECT' && input.invitedParticipantIds.length !== 1) {
-      throw new BadRequestException('Direct conversations must have exactly one invited participant');
+      throw new BadRequestException(
+        'Direct conversations must have exactly one invited participant',
+      );
     }
 
     let anchor = undefined;

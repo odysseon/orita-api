@@ -68,5 +68,9 @@ export abstract class StorageProvider {
    * Generates a signed upload signature for direct-from-browser uploads.
    * Throws NotSupportedException if the provider does not support it.
    */
-  abstract generateUploadSignature(folder: string, publicId: string, timestamp: number): Promise<UploadSignatureResult>;
+  abstract generateUploadSignature(
+    folder: string,
+    publicId: string,
+    timestamp: number,
+  ): Promise<UploadSignatureResult>;
 }

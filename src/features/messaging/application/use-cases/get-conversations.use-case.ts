@@ -13,8 +13,8 @@ export class GetConversationsUseCase {
   async execute(userId: string): Promise<ConversationView[]> {
     // A user can see conversations for any participant they control
     const participants = await this.participantService.getMyParticipants(userId);
-    const participantIds = participants.map(p => p.id);
-    
+    const participantIds = participants.map((p) => p.id);
+
     if (participantIds.length === 0) return [];
     return this.repo.findByParticipantIds(participantIds);
   }

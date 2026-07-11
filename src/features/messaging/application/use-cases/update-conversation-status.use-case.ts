@@ -6,7 +6,11 @@ import { ConversationStatus, ConversationView } from '../../domain/types/messagi
 export class UpdateConversationStatusUseCase {
   constructor(private readonly repo: IConversationRepository) {}
 
-  async execute(conversationId: string, participantId: string, status: ConversationStatus): Promise<ConversationView> {
+  async execute(
+    conversationId: string,
+    participantId: string,
+    status: ConversationStatus,
+  ): Promise<ConversationView> {
     const exists = await this.repo.findById(conversationId);
     if (!exists) {
       throw new NotFoundException(`Conversation ${conversationId} not found.`);

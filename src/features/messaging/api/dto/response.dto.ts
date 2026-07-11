@@ -106,7 +106,8 @@ export class ConversationResponseDto {
   @ApiProperty() status!: string;
   @ApiPropertyOptional() title!: string | null;
   @ApiPropertyOptional() anchorId!: string | null;
-  @ApiPropertyOptional({ type: ConversationAnchorResponseDto }) anchor?: ConversationAnchorResponseDto | null;
+  @ApiPropertyOptional({ type: ConversationAnchorResponseDto })
+  anchor?: ConversationAnchorResponseDto | null;
   @ApiProperty({ type: [String] }) participantIds!: string[];
   @ApiProperty() createdAt!: Date;
   @ApiProperty() updatedAt!: Date;

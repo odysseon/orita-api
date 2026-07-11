@@ -126,7 +126,10 @@ export class PrismaUserRepository implements IUserRepository {
     }
   }
 
-  async updateExplorationContext(accountId: string, payload: UpdateExplorationContextDto): Promise<UserEntity> {
+  async updateExplorationContext(
+    accountId: string,
+    payload: UpdateExplorationContextDto,
+  ): Promise<UserEntity> {
     try {
       const updatedUser = await this.prisma.user.update({
         where: { accountId },

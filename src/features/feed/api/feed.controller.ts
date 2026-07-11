@@ -1,7 +1,11 @@
 import { Controller, Get, Query } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiQuery } from '@nestjs/swagger';
 import { PrismaFeedRepository, FeedQueryParams } from '../infrastructure/prisma-feed.repository.js';
-import { OptionalAuth, CurrentIdentity, type RequestIdentity } from '@odysseon/whoami-adapter-nestjs';
+import {
+  OptionalAuth,
+  CurrentIdentity,
+  type RequestIdentity,
+} from '@odysseon/whoami-adapter-nestjs';
 import { IdentityService } from '../../../shared/identity/identity.service.js';
 import { BadRequestException } from '@nestjs/common';
 
@@ -74,18 +78,20 @@ export class FeedController {
     if (
       reqLat === undefined ||
       !Number.isFinite(reqLat) ||
-      reqLat < -90 || reqLat > 90 ||
+      reqLat < -90 ||
+      reqLat > 90 ||
       reqLng === undefined ||
       !Number.isFinite(reqLng) ||
-      reqLng < -180 || reqLng > 180
+      reqLng < -180 ||
+      reqLng > 180
     ) {
       throw new BadRequestException('Valid coordinates are required to load the feed.');
     }
 
     const params: FeedQueryParams = {
       ...(userId ? { userId } : {}),
-      userLat: reqLat!,
-      userLng: reqLng!,
+      userLat: reqLat,
+      userLng: reqLng,
       limit,
     };
 

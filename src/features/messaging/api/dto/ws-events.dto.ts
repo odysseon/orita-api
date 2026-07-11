@@ -10,7 +10,7 @@ export class WsSendMessagePayload {
   @IsOptional() @IsString() content?: string;
   @IsOptional() @IsString() mediaUrl?: string;
   @IsOptional() @IsEnum(['IMAGE', 'VIDEO']) mediaType?: 'IMAGE' | 'VIDEO';
-  
+
   @IsOptional()
   @IsArray()
   @ValidateNested({ each: true })

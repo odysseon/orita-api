@@ -9,8 +9,15 @@ import {
 import type { ConversationAnchor } from '../../../../../generated/prisma/client.js';
 
 export abstract class IConversationRepository {
-  abstract create(input: CreateConversationInput, anchor?: ConversationAnchor): Promise<ConversationView>;
-  abstract addMessage(input: SendMessageInput, senderDisplayName: string, senderAvatarUrl: string | null): Promise<MessageView>;
+  abstract create(
+    input: CreateConversationInput,
+    anchor?: ConversationAnchor,
+  ): Promise<ConversationView>;
+  abstract addMessage(
+    input: SendMessageInput,
+    senderDisplayName: string,
+    senderAvatarUrl: string | null,
+  ): Promise<MessageView>;
   abstract findById(id: string): Promise<ConversationView | null>;
   abstract findByParticipantIds(participantIds: string[]): Promise<ConversationView[]>;
   abstract getMessages(conversationId: string): Promise<MessageView[]>;

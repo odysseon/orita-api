@@ -39,7 +39,7 @@ export class ParticipantService {
    */
   async getMyParticipants(userId: string): Promise<Participant[]> {
     const personal = await this.ensurePersonalParticipant(userId);
-    
+
     const businesses = await this.prisma.businessProfile.findMany({
       where: { ownerId: userId },
       select: { id: true },

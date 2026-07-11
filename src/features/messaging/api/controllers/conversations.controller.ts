@@ -41,9 +41,11 @@ export class ConversationsController {
     @CurrentIdentity() identity: RequestIdentity,
     @Body() dto: CreateConversationDto,
   ): Promise<ConversationResponseDto> {
-    const user = await this.prisma.user.findUniqueOrThrow({ where: { accountId: identity.accountId } });
+    const user = await this.prisma.user.findUniqueOrThrow({
+      where: { accountId: identity.accountId },
+    });
     const personalParticipant = await this.participantService.ensurePersonalParticipant(user.id);
-    
+
     const conversation = await this.createConversation.execute({
       type: dto.type,
       participantId: personalParticipant.id, // Using personal participant as initiator by default
@@ -55,10 +57,14 @@ export class ConversationsController {
   }
 
   @Get()
-  @ApiOperation({ summary: 'List all conversations for the current user (including their businesses)' })
+  @ApiOperation({
+    summary: 'List all conversations for the current user (including their businesses)',
+  })
   @ApiResponse({ status: 200, type: [ConversationResponseDto] })
   async listAll(@CurrentIdentity() identity: RequestIdentity): Promise<ConversationResponseDto[]> {
-    const user = await this.prisma.user.findUniqueOrThrow({ where: { accountId: identity.accountId } });
+    const user = await this.prisma.user.findUniqueOrThrow({
+      where: { accountId: identity.accountId },
+    });
     const conversations = await this.getConversations.execute(user.id);
     return conversations.map((c) => ConversationResponseDto.from(c));
   }
@@ -70,7 +76,9 @@ export class ConversationsController {
     @CurrentIdentity() identity: RequestIdentity,
     @Param('id') id: string,
   ): Promise<ConversationResponseDto> {
-    const user = await this.prisma.user.findUniqueOrThrow({ where: { accountId: identity.accountId } });
+    const user = await this.prisma.user.findUniqueOrThrow({
+      where: { accountId: identity.accountId },
+    });
     const personalParticipant = await this.participantService.ensurePersonalParticipant(user.id);
     const details = await this.getConversationDetails.execute(id, personalParticipant.id);
     return ConversationResponseDto.from(details.conversation, details.messages);
@@ -84,8 +92,10 @@ export class ConversationsController {
     @Param('id') conversationId: string,
     @Body() dto: SendMessageDto,
   ): Promise<MessageResponseDto> {
-    const user = await this.prisma.user.findUniqueOrThrow({ where: { accountId: identity.accountId } });
-    // For simplicity, using personal participant. 
+    const user = await this.prisma.user.findUniqueOrThrow({
+      where: { accountId: identity.accountId },
+    });
+    // For simplicity, using personal participant.
     // Clients should eventually send the desired participantId to speak as a business.
     const personalParticipant = await this.participantService.ensurePersonalParticipant(user.id);
 
@@ -108,7 +118,9 @@ export class ConversationsController {
     @Param('id') id: string,
     @Body() dto: UpdateConversationStatusDto,
   ): Promise<ConversationResponseDto> {
-    const user = await this.prisma.user.findUniqueOrThrow({ where: { accountId: identity.accountId } });
+    const user = await this.prisma.user.findUniqueOrThrow({
+      where: { accountId: identity.accountId },
+    });
     const personalParticipant = await this.participantService.ensurePersonalParticipant(user.id);
     const conversation = await this.updateStatus.execute(id, personalParticipant.id, dto.status);
     return ConversationResponseDto.from(conversation);
@@ -122,7 +134,9 @@ export class ConversationsController {
     @Param('id') conversationId: string,
     @Body() dto: MarkMessagesReadDto,
   ): Promise<void> {
-    const user = await this.prisma.user.findUniqueOrThrow({ where: { accountId: identity.accountId } });
+    const user = await this.prisma.user.findUniqueOrThrow({
+      where: { accountId: identity.accountId },
+    });
     const personalParticipant = await this.participantService.ensurePersonalParticipant(user.id);
     await this.markMessagesRead.execute({
       conversationId,

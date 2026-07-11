@@ -61,6 +61,4 @@ export class UsersController {
     if (!file) throw new BadRequestException('No file provided');
     return this.uploadAvatarUseCase.execute(identity.accountId, file);
   }
-
-
 }

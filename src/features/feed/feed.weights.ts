@@ -1,7 +1,7 @@
 export const FeedWeights = {
   // Proximity: Exponential decay scale in meters
-  distanceScale: 3000, 
-  
+  distanceScale: 3000,
+
   // Popularity: Logarithmic multipliers for raw engagement counts
   engagement: {
     clicks: 0.3,
@@ -31,5 +31,5 @@ export const FeedWeights = {
     newDaysThreshold: 7,
     newBonus: 1.5,
     randomJitter: 0.5, // max random score added
-  }
+  },
 } as const;

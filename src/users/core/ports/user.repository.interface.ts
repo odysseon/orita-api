@@ -27,5 +27,8 @@ export interface IUserRepository {
   /**
    * Updates the user's active exploration context.
    */
-  updateExplorationContext(accountId: string, payload: UpdateExplorationContextDto): Promise<UserEntity>;
+  updateExplorationContext(
+    accountId: string,
+    payload: UpdateExplorationContextDto,
+  ): Promise<UserEntity>;
 }

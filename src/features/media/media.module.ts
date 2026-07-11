@@ -37,6 +37,6 @@ import { ConsumeUploadIntentUseCase } from './application/use-cases/consume-uplo
     GetResourceMediaUseCase,
     GenerateUploadIntentUseCase,
     ConsumeUploadIntentUseCase,
-  ]
+  ],
 })
 export class MediaModule {}

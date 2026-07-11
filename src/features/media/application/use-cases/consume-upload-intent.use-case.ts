@@ -49,7 +49,9 @@ export class ConsumeUploadIntentUseCase {
     // 3. Fetch authoritative metadata from Cloudinary
     const metadata = await this.storage.getMetadata(intent.publicId);
     if (!metadata) {
-      throw new BadRequestException('Media asset not found in storage provider. Did the upload complete?');
+      throw new BadRequestException(
+        'Media asset not found in storage provider. Did the upload complete?',
+      );
     }
 
     // 4. Validate metadata matches expectations
@@ -58,7 +60,7 @@ export class ConsumeUploadIntentUseCase {
     }
 
     // (Assuming upload time is checked loosely, or we trust Cloudinary metadata)
-    
+
     // 5. Consume Intent
     await this.intentRepo.markConsumed(intent.id);
 
@@ -72,12 +74,12 @@ export class ConsumeUploadIntentUseCase {
       fileId: metadata.fileId,
       provider: metadata.provider,
       mimeType: metadata.mimeType,
-      bytes: metadata.bytes as number | undefined,
-      width: metadata.width as number | undefined,
-      height: metadata.height as number | undefined,
-      duration: metadata.duration as number | undefined,
+      bytes: metadata.bytes,
+      width: metadata.width,
+      height: metadata.height,
+      duration: metadata.duration,
       version: metadata.version || input.version,
-      format: metadata.format as string | undefined,
+      format: metadata.format,
     });
   }
 }

@@ -1,14 +1,4 @@
-import {
-  Controller,
-  Get,
-  Post,
-  Delete,
-  Patch,
-  Param,
-  Body,
-  Query,
-  HttpCode,
-} from '@nestjs/common';
+import { Controller, Get, Post, Delete, Patch, Param, Body, Query, HttpCode } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
 import { FollowsService, type FollowTargetType } from '../application/follows.service.js';
 import { CurrentIdentity, type RequestIdentity } from '@odysseon/whoami-adapter-nestjs';
@@ -20,7 +10,6 @@ class UpdateNotificationsDto {
 
 @ApiTags('Follows')
 @ApiBearerAuth()
-
 @Controller('v1/follows')
 export class FollowsController {
   constructor(
@@ -31,7 +20,10 @@ export class FollowsController {
   @Get()
   @ApiOperation({ summary: 'Get current user follows' })
   @ApiQuery({ name: 'type', required: false, enum: ['business', 'location'] })
-  async getFollows(@CurrentIdentity() identity: RequestIdentity, @Query('type') type?: FollowTargetType) {
+  async getFollows(
+    @CurrentIdentity() identity: RequestIdentity,
+    @Query('type') type?: FollowTargetType,
+  ) {
     const user = await this.identityService.resolveUserOrThrow(identity.accountId);
     return this.followsService.getFollows(user.id, type);
   }

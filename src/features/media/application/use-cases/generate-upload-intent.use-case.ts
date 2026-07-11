@@ -1,6 +1,10 @@
 import { Injectable, BadRequestException } from '@nestjs/common';
 import { v4 as uuidv4 } from 'uuid';
-import { MediaRole, StorageProvider, UploadOwnerType } from '../../../../../generated/prisma/client.js';
+import {
+  MediaRole,
+  StorageProvider,
+  UploadOwnerType,
+} from '../../../../../generated/prisma/client.js';
 import { IUploadIntentRepository } from '../../domain/ports/upload-intent.repository.port.js';
 import { MediaStorageService } from '../../../../storage/media-storage.service.js';
 import { UploadSignatureResult } from '../../../../storage/ports/provider.port.js';

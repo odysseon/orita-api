@@ -96,7 +96,15 @@ export class PrismaLocationRepository {
 
     const created = await this.prisma.location.findFirst({
       where: { provider: candidate.provider, externalId: candidate.externalId },
-      select: { id: true, provider: true, externalId: true, name: true, formattedAddress: true, latitude: true, longitude: true },
+      select: {
+        id: true,
+        provider: true,
+        externalId: true,
+        name: true,
+        formattedAddress: true,
+        latitude: true,
+        longitude: true,
+      },
     });
 
     return created!;
@@ -105,7 +113,15 @@ export class PrismaLocationRepository {
   async findById(id: string): Promise<LocationRecord | null> {
     return this.prisma.location.findUnique({
       where: { id },
-      select: { id: true, provider: true, externalId: true, name: true, formattedAddress: true, latitude: true, longitude: true },
+      select: {
+        id: true,
+        provider: true,
+        externalId: true,
+        name: true,
+        formattedAddress: true,
+        latitude: true,
+        longitude: true,
+      },
     });
   }
 

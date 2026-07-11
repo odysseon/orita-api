@@ -1,4 +1,8 @@
-import { MediaRole, StorageProvider, UploadOwnerType } from '../../../../../generated/prisma/client.js';
+import {
+  MediaRole,
+  StorageProvider,
+  UploadOwnerType,
+} from '../../../../../generated/prisma/client.js';
 
 export interface UploadIntent {
   readonly id: string;
