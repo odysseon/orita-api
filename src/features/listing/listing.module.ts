@@ -1,4 +1,5 @@
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
+import { MediaModule } from '../media/media.module.js';
 import { RedisModule } from '../../shared/redis/redis.module.js';
 import { IListingRepository } from './domain/ports/listing.repository.port.js';
 import { PrismaListingRepository } from './infrastructure/prisma-listing.repository.js';
@@ -18,7 +19,7 @@ import { PublicListingController } from './api/controllers/public-listing.contro
 import { ListingController } from './api/controllers/listing.controller.js';
 
 @Module({
-  imports: [CategoryModule, RedisModule],
+  imports: [CategoryModule, RedisModule, forwardRef(() => MediaModule)],
   controllers: [PublicListingController, ListingController],
   providers: [
     { provide: IListingRepository, useClass: PrismaListingRepository },

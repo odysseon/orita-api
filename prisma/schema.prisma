@@ -306,7 +306,6 @@ model Media {
 
   provider StorageProvider
   fileId   String          @unique
-  url      String // Cached delivery URL
 
   mediaType MediaType
   mimeType  String // e.g. "image/webp", "video/mp4"

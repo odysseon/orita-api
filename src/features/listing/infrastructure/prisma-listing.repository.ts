@@ -1,5 +1,10 @@
 import { Injectable } from '@nestjs/common';
-import { Prisma, Listing as PrismaListing } from '../../../../generated/prisma/client.js';
+import { MediaUrlService } from '../../media/application/services/media-url.service.js';
+import {
+  Prisma,
+  Listing as PrismaListing,
+  StorageProvider,
+} from '../../../../generated/prisma/client.js';
 import { PrismaService } from '../../../prisma/prisma.service.js';
 import { RedisService } from '../../../shared/redis/redis.service.js';
 import { IListingRepository } from '../domain/ports/listing.repository.port.js';
@@ -60,6 +65,7 @@ export class PrismaListingRepository extends IListingRepository {
   constructor(
     private readonly prisma: PrismaService,
     private readonly redisService: RedisService,
+    private readonly mediaUrlService: MediaUrlService,
   ) {
     super();
   }
@@ -241,13 +247,19 @@ export class PrismaListingRepository extends IListingRepository {
           isNegotiable: boolean;
           categoryId: string | null;
           attributes: Prisma.JsonValue;
-          coverUrl: string | null;
+          coverMedia: {
+            provider: string;
+            fileId: string;
+            mimeType: string;
+            version: string | null;
+            format: string | null;
+          } | null;
           distance: number;
         }[]
       >`
         SELECT l.id, l."businessProfileId", bp.slug as "businessProfileSlug", l.title, l.slug, l.description, 
                l."minPrice", l."maxPrice", l."currencyCode", l."isNegotiable", l."categoryId", l.attributes,
-               (SELECT url FROM "Media" m WHERE m."listingId" = l.id AND m.role = 'COVER' LIMIT 1) as "coverUrl",
+               (SELECT json_build_object('provider', m.provider, 'fileId', m."fileId", 'mimeType', m."mimeType", 'version', m.version, 'format', m.format) FROM "media" m WHERE m."listingId" = l.id AND m.role = 'COVER' LIMIT 1) as "coverMedia",
                (ST_Distance(loc.coordinates::geography, ST_SetSRID(ST_MakePoint(${input.lng}, ${input.lat}), 4326)::geography) / 1000) AS distance
         FROM listings l
         JOIN business_profiles bp ON l."businessProfileId" = bp.id
@@ -313,7 +325,17 @@ export class PrismaListingRepository extends IListingRepository {
         isNegotiable: r.isNegotiable,
         categoryId: r.categoryId,
         attributes: r.attributes as Record<string, unknown> | null,
-        ...(r.coverUrl ? { coverUrl: r.coverUrl } : {}),
+        ...(r.coverMedia
+          ? {
+              coverUrl: this.mediaUrlService.getMediaUrl(
+                r.coverMedia.provider as StorageProvider,
+                r.coverMedia.fileId,
+                r.coverMedia.mimeType,
+                r.coverMedia.version,
+                r.coverMedia.format,
+              ),
+            }
+          : {}),
       }));
 
       return this.enrichWithSavedStatus(
@@ -353,7 +375,7 @@ export class PrismaListingRepository extends IListingRepository {
           media: {
             where: { role: 'COVER' },
             take: 1,
-            select: { url: true },
+            select: { provider: true, fileId: true, mimeType: true, version: true, format: true },
           },
           businessProfile: {
             select: { slug: true },
@@ -365,11 +387,21 @@ export class PrismaListingRepository extends IListingRepository {
     ]);
 
     const items = rows.map((r) => {
-      const coverUrl = r.media?.[0]?.url;
+      const coverMedia = r.media?.[0];
+      const coverUrl = coverMedia
+        ? this.mediaUrlService.getMediaUrl(
+            coverMedia.provider,
+            coverMedia.fileId,
+            coverMedia.mimeType,
+            coverMedia.version,
+            coverMedia.format,
+          )
+        : undefined;
       return {
         id: r.id,
         businessProfileId: r.businessProfileId,
-        businessProfileSlug: (r as { businessProfile: { slug: string } }).businessProfile.slug,
+        businessProfileSlug: (r as unknown as { businessProfile: { slug: string } }).businessProfile
+          .slug,
         title: r.title,
         slug: r.slug,
         description: r.description,

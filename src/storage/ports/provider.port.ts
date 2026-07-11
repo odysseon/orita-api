@@ -20,8 +20,8 @@ export interface UploadResult {
 export interface UploadSignatureResult {
   signature: string;
   timestamp: number;
-  apiKey: string;
-  cloudName: string;
+  apiKey?: string;
+  cloudName?: string;
 }
 
 /**

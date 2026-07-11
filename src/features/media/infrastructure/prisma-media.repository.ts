@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { MediaUrlService } from '../application/services/media-url.service.js';
 import { PrismaService } from '../../../prisma/prisma.service.js';
 import { RedisService } from '../../../shared/redis/redis.service.js';
 import { IMediaRepository, MediaOwnerKey } from '../domain/ports/media.repository.port.js';
@@ -7,29 +8,36 @@ import { MediaRole } from '../domain/types/media-role.enum.js';
 import { AddMediaInput, ReorderMediaInput } from '../domain/types/media.types.js';
 import { Media as PrismaMedia, Prisma } from '../../../../generated/prisma/client.js';
 
-function toDomain(raw: PrismaMedia): Media {
-  return {
-    id: raw.id,
-    businessProfileId: raw.businessProfileId,
-    listingId: raw.listingId,
-    businessTourId: raw.businessTourId,
-    reviewId: raw.reviewId,
-    url: raw.url,
-    fileId: raw.fileId,
-    mediaType: raw.mediaType,
-    role: raw.role,
-    order: raw.order,
-    createdAt: raw.createdAt,
-  };
-}
-
 @Injectable()
 export class PrismaMediaRepository extends IMediaRepository {
   constructor(
     private readonly prisma: PrismaService,
     private readonly redisService: RedisService,
+    private readonly mediaUrlService: MediaUrlService,
   ) {
     super();
+  }
+
+  private toDomain(raw: PrismaMedia): Media {
+    return {
+      id: raw.id,
+      businessProfileId: raw.businessProfileId,
+      listingId: raw.listingId,
+      businessTourId: raw.businessTourId,
+      reviewId: raw.reviewId,
+      url: this.mediaUrlService.getMediaUrl(
+        raw.provider,
+        raw.fileId,
+        raw.mimeType,
+        raw.version,
+        raw.format,
+      ),
+      fileId: raw.fileId,
+      mediaType: raw.mediaType,
+      role: raw.role,
+      order: raw.order,
+      createdAt: raw.createdAt,
+    };
   }
 
   // fallow-ignore-next-line complexity
@@ -57,7 +65,6 @@ export class PrismaMediaRepository extends IMediaRepository {
 
   async add(input: AddMediaInput): Promise<Media> {
     const data: Prisma.MediaUncheckedCreateInput = {
-      url: input.url,
       fileId: input.fileId,
       mediaType: input.mediaType,
       role: input.role,
@@ -84,7 +91,7 @@ export class PrismaMediaRepository extends IMediaRepository {
     } else if (input.listingId) {
       await this.invalidateParentCache('listingId', input.listingId);
     }
-    return toDomain(raw);
+    return this.toDomain(raw);
   }
 
   async findByOwner(ownerKey: MediaOwnerKey, ownerId: string): Promise<Media[]> {
@@ -92,7 +99,7 @@ export class PrismaMediaRepository extends IMediaRepository {
       where: { [ownerKey]: ownerId },
       orderBy: [{ role: 'asc' }, { order: 'asc' }],
     });
-    return rows.map(toDomain);
+    return rows.map((r) => this.toDomain(r));
   }
 
   async findByRole(ownerKey: MediaOwnerKey, ownerId: string, role: MediaRole): Promise<Media[]> {
@@ -100,12 +107,12 @@ export class PrismaMediaRepository extends IMediaRepository {
       where: { [ownerKey]: ownerId, role },
       orderBy: { order: 'asc' },
     });
-    return rows.map(toDomain);
+    return rows.map((r) => this.toDomain(r));
   }
 
   async findById(id: string): Promise<Media | null> {
     const raw = await this.prisma.media.findUnique({ where: { id } });
-    return raw ? toDomain(raw) : null;
+    return raw ? this.toDomain(raw) : null;
   }
 
   async reorder(

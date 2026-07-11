@@ -1,11 +1,6 @@
-import {
-  Inject,
-  Injectable,
-  InternalServerErrorException,
-  Logger,
-  NotImplementedException,
-} from '@nestjs/common';
-import { S3Client, DeleteObjectCommand } from '@aws-sdk/client-s3';
+import { Inject, Injectable, InternalServerErrorException, Logger } from '@nestjs/common';
+import { S3Client, DeleteObjectCommand, PutObjectCommand } from '@aws-sdk/client-s3';
+import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { Upload } from '@aws-sdk/lib-storage';
 import { isError } from '../../../shared/utils/error.util.js';
 import {
@@ -87,9 +82,28 @@ export class BackblazeStorageProvider implements StorageProvider {
     return Promise.resolve(null);
   }
 
-  generateUploadSignature(): Promise<UploadSignatureResult> {
-    throw new NotImplementedException(
-      'Direct signed uploads are not supported by the Backblaze provider.',
-    );
+  async generateUploadSignature(
+    _folder: string,
+    publicId: string,
+    timestamp: number,
+  ): Promise<UploadSignatureResult> {
+    try {
+      const command = new PutObjectCommand({
+        Bucket: this.config.bucketName,
+        Key: publicId,
+        ContentType: 'application/octet-stream', // Can be overridden by the client
+      });
+
+      // Backblaze allows S3 presigned URLs up to 7 days, we'll use 15 mins (900s)
+      const presignedUrl = await getSignedUrl(this.s3Client, command, { expiresIn: 900 });
+
+      return {
+        signature: presignedUrl, // Treat the full URL as the signature payload for clients
+        timestamp,
+      };
+    } catch (error) {
+      this.logger.error('Failed to generate Backblaze presigned URL:', error);
+      throw new InternalServerErrorException('Could not generate upload signature.');
+    }
   }
 }

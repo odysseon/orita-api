@@ -9,6 +9,18 @@ export const configSchema = z
     FRONTEND_URL: z.string().url().default('https://orita.app'),
     ALLOWED_ORIGINS: z.string().optional(),
 
+    // ── Storage ───────────────────────────────────────────────────────────
+    STORAGE_PROVIDER: z.enum(['cloudinary', 'backblaze']).default('cloudinary'),
+    CLOUDINARY_CLOUD_NAME: z.string().optional(),
+    CLOUDINARY_API_KEY: z.string().optional(),
+    CLOUDINARY_API_SECRET: z.string().optional(),
+    B2_APPLICATION_KEY_ID: z.string().optional(),
+    B2_APPLICATION_KEY: z.string().optional(),
+    B2_ENDPOINT: z.string().optional(),
+    B2_REGION: z.string().optional(),
+    B2_BUCKET_NAME: z.string().optional(),
+    B2_PUBLIC_URL_BASE: z.string().optional(),
+
     // ── Receipt Secret ────────────────────────────────────────────────────
     RECEIPT_SECRET: z.string().min(32),
 

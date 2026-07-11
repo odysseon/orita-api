@@ -1,11 +1,15 @@
 import { Injectable, BadRequestException } from '@nestjs/common';
+import { MediaUrlService } from '../../../media/application/services/media-url.service.js';
 import { PrismaService } from '../../../../prisma/prisma.service.js';
 import type { ConversationAnchor } from '../../../../../generated/prisma/client.js';
 import { ConversationAnchorView } from '../../domain/types/messaging.types.js';
 
 @Injectable()
 export class AnchorService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly mediaUrlService: MediaUrlService,
+  ) {}
 
   /**
    * Resolves the anchor entity, captures the snapshot, and creates a ConversationAnchor.
@@ -29,7 +33,15 @@ export class AnchorService {
         businessId = b.id;
         title = b.name;
         subtitle = b.description ?? null;
-        imageUrl = b.media[0]?.url ?? null;
+        imageUrl = b.media[0]
+          ? this.mediaUrlService.getMediaUrl(
+              b.media[0].provider,
+              b.media[0].fileId,
+              b.media[0].mimeType,
+              b.media[0].version,
+              b.media[0].format,
+            )
+          : null;
         break;
       }
       case 'LISTING': {
@@ -41,7 +53,15 @@ export class AnchorService {
         listingId = l.id;
         title = l.title;
         subtitle = l.businessProfile.name;
-        imageUrl = l.media[0]?.url ?? null;
+        imageUrl = l.media[0]
+          ? this.mediaUrlService.getMediaUrl(
+              l.media[0].provider,
+              l.media[0].fileId,
+              l.media[0].mimeType,
+              l.media[0].version,
+              l.media[0].format,
+            )
+          : null;
         break;
       }
       case 'TOUR': {
@@ -53,7 +73,15 @@ export class AnchorService {
         tourId = t.id;
         title = t.title;
         subtitle = t.businessProfile.name;
-        imageUrl = t.media[0]?.url ?? null;
+        imageUrl = t.media[0]
+          ? this.mediaUrlService.getMediaUrl(
+              t.media[0].provider,
+              t.media[0].fileId,
+              t.media[0].mimeType,
+              t.media[0].version,
+              t.media[0].format,
+            )
+          : null;
         break;
       }
       case 'LOCATION': {

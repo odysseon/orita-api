@@ -56,11 +56,11 @@ jobs:
         id: typecheck
         run: pnpm typecheck
 
-      # - name: Lint
-      #   id: lint
-      #   run: pnpm lint
+      - name: Lint
+        id: lint
+        run: pnpm lint
 
-  # ── Docker image build ──────────────────────────────────────────────────────
+  # ── ocker image build ──────────────────────────────────────────────────────
   docker-build:
     name: Docker image build
     runs-on: ubuntu-latest

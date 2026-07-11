@@ -1,4 +1,5 @@
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
+import { MediaModule } from '../media/media.module.js';
 import { IReviewRepository } from './domain/ports/review.repository.port.js';
 import { PrismaReviewRepository } from './infrastructure/prisma-review.repository.js';
 import { CreateReviewUseCase } from './application/use-cases/create-review.use-case.js';
@@ -8,6 +9,7 @@ import { GetListingReviewsUseCase } from './application/use-cases/get-listing-re
 import { ReviewController } from './api/controllers/review.controller.js';
 
 @Module({
+  imports: [forwardRef(() => MediaModule)],
   controllers: [ReviewController],
   providers: [
     {

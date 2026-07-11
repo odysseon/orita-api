@@ -1,4 +1,5 @@
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
+import { MediaModule } from '../media/media.module.js';
 import { PrismaModule } from '../../prisma/prisma.module.js';
 import { RedisModule } from '../../shared/redis/redis.module.js';
 import { IConversationRepository } from './domain/ports/conversation.repository.port.js';
@@ -17,7 +18,7 @@ import { MessagingGateway } from './api/gateways/messaging.gateway.js';
 import { ConversationsController } from './api/controllers/conversations.controller.js';
 
 @Module({
-  imports: [PrismaModule, RedisModule],
+  imports: [PrismaModule, RedisModule, forwardRef(() => MediaModule)],
   controllers: [ConversationsController],
   providers: [
     // Repository binding

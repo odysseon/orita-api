@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { MediaUrlService } from '../../media/application/services/media-url.service.js';
 import { PrismaService } from '../../../prisma/prisma.service.js';
 import { RedisService } from '../../../shared/redis/redis.service.js';
 import { IReviewRepository } from '../domain/ports/review.repository.port.js';
@@ -18,40 +19,6 @@ import type {
 import { MediaRole } from '../../media/domain/types/media-role.enum.js';
 
 // ---------------------------------------------------------------------------
-// Mappers
-// ---------------------------------------------------------------------------
-
-function toDomain(raw: PrismaReview): Review {
-  return {
-    id: raw.id,
-    listingId: raw.listingId,
-    reviewerId: raw.reviewerId,
-    rating: raw.rating,
-    comment: raw.comment,
-    createdAt: raw.createdAt,
-    updatedAt: raw.updatedAt,
-  };
-}
-
-function mediaItemFromRaw(raw: PrismaMedia): ReviewMediaItem {
-  return {
-    id: raw.id,
-    url: raw.url,
-    mediaType: raw.mediaType,
-    order: raw.order,
-    createdAt: raw.createdAt,
-  };
-}
-
-function toWithMedia(raw: PrismaReview & { media: PrismaMedia[] }): ReviewWithMedia {
-  const sorted = [...raw.media].sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
-  return {
-    ...toDomain(raw),
-    media: sorted.map(mediaItemFromRaw),
-  };
-}
-
-// ---------------------------------------------------------------------------
 // Repository
 // ---------------------------------------------------------------------------
 
@@ -60,8 +27,45 @@ export class PrismaReviewRepository extends IReviewRepository {
   constructor(
     private readonly prisma: PrismaService,
     private readonly redisService: RedisService,
+    private readonly mediaUrlService: MediaUrlService,
   ) {
     super();
+  }
+
+  private toDomain(raw: PrismaReview): Review {
+    return {
+      id: raw.id,
+      listingId: raw.listingId,
+      reviewerId: raw.reviewerId,
+      rating: raw.rating,
+      comment: raw.comment,
+      createdAt: raw.createdAt,
+      updatedAt: raw.updatedAt,
+    };
+  }
+
+  private mediaItemFromRaw(raw: PrismaMedia): ReviewMediaItem {
+    return {
+      id: raw.id,
+      url: this.mediaUrlService.getMediaUrl(
+        raw.provider,
+        raw.fileId,
+        raw.mimeType,
+        raw.version,
+        raw.format,
+      ),
+      mediaType: raw.mediaType,
+      order: raw.order,
+      createdAt: raw.createdAt,
+    };
+  }
+
+  private toWithMedia(raw: PrismaReview & { media: PrismaMedia[] }): ReviewWithMedia {
+    const sorted = [...raw.media].sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+    return {
+      ...this.toDomain(raw),
+      media: sorted.map((m) => this.mediaItemFromRaw(m)),
+    };
   }
 
   private async invalidateListingCache(listingId: string): Promise<void> {
@@ -85,12 +89,12 @@ export class PrismaReviewRepository extends IReviewRepository {
       },
     });
     await this.invalidateListingCache(input.listingId);
-    return toDomain(raw);
+    return this.toDomain(raw);
   }
 
   async findById(id: string): Promise<Review | null> {
     const raw = await this.prisma.review.findUnique({ where: { id } });
-    return raw ? toDomain(raw) : null;
+    return raw ? this.toDomain(raw) : null;
   }
 
   async findByIdWithMedia(id: string): Promise<ReviewWithMedia | null> {
@@ -105,7 +109,7 @@ export class PrismaReviewRepository extends IReviewRepository {
         },
       },
     });
-    return raw ? toWithMedia(raw) : null;
+    return raw ? this.toWithMedia(raw) : null;
   }
 
   async existsByListingAndReviewer(listingId: string, reviewerId: string): Promise<boolean> {
@@ -146,7 +150,7 @@ export class PrismaReviewRepository extends IReviewRepository {
     const lastItem = items[items.length - 1];
 
     return {
-      items: items.map(toWithMedia),
+      items: items.map((i) => this.toWithMedia(i)),
       nextCursor: hasNextPage && lastItem ? lastItem.id : null,
     };
   }
@@ -160,7 +164,7 @@ export class PrismaReviewRepository extends IReviewRepository {
       },
     });
     await this.invalidateListingCache(raw.listingId);
-    return toDomain(raw);
+    return this.toDomain(raw);
   }
 
   async delete(id: string): Promise<void> {

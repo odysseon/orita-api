@@ -7,7 +7,6 @@ export interface AddMediaInput {
   readonly listingId?: string;
   readonly businessTourId?: string;
   readonly reviewId?: string;
-  readonly url: string;
   readonly fileId: string;
   readonly mediaType: MediaType;
   readonly role: MediaRole;

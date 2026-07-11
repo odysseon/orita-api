@@ -1,4 +1,5 @@
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
+import { MediaModule } from '../media/media.module.js';
 import { IBusinessTourRepository } from './domain/ports/business-tour.repository.port.js';
 import { PrismaBusinessTourRepository } from './infrastructure/prisma-business-tour.repository.js';
 import { CreateBusinessTourUseCase } from './application/use-cases/create-business-tour.use-case.js';
@@ -12,7 +13,7 @@ import { StorageModule } from '../../storage/storage.module.js';
 import { MailModule } from '../../mail/mail.module.js';
 
 @Module({
-  imports: [StorageModule, MailModule],
+  imports: [StorageModule, MailModule, forwardRef(() => MediaModule)],
   controllers: [BusinessTourController],
   providers: [
     {

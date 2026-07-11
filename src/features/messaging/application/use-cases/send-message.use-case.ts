@@ -1,4 +1,5 @@
 import { Injectable, ForbiddenException, BadRequestException } from '@nestjs/common';
+import { MediaUrlService } from '../../../media/application/services/media-url.service.js';
 import { IConversationRepository } from '../../domain/ports/conversation.repository.port.js';
 import { SendMessageInput, MessageView } from '../../domain/types/messaging.types.js';
 import { EventBusService } from '../../../../shared/events/event-bus.service.js';
@@ -10,6 +11,7 @@ export class SendMessageUseCase {
     private readonly repo: IConversationRepository,
     private readonly eventBus: EventBusService,
     private readonly prisma: PrismaService,
+    private readonly mediaUrlService: MediaUrlService,
   ) {}
 
   async execute(input: SendMessageInput): Promise<MessageView> {
@@ -44,7 +46,15 @@ export class SendMessageUseCase {
         where: { businessProfileId: participant.business.id, role: 'LOGO' },
         orderBy: { createdAt: 'desc' },
       });
-      senderAvatarUrl = media?.url ?? null;
+      senderAvatarUrl = media
+        ? this.mediaUrlService.getMediaUrl(
+            media.provider,
+            media.fileId,
+            media.mimeType,
+            media.version,
+            media.format,
+          )
+        : null;
     } else if (participant.user) {
       senderDisplayName = participant.user.username;
       senderAvatarUrl = participant.user.avatarUrl;

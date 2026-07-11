@@ -11,6 +11,8 @@ import { PrismaUploadIntentRepository } from './infrastructure/prisma-upload-int
 import { IUploadIntentRepository } from './domain/ports/upload-intent.repository.port.js';
 import { GenerateUploadIntentUseCase } from './application/use-cases/generate-upload-intent.use-case.js';
 import { ConsumeUploadIntentUseCase } from './application/use-cases/consume-upload-intent.use-case.js';
+import { MediaUrlService } from './application/services/media-url.service.js';
+import { OrphanCleanupJob } from './application/jobs/orphan-cleanup.job.js';
 
 @Module({
   controllers: [MediaController],
@@ -29,6 +31,8 @@ import { ConsumeUploadIntentUseCase } from './application/use-cases/consume-uplo
     GetResourceMediaUseCase,
     GenerateUploadIntentUseCase,
     ConsumeUploadIntentUseCase,
+    MediaUrlService,
+    OrphanCleanupJob,
   ],
   exports: [
     AddMediaUseCase,
@@ -37,6 +41,7 @@ import { ConsumeUploadIntentUseCase } from './application/use-cases/consume-uplo
     GetResourceMediaUseCase,
     GenerateUploadIntentUseCase,
     ConsumeUploadIntentUseCase,
+    MediaUrlService,
   ],
 })
 export class MediaModule {}

@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { MediaUrlService } from '../../media/application/services/media-url.service.js';
 import { PrismaService } from '../../../prisma/prisma.service.js';
 import { IBusinessTourRepository } from '../domain/ports/business-tour.repository.port.js';
 import { BusinessTour, BusinessTourStatus } from '../domain/types/business-tour.entity.js';
@@ -23,38 +24,47 @@ type PrismaBusinessTourWithRelations = PrismaBusinessTour & {
   media: PrismaMedia[];
 };
 
-function toDomain(raw: PrismaBusinessTourWithRelations): BusinessTour {
-  const sortedMedia = (raw.media ?? []).toSorted((a, b) => (a.order ?? 0) - (b.order ?? 0));
-  return {
-    id: raw.id,
-    businessProfileId: raw.businessProfileId,
-    title: raw.title,
-    summary: raw.summary,
-    visitDate: raw.visitDate,
-    status: raw.status as BusinessTourStatus,
-    publishedAt: raw.publishedAt,
-    createdById: raw.createdById,
-    createdAt: raw.createdAt,
-    updatedAt: raw.updatedAt,
-    highlights: raw.highlights.map((h) => ({ id: h.id, value: h.value })),
-    media: sortedMedia.map((m) => ({
-      id: m.id,
-      url: m.url,
-      mediaType: m.mediaType,
-      order: m.order,
-      createdAt: m.createdAt,
-    })),
-  };
-}
-
-function toView(raw: PrismaBusinessTourWithRelations): BusinessTourView {
-  return toDomain(raw);
-}
-
 @Injectable()
 export class PrismaBusinessTourRepository extends IBusinessTourRepository {
-  constructor(private readonly prisma: PrismaService) {
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly mediaUrlService: MediaUrlService,
+  ) {
     super();
+  }
+
+  private toDomain(raw: PrismaBusinessTourWithRelations): BusinessTour {
+    const sortedMedia = (raw.media ?? []).toSorted((a, b) => (a.order ?? 0) - (b.order ?? 0));
+    return {
+      id: raw.id,
+      businessProfileId: raw.businessProfileId,
+      title: raw.title,
+      summary: raw.summary,
+      visitDate: raw.visitDate,
+      status: raw.status as BusinessTourStatus,
+      publishedAt: raw.publishedAt,
+      createdById: raw.createdById,
+      createdAt: raw.createdAt,
+      updatedAt: raw.updatedAt,
+      highlights: raw.highlights.map((h) => ({ id: h.id, value: h.value })),
+      media: sortedMedia.map((m) => ({
+        id: m.id,
+        url: this.mediaUrlService.getMediaUrl(
+          m.provider,
+          m.fileId,
+          m.mimeType,
+          m.version,
+          m.format,
+        ),
+        mediaType: m.mediaType,
+        order: m.order,
+        createdAt: m.createdAt,
+      })),
+    };
+  }
+
+  private toView(raw: PrismaBusinessTourWithRelations): BusinessTourView {
+    return this.toDomain(raw);
   }
 
   async create(input: CreateBusinessTourInput): Promise<BusinessTour> {
@@ -75,7 +85,7 @@ export class PrismaBusinessTourRepository extends IBusinessTourRepository {
         media: true,
       },
     });
-    return toDomain(raw);
+    return this.toDomain(raw);
   }
 
   async findById(id: string): Promise<BusinessTourView | null> {
@@ -86,7 +96,7 @@ export class PrismaBusinessTourRepository extends IBusinessTourRepository {
         media: true,
       },
     });
-    return raw ? toView(raw) : null;
+    return raw ? this.toView(raw) : null;
   }
 
   async update(id: string, input: UpdateBusinessTourInput): Promise<BusinessTour> {
@@ -122,7 +132,7 @@ export class PrismaBusinessTourRepository extends IBusinessTourRepository {
       });
     });
 
-    return toDomain(raw);
+    return this.toDomain(raw);
   }
 
   async delete(id: string): Promise<void> {
@@ -154,7 +164,7 @@ export class PrismaBusinessTourRepository extends IBusinessTourRepository {
     ]);
 
     return {
-      items: rows.map((r) => toView(r)),
+      items: rows.map((r) => this.toView(r)),
       total,
       page: input.page,
       limit: input.limit,
@@ -289,7 +299,17 @@ export class PrismaBusinessTourRepository extends IBusinessTourRepository {
         visitDate: r.visitDate,
         status: r.status as BusinessTourStatus,
         publishedAt: r.publishedAt,
-        ...(r.media[0]?.url !== undefined ? { coverUrl: r.media[0].url } : {}),
+        ...(r.media[0] !== undefined
+          ? {
+              coverUrl: this.mediaUrlService.getMediaUrl(
+                r.media[0].provider,
+                r.media[0].fileId,
+                r.media[0].mimeType,
+                r.media[0].version,
+                r.media[0].format,
+              ),
+            }
+          : {}),
       })),
       total,
       page: input.page,

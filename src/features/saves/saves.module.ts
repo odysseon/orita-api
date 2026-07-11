@@ -1,4 +1,5 @@
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
+import { MediaModule } from '../media/media.module.js';
 import { SavesController } from './api/controllers/saves.controller.js';
 import { ISavesRepository } from './domain/ports/saves.repository.port.js';
 import { PrismaSavesRepository } from './infrastructure/prisma-saves.repository.js';
@@ -7,6 +8,7 @@ import { UnsaveListingUseCase } from './application/use-cases/unsave-listing.use
 import { GetSavedListingsUseCase } from './application/use-cases/get-saved-listings.use-case.js';
 
 @Module({
+  imports: [forwardRef(() => MediaModule)],
   controllers: [SavesController],
   providers: [
     {

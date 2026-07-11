@@ -70,7 +70,6 @@ export class ConsumeUploadIntentUseCase {
       ownerId: input.ownerId,
       role: intent.role,
       mediaType: metadata.mimeType.startsWith('video/') ? 'VIDEO' : 'IMAGE',
-      url: metadata.url,
       fileId: metadata.fileId,
       provider: metadata.provider,
       mimeType: metadata.mimeType,

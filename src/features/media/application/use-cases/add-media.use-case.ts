@@ -16,7 +16,6 @@ export interface AddMediaInput {
   readonly role: MediaRole;
   readonly mediaType: MediaType;
 
-  readonly url: string;
   readonly fileId: string;
   readonly provider: StorageProvider;
   readonly mimeType: string;
@@ -89,7 +88,6 @@ export class AddMediaUseCase {
       : await this.mediaRepo.countByRole(input.ownerKey, input.ownerId, MediaRole.GALLERY);
 
     const payload: RepoAddMediaInput = {
-      url: input.url,
       fileId: input.fileId,
       provider: input.provider,
       mimeType: input.mimeType,

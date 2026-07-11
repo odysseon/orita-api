@@ -31,10 +31,12 @@ import { EventEmitterModule } from '@nestjs/event-emitter';
 import { DomainEventsModule } from './shared/events/domain-events.module.js';
 import { SearchModule } from './features/search/search.module.js';
 import { NotificationsModule } from './features/notifications/notifications.module.js';
+import { ScheduleModule } from '@nestjs/schedule';
 
 @Module({
   imports: [
     DomainEventsModule,
+    ScheduleModule.forRoot(),
     EventEmitterModule.forRoot({
       global: true,
       wildcard: true,

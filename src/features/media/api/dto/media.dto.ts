@@ -28,8 +28,8 @@ export class ConsumeIntentRequestDto {
 export class UploadIntentResponseDto {
   signature!: string;
   timestamp!: number;
-  apiKey!: string;
-  cloudName!: string;
+  apiKey?: string;
+  cloudName?: string;
   intentId!: string;
   folder!: string;
   publicId!: string;

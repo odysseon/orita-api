@@ -1,10 +1,14 @@
 import { Injectable } from '@nestjs/common';
+import { MediaUrlService } from '../../media/application/services/media-url.service.js';
 import { PrismaService } from '../../../prisma/prisma.service.js';
 import { ISavesRepository, SavedListingView } from '../domain/ports/saves.repository.port.js';
 
 @Injectable()
 export class PrismaSavesRepository implements ISavesRepository {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly mediaUrlService: MediaUrlService,
+  ) {}
 
   async saveListing(userId: string, listingId: string): Promise<void> {
     await this.prisma.savedListing.upsert({
@@ -87,7 +91,15 @@ export class PrismaSavesRepository implements ISavesRepository {
         isNegotiable: r.listing.isNegotiable,
         createdAt: r.listing.createdAt,
         updatedAt: r.listing.updatedAt,
-        coverUrl: r.listing.media[0]?.url,
+        coverUrl: r.listing.media[0]
+          ? this.mediaUrlService.getMediaUrl(
+              r.listing.media[0].provider,
+              r.listing.media[0].fileId,
+              r.listing.media[0].mimeType,
+              r.listing.media[0].version,
+              r.listing.media[0].format,
+            )
+          : undefined,
       },
     }));
 

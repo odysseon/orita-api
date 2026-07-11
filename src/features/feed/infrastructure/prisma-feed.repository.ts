@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { MediaUrlService } from '../../media/application/services/media-url.service.js';
 import { PrismaService } from '../../../prisma/prisma.service.js';
 import { DiscoveryItemType } from '../../../../generated/prisma/client.js';
 import { FeedWeights } from '../feed.weights.js';
@@ -27,7 +28,10 @@ export interface FeedItemView {
 
 @Injectable()
 export class PrismaFeedRepository {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly mediaUrlService: MediaUrlService,
+  ) {}
 
   async getFeed(params: FeedQueryParams): Promise<FeedItemView[]> {
     const limit = params.limit ?? 20;
@@ -184,9 +188,27 @@ export class PrismaFeedRepository {
 
     const businessMap = new Map(
       businesses.map((b) => {
-        const logo = b.media?.find((m) => m.role === 'LOGO')?.url;
-        const cover = b.media?.find((m) => m.role === 'COVER')?.url;
-        return [b.id, { ...b, logoUrl: logo, coverUrl: cover }];
+        const logo = b.media?.find((m) => m.role === 'LOGO');
+        const cover = b.media?.find((m) => m.role === 'COVER');
+        const logoUrl = logo
+          ? this.mediaUrlService.getMediaUrl(
+              logo.provider,
+              logo.fileId,
+              logo.mimeType,
+              logo.version,
+              logo.format,
+            )
+          : undefined;
+        const coverUrl = cover
+          ? this.mediaUrlService.getMediaUrl(
+              cover.provider,
+              cover.fileId,
+              cover.mimeType,
+              cover.version,
+              cover.format,
+            )
+          : undefined;
+        return [b.id, { ...b, logoUrl, coverUrl }];
       }),
     );
     const listingMap = new Map(listings.map((l) => [l.id, l]));
