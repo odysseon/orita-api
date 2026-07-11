@@ -8,6 +8,7 @@ import {
   PaginatedBusinessTours,
   BusinessTourView,
   UpdateBusinessTourInput,
+  PaginatedBusinessToursSummary,
 } from '../domain/types/business-tour.types.js';
 import {
   BusinessTour as PrismaBusinessTour,
@@ -160,7 +161,7 @@ export class PrismaBusinessTourRepository extends IBusinessTourRepository {
     };
   }
 
-  async discoverGlobal(input: DiscoverBusinessToursInput): Promise<any> {
+  async discoverGlobal(input: DiscoverBusinessToursInput): Promise<PaginatedBusinessToursSummary> {
     const limit = input.limit;
     const offset = (input.page - 1) * limit;
 
@@ -238,11 +239,11 @@ export class PrismaBusinessTourRepository extends IBusinessTourRepository {
           businessProfileSlug: r.businessProfileSlug,
           title: r.title,
           summary: r.summary,
-          visitDate: r.visitDate,
-          status: r.status,
+          visitDate: r.visitDate as Date,
+          status: r.status as BusinessTourStatus,
           publishedAt: r.publishedAt,
-          coverUrl: r.coverUrl,
-          distanceKm: r.distanceMeters / 1000,
+          ...(r.coverUrl ? { coverUrl: r.coverUrl } : {}),
+          ...(r.distanceMeters !== undefined ? { distanceKm: r.distanceMeters / 1000 } : {}),
         })),
         total: Number(count),
         page: input.page,
@@ -288,7 +289,7 @@ export class PrismaBusinessTourRepository extends IBusinessTourRepository {
         visitDate: r.visitDate,
         status: r.status as BusinessTourStatus,
         publishedAt: r.publishedAt,
-        coverUrl: r.media[0]?.url,
+        ...(r.media[0]?.url !== undefined ? { coverUrl: r.media[0].url } : {}),
       })),
       total,
       page: input.page,

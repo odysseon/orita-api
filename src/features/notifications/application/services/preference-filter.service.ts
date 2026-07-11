@@ -33,7 +33,7 @@ export class PreferenceFilterService {
     // So if a user doesn't have a record, they are included.
 
     const optedOutUsers = new Set<string>(
-      (preferences as Record<string, any>[])
+      (preferences as Record<string, unknown>[])
         .filter((p) => p[category] === false)
         .map((p) => p['userId'] as string),
     );

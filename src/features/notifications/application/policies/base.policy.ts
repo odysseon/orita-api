@@ -12,7 +12,7 @@ export interface NotificationPayload {
   payload: Record<string, unknown>;
 }
 
-export abstract class BaseNotificationPolicy<TEvent = any> {
+export abstract class BaseNotificationPolicy<TEvent = unknown> {
   /**
    * Determine if the event warrants a notification.
    */

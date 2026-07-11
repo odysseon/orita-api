@@ -3,7 +3,7 @@ export interface SavedListingView {
   userId: string;
   listingId: string;
   createdAt: Date;
-  listing: any; // We'll refine this later
+  listing: Record<string, unknown>; // We'll refine this later
 }
 
 export abstract class ISavesRepository {

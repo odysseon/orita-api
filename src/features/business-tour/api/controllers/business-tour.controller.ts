@@ -22,7 +22,11 @@ import { GetBusinessTourUseCase } from '../../application/use-cases/get-business
 import { GetBusinessToursByProfileUseCase } from '../../application/use-cases/get-business-tours-by-profile.use-case.js';
 import { GetBusinessToursUseCase } from '../../application/use-cases/get-business-tours.use-case.js';
 import { CreateBusinessTourDto, UpdateBusinessTourDto } from '../dto/request.dto.js';
-import { BusinessTourResponseDto, PaginatedBusinessToursResponseDto } from '../dto/response.dto.js';
+import {
+  BusinessTourResponseDto,
+  PaginatedBusinessToursResponseDto,
+  PaginatedBusinessToursSummaryResponseDto,
+} from '../dto/response.dto.js';
 import { BusinessTourStatus } from '../../domain/types/business-tour.entity.js';
 
 import { ModeratorOrAdminGuard } from '../../../../shared/decorators/moderator-or-admin-guard.decorator.js';
@@ -69,7 +73,7 @@ export class BusinessTourController {
     @Query('lat') latStr?: string,
     @Query('lng') lngStr?: string,
     @Query('radius') radiusStr?: string,
-  ): Promise<any> {
+  ): Promise<PaginatedBusinessToursSummaryResponseDto> {
     const pageNum = parseInt(page ?? '1', 10);
     const limitNum = parseInt(limit ?? '20', 10);
 
@@ -77,7 +81,7 @@ export class BusinessTourController {
     const lng = lngStr ? parseFloat(lngStr) : undefined;
     const radius = radiusStr ? parseFloat(radiusStr) : undefined;
 
-    return this.getBusinessTours.execute({
+    const paginated = await this.getBusinessTours.execute({
       ...(status !== undefined && { status }),
       ...(search !== undefined && { search }),
       ...(lat !== undefined && !isNaN(lat) && { lat }),
@@ -86,6 +90,7 @@ export class BusinessTourController {
       page: isNaN(pageNum) ? 1 : pageNum,
       limit: isNaN(limitNum) ? 20 : limitNum,
     });
+    return PaginatedBusinessToursSummaryResponseDto.from(paginated);
   }
 
   @Public()

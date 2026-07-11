@@ -10,7 +10,7 @@ export class MailTemplateService {
   private readonly logger = new Logger(MailTemplateService.name);
   private templatesCache = new Map<string, handlebars.TemplateDelegate>();
 
-  async compile(templateName: string, context: Record<string, any> = {}): Promise<string> {
+  async compile(templateName: string, context: Record<string, unknown> = {}): Promise<string> {
     try {
       let templateDelegate = this.templatesCache.get(templateName);
 
