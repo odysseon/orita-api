@@ -6,6 +6,8 @@ import { Prisma } from '../../../../generated/prisma/client.js';
 
 export interface LocationRecord {
   id: string;
+  provider: string | null;
+  externalId: string | null;
   name: string;
   formattedAddress: string | null;
   latitude: number;
@@ -29,6 +31,8 @@ export class PrismaLocationRepository {
       take: limit,
       select: {
         id: true,
+        provider: true,
+        externalId: true,
         name: true,
         formattedAddress: true,
         latitude: true,
@@ -40,7 +44,7 @@ export class PrismaLocationRepository {
   async findNearby(lat: number, lng: number, radiusMeters = 500): Promise<LocationRecord | null> {
     // PostGIS spatial query to find nearest location within radius
     const results = await this.prisma.$queryRaw<LocationRecord[]>`
-      SELECT id, name, "formattedAddress", latitude, longitude
+      SELECT id, provider, "externalId", name, "formattedAddress", latitude, longitude
       FROM locations
       WHERE ST_DWithin(
         coordinates::geography,
@@ -92,7 +96,7 @@ export class PrismaLocationRepository {
 
     const created = await this.prisma.location.findFirst({
       where: { provider: candidate.provider, externalId: candidate.externalId },
-      select: { id: true, name: true, formattedAddress: true, latitude: true, longitude: true },
+      select: { id: true, provider: true, externalId: true, name: true, formattedAddress: true, latitude: true, longitude: true },
     });
 
     return created!;
@@ -101,7 +105,19 @@ export class PrismaLocationRepository {
   async findById(id: string): Promise<LocationRecord | null> {
     return this.prisma.location.findUnique({
       where: { id },
-      select: { id: true, name: true, formattedAddress: true, latitude: true, longitude: true },
+      select: { id: true, provider: true, externalId: true, name: true, formattedAddress: true, latitude: true, longitude: true },
     });
+  }
+
+  async getFollowedLocationIds(userId: string, locationIds: string[]): Promise<string[]> {
+    if (!locationIds.length) return [];
+    const follows = await this.prisma.follow.findMany({
+      where: {
+        followerId: userId,
+        locationId: { in: locationIds },
+      },
+      select: { locationId: true },
+    });
+    return follows.map((f) => f.locationId as string);
   }
 }

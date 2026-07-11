@@ -4,12 +4,15 @@ import {
   PrismaLocationRepository,
   LocationRecord,
 } from '../infrastructure/prisma-location.repository.js';
+import { IdentityService } from '../../../shared/identity/identity.service.js';
+import type { RequestIdentity } from '@odysseon/whoami-adapter-nestjs';
 
 @Injectable()
 export class LocationsService {
   constructor(
     private readonly geocoder: Geocoder,
     private readonly repo: PrismaLocationRepository,
+    private readonly identityService: IdentityService,
   ) {}
 
   /**
@@ -17,14 +20,39 @@ export class LocationsService {
    * If fewer than 3 DB results, falls back to the geocoder for suggestions.
    * Geocoder results are NOT persisted here — only on explicit selection via `ensure()`.
    */
-  async search(query: string): Promise<(LocationRecord & { persisted: boolean })[]> {
+  async search(query: string, identity?: RequestIdentity): Promise<(LocationRecord & { persisted: boolean, isFollowed: boolean })[]> {
     const trimmed = query.trim();
     if (!trimmed || trimmed.length < 2) return [];
 
     const dbResults = await this.repo.searchByText(trimmed, 6);
+    
+    // Resolve user and followed locations
+    let followedIds = new Set<string>();
+    if (identity) {
+      const user = await this.identityService.resolveUser(identity.accountId);
+      if (user && dbResults.length > 0) {
+        const ids = dbResults.map(r => r.id);
+        const follows = await this.repo.getFollowedLocationIds(user.id, ids);
+        followedIds = new Set(follows);
+      }
+    }
 
-    if (dbResults.length >= 3) {
-      return dbResults.map((r) => ({ ...r, persisted: true }));
+    // Map-based canonical deduplication
+    const resultsMap = new Map<string, LocationRecord & { persisted: boolean, isFollowed: boolean }>();
+    const key = (provider: string, externalId: string) => `${provider}:${String(externalId)}`;
+
+    // 1. Insert DB results
+    for (const db of dbResults) {
+      if (!db.provider || !db.externalId) continue;
+      resultsMap.set(key(db.provider, db.externalId), {
+        ...db,
+        persisted: true,
+        isFollowed: followedIds.has(db.id)
+      });
+    }
+
+    if (resultsMap.size >= 3) {
+      return Array.from(resultsMap.values());
     }
 
     // Supplement with provider results (not persisted yet)
@@ -35,20 +63,25 @@ export class LocationsService {
       // Silently fall back to DB-only results
     }
 
-    const providerMapped = providerResults
-      .filter((p) => !dbResults.some((d) => d.name === p.name))
-      .map((p) => ({
-        id: '', // Not yet in DB — client must call ensure() on selection
-        externalId: p.externalId,
-        provider: p.provider,
-        name: p.name,
-        formattedAddress: p.formattedAddress,
-        latitude: p.lat,
-        longitude: p.lng,
-        persisted: false,
-      }));
+    // 2. Insert Geocoder results if they don't already exist
+    for (const p of providerResults) {
+      const canonicalKey = key(p.provider, p.externalId);
+      if (!resultsMap.has(canonicalKey)) {
+        resultsMap.set(canonicalKey, {
+          id: '', // Not yet in DB
+          provider: p.provider,
+          externalId: p.externalId,
+          name: p.name,
+          formattedAddress: p.formattedAddress,
+          latitude: p.lat,
+          longitude: p.lng,
+          persisted: false,
+          isFollowed: false
+        } as LocationRecord & { persisted: boolean, isFollowed: boolean });
+      }
+    }
 
-    return [...dbResults.map((r) => ({ ...r, persisted: true })), ...providerMapped];
+    return Array.from(resultsMap.values());
   }
 
   /**
