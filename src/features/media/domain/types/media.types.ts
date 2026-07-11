@@ -1,5 +1,6 @@
 import { MediaRole } from './media-role.enum.js';
 import { MediaType } from './media-type.enum.js';
+import { StorageProvider } from '../../../../../generated/prisma/client.js';
 
 export interface AddMediaInput {
   readonly businessProfileId?: string;
@@ -12,6 +13,16 @@ export interface AddMediaInput {
   readonly role: MediaRole;
   /** Assigned by use case after normalization — not provided by caller */
   readonly order: number | null;
+
+  // New metadata fields
+  readonly provider: StorageProvider;
+  readonly mimeType: string;
+  readonly bytes?: number;
+  readonly width?: number;
+  readonly height?: number;
+  readonly duration?: number;
+  readonly version?: string;
+  readonly format?: string;
 }
 
 export interface ReorderMediaInput {

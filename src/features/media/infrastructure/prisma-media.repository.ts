@@ -5,7 +5,7 @@ import { IMediaRepository, MediaOwnerKey } from '../domain/ports/media.repositor
 import { Media } from '../domain/types/media.entity.js';
 import { MediaRole } from '../domain/types/media-role.enum.js';
 import { AddMediaInput, ReorderMediaInput } from '../domain/types/media.types.js';
-import { Media as PrismaMedia } from '../../../../generated/prisma/client.js';
+import { Media as PrismaMedia, Prisma } from '../../../../generated/prisma/client.js';
 
 function toDomain(raw: PrismaMedia): Media {
   return {
@@ -56,11 +56,29 @@ export class PrismaMediaRepository extends IMediaRepository {
   }
 
   async add(input: AddMediaInput): Promise<Media> {
-    const raw = await this.prisma.media.create({
-      data: {
-        ...input,
-      },
-    });
+    const data: Prisma.MediaUncheckedCreateInput = {
+      url: input.url,
+      fileId: input.fileId,
+      mediaType: input.mediaType,
+      role: input.role,
+      order: input.order ?? null,
+      provider: input.provider,
+      mimeType: input.mimeType,
+    };
+    
+    if (input.businessProfileId !== undefined) data.businessProfileId = input.businessProfileId;
+    if (input.listingId !== undefined) data.listingId = input.listingId;
+    if (input.businessTourId !== undefined) data.businessTourId = input.businessTourId;
+    if (input.reviewId !== undefined) data.reviewId = input.reviewId;
+    
+    if (input.bytes !== undefined) data.bytes = input.bytes;
+    if (input.width !== undefined) data.width = input.width;
+    if (input.height !== undefined) data.height = input.height;
+    if (input.duration !== undefined) data.duration = input.duration;
+    if (input.version !== undefined) data.version = input.version;
+    if (input.format !== undefined) data.format = input.format;
+
+    const raw = await this.prisma.media.create({ data });
     if (input.businessProfileId) {
       await this.invalidateParentCache('businessProfileId', input.businessProfileId);
     } else if (input.listingId) {
