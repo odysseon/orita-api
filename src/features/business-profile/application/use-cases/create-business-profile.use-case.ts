@@ -23,7 +23,13 @@ export class CreateBusinessProfileUseCase {
 
     const slug = await this.deriveUniqueSlug(input.name);
 
-    const profile = await this.repo.create(input, slug);
+    const profile = await this.repo.create(
+      {
+        ...input,
+        isPublic: input.isPublic ?? true,
+      },
+      slug,
+    );
 
     await this.eventBus.publish(
       'business.created',
