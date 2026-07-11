@@ -551,11 +551,11 @@ export class PrismaBusinessProfileRepository extends IBusinessProfileRepository 
         latitude: r.latitude,
         longitude: r.longitude,
         primaryCategoryId:
-          (r.categories_json as { categoryId: string; isPrimary: boolean }[])?.find(
+          (r.categories_json as unknown as { categoryId: string; isPrimary: boolean }[])?.find(
             (c) => c.isPrimary,
           )?.categoryId ?? null,
         secondaryCategoryIds:
-          (r.categories_json as { categoryId: string; isPrimary: boolean }[])
+          (r.categories_json as unknown as { categoryId: string; isPrimary: boolean }[])
             ?.filter((c) => !c.isPrimary)
             .map((c) => c.categoryId) ?? [],
         distanceKm: Number(r.distance),

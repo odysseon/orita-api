@@ -52,12 +52,16 @@ export class CloudinaryStorageProvider implements StorageProvider {
             fileId: cloudinaryResult.public_id,
             provider: ProviderEnum.CLOUDINARY,
             mimeType: `${cloudinaryResult.resource_type}/${cloudinaryResult.format || 'unknown'}`,
-            bytes: cloudinaryResult.bytes,
-            width: cloudinaryResult.width,
-            height: cloudinaryResult.height,
-            duration: cloudinaryResult.duration,
-            version: String(cloudinaryResult.version),
-            format: cloudinaryResult.format,
+            ...(cloudinaryResult.bytes !== undefined ? { bytes: cloudinaryResult.bytes } : {}),
+            ...(cloudinaryResult.width !== undefined ? { width: cloudinaryResult.width } : {}),
+            ...(cloudinaryResult.height !== undefined ? { height: cloudinaryResult.height } : {}),
+            ...(cloudinaryResult.duration !== undefined
+              ? { duration: cloudinaryResult.duration }
+              : {}),
+            ...(cloudinaryResult.version !== undefined
+              ? { version: String(cloudinaryResult.version) }
+              : {}),
+            ...(cloudinaryResult.format !== undefined ? { format: cloudinaryResult.format } : {}),
           });
         },
       );
@@ -120,12 +124,14 @@ export class CloudinaryStorageProvider implements StorageProvider {
         fileId: cloudinaryResult.public_id,
         provider: ProviderEnum.CLOUDINARY,
         mimeType: `${cloudinaryResult.resource_type}/${cloudinaryResult.format || 'unknown'}`,
-        bytes: cloudinaryResult.bytes,
-        width: cloudinaryResult.width,
-        height: cloudinaryResult.height,
-        duration: cloudinaryResult.duration,
-        version: String(cloudinaryResult.version),
-        format: cloudinaryResult.format,
+        ...(cloudinaryResult.bytes !== undefined ? { bytes: cloudinaryResult.bytes } : {}),
+        ...(cloudinaryResult.width !== undefined ? { width: cloudinaryResult.width } : {}),
+        ...(cloudinaryResult.height !== undefined ? { height: cloudinaryResult.height } : {}),
+        ...(cloudinaryResult.duration !== undefined ? { duration: cloudinaryResult.duration } : {}),
+        ...(cloudinaryResult.version !== undefined
+          ? { version: String(cloudinaryResult.version) }
+          : {}),
+        ...(cloudinaryResult.format !== undefined ? { format: cloudinaryResult.format } : {}),
       };
     } catch (err: unknown) {
       const errorObj = err as Record<string, unknown>;
@@ -142,8 +148,7 @@ export class CloudinaryStorageProvider implements StorageProvider {
     }
   }
 
-  // eslint-disable-next-line @typescript-eslint/require-await
-  async generateUploadSignature(
+  generateUploadSignature(
     folder: string,
     publicId: string,
     timestamp: number,
@@ -165,11 +170,11 @@ export class CloudinaryStorageProvider implements StorageProvider {
       apiSecret,
     );
 
-    return {
+    return Promise.resolve({
       signature,
       timestamp,
       apiKey,
       cloudName,
-    };
+    });
   }
 }

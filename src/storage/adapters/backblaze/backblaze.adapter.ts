@@ -82,10 +82,9 @@ export class BackblazeStorageProvider implements StorageProvider {
     }
   }
 
-  // eslint-disable-next-line @typescript-eslint/require-await
-  async getMetadata(): Promise<UploadResult | null> {
+  getMetadata(): Promise<UploadResult | null> {
     // Backblaze does not currently support rich metadata retrieval in this implementation
-    return null;
+    return Promise.resolve(null);
   }
 
   generateUploadSignature(): Promise<UploadSignatureResult> {

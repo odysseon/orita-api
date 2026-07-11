@@ -3,6 +3,7 @@ import { Job } from 'bullmq';
 import { Injectable, Logger } from '@nestjs/common';
 import { NotificationPayload } from '../../application/policies/base.policy.js';
 import { PrismaService } from '../../../../prisma/prisma.service.js';
+import { Prisma } from '../../../../../generated/prisma/client.js';
 
 @Injectable()
 @Processor('in_app_delivery_queue')
@@ -24,8 +25,7 @@ export class InAppWorker extends WorkerHost {
         actorId: payload.actorId || null,
         referenceType: payload.referenceType || null,
         referenceId: payload.referenceId || null,
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-        payload: payload.payload as any,
+        payload: payload.payload as unknown as Prisma.InputJsonValue,
       },
     });
 
