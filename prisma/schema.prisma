@@ -119,6 +119,7 @@ model User {
   follows                 Follow[]                @relation("UserFollows")
   notificationPreferences NotificationPreference?
   inAppNotifications      InAppNotification[]
+  uploadIntents           UploadIntent[]
 
   @@index([accountId])
 }
@@ -169,7 +170,7 @@ model BusinessProfile {
   geoEntity   Location? @relation(fields: [locationId], references: [id])
 
   // Commercial identity — explicit many-to-many relations with Category
-  categories    BusinessCategory[]     @relation("BusinessCategories")
+  categories    BusinessCategory[] @relation("BusinessCategories")
   businessTours BusinessTour[]
 
   createdAt DateTime @default(now())
@@ -272,6 +273,17 @@ model Listing {
 // ============================================
 // Media
 // ============================================
+enum StorageProvider {
+  CLOUDINARY
+  BACKBLAZE
+}
+
+enum UploadOwnerType {
+  BUSINESS_PROFILE
+  LISTING
+  BUSINESS_TOUR
+  REVIEW
+}
 
 enum MediaType {
   IMAGE
@@ -292,13 +304,21 @@ enum MediaRole {
 model Media {
   id String @id @default(cuid())
 
-  url    String
-  fileId String
+  provider StorageProvider
+  fileId   String          @unique
+  url      String // Cached delivery URL
 
   mediaType MediaType
+  mimeType  String // e.g. "image/webp", "video/mp4"
   role      MediaRole
+  order     Int?
 
-  order Int?
+  bytes    Int?
+  width    Int?
+  height   Int?
+  duration Float? // seconds, video only
+  version  String? // Cloudinary version for cache invalidation
+  format   String? // original upload format, e.g. "jpg"
 
   businessProfileId String?
   businessProfile   BusinessProfile? @relation(fields: [businessProfileId], references: [id], onDelete: Cascade)
@@ -318,6 +338,34 @@ model Media {
   @@index([listingId])
   @@index([businessTourId])
   @@map("media")
+}
+
+// ============================================
+// UploadIntent
+// ============================================
+
+model UploadIntent {
+  id String @id @default(cuid())
+
+  ownerType UploadOwnerType
+  ownerId   String
+  role      MediaRole
+  provider  StorageProvider
+
+  folder   String
+  publicId String
+
+  createdById String
+  createdBy   User   @relation(fields: [createdById], references: [id], onDelete: Cascade)
+
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  consumedAt DateTime?
+
+  @@index([ownerId])
+  @@index([createdById])
+  @@map("upload_intents")
 }
 
 // ============================================
@@ -365,7 +413,7 @@ model Category {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  businessProfiles BusinessCategory[]   @relation("BusinessCategories")
+  businessProfiles BusinessCategory[]  @relation("BusinessCategories")
   listings         Listing[]           @relation("ListingCategory")
   attributes       CategoryAttribute[]
 
