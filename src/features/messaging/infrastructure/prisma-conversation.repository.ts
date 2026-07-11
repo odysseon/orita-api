@@ -11,15 +11,27 @@ import {
   ConversationStatus,
   MessageEmbedView,
   ConversationAnchorView,
-  ConversationType,
 } from '../domain/types/messaging.types.js';
-import type { ConversationAnchor } from '../../../../generated/prisma/client.js';
+import type {
+  ConversationAnchor,
+  Message,
+  MessageEmbed,
+  MessageReadReceipt,
+  Conversation,
+  ConversationParticipant,
+} from '../../../../generated/prisma/client.js';
+
+type HydratedMessage = Message & { embeds?: MessageEmbed[]; readReceipts?: MessageReadReceipt[] };
+type HydratedConversation = Conversation & {
+  anchor?: ConversationAnchor | null;
+  participants: ConversationParticipant[];
+};
 
 @Injectable()
 export class PrismaConversationRepository implements IConversationRepository {
   constructor(private readonly prisma: PrismaService) {}
 
-  private mapMessage(m: any): MessageView {
+  private mapMessage(m: HydratedMessage): MessageView {
     return {
       id: m.id,
       conversationId: m.conversationId,
@@ -29,7 +41,7 @@ export class PrismaConversationRepository implements IConversationRepository {
       content: m.content,
       mediaUrl: m.mediaUrl,
       mediaType: m.mediaType,
-      embeds: (m.embeds || []).map((e: any): MessageEmbedView => ({
+      embeds: (m.embeds || []).map((e: MessageEmbed): MessageEmbedView => ({
         id: e.id,
         embedType: e.embedType,
         targetId: e.targetId,
@@ -40,7 +52,7 @@ export class PrismaConversationRepository implements IConversationRepository {
         ctaPath: e.ctaPath,
       })),
       createdAt: m.createdAt,
-      readReceipts: (m.readReceipts || []).map((r: any): MessageReadReceiptView => ({
+      readReceipts: (m.readReceipts || []).map((r: MessageReadReceipt): MessageReadReceiptView => ({
         messageId: r.messageId,
         participantId: r.participantId,
         readAt: r.readAt,
@@ -48,7 +60,7 @@ export class PrismaConversationRepository implements IConversationRepository {
     };
   }
 
-  private mapConversation(c: any): ConversationView {
+  private mapConversation(c: HydratedConversation): ConversationView {
     let anchorView: ConversationAnchorView | null = null;
     if (c.anchor) {
       anchorView = {
@@ -65,18 +77,21 @@ export class PrismaConversationRepository implements IConversationRepository {
 
     return {
       id: c.id,
-      type: c.type as ConversationType,
-      status: c.status as ConversationStatus,
+      type: c.type,
+      status: c.status,
       title: c.title,
       anchorId: c.anchorId,
       anchor: anchorView,
-      participantIds: c.participants.map((p: any) => p.participantId),
+      participantIds: c.participants.map((p: ConversationParticipant) => p.participantId),
       createdAt: c.createdAt,
       updatedAt: c.updatedAt,
     };
   }
 
-  async create(input: CreateConversationInput, anchor?: ConversationAnchor): Promise<ConversationView> {
+  async create(
+    input: CreateConversationInput,
+    anchor?: ConversationAnchor,
+  ): Promise<ConversationView> {
     const participantIds = [input.participantId, ...input.invitedParticipantIds];
     const uniqueParticipants = Array.from(new Set(participantIds));
 
@@ -102,13 +117,14 @@ export class PrismaConversationRepository implements IConversationRepository {
     senderDisplayName: string,
     senderAvatarUrl: string | null,
   ): Promise<MessageView> {
-    const embedsData = input.embeds?.map((e) => ({
-      embedType: e.embedType,
-      targetId: e.targetId,
-      title: 'Embed Snapshot', // In a full implementation, AnchorService logic would resolve these per-embed
-      subtitle: null,
-      imageUrl: null,
-    })) || [];
+    const embedsData =
+      input.embeds?.map((e) => ({
+        embedType: e.embedType,
+        targetId: e.targetId,
+        title: 'Embed Snapshot', // In a full implementation, AnchorService logic would resolve these per-embed
+        subtitle: null,
+        imageUrl: null,
+      })) || [];
 
     const message = await this.prisma.message.create({
       data: {

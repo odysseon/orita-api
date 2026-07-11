@@ -15,8 +15,8 @@ export class AnchorService {
     let listingId: string | null = null;
     let tourId: string | null = null;
     let locationId: string | null = null;
-    let title = '';
-    let subtitle: string | null = null;
+    let title: string;
+    let subtitle: string | null;
     let imageUrl: string | null = null;
 
     switch (input.type.toUpperCase()) {

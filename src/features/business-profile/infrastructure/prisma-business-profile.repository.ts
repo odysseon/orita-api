@@ -88,8 +88,9 @@ function toDomain(raw: HydratedProfile): BusinessProfileView {
     location: raw.locationName,
     latitude: raw.latitude,
     longitude: raw.longitude,
-    primaryCategoryId: raw.categories?.find(c => c.isPrimary)?.categoryId ?? null,
-    secondaryCategoryIds: raw.categories?.filter(c => !c.isPrimary).map(c => c.categoryId) ?? [],
+    primaryCategoryId: raw.categories?.find((c) => c.isPrimary)?.categoryId ?? null,
+    secondaryCategoryIds:
+      raw.categories?.filter((c) => !c.isPrimary).map((c) => c.categoryId) ?? [],
     createdAt: raw.createdAt,
     updatedAt: raw.updatedAt,
     ...(raw.hours && {
@@ -213,7 +214,8 @@ export class PrismaBusinessProfileRepository extends IBusinessProfileRepository 
           categories: {
             create: [
               { categoryId: input.primaryCategoryId, isPrimary: true },
-              ...(input.secondaryCategoryIds?.map(id => ({ categoryId: id, isPrimary: false })) ?? []),
+              ...(input.secondaryCategoryIds?.map((id) => ({ categoryId: id, isPrimary: false })) ??
+                []),
             ],
           },
         }),
@@ -373,7 +375,8 @@ export class PrismaBusinessProfileRepository extends IBusinessProfileRepository 
             deleteMany: {},
             create: [
               { categoryId: input.primaryCategoryId, isPrimary: true },
-              ...(input.secondaryCategoryIds?.map(id => ({ categoryId: id, isPrimary: false })) ?? []),
+              ...(input.secondaryCategoryIds?.map((id) => ({ categoryId: id, isPrimary: false })) ??
+                []),
             ],
           },
         }),
@@ -547,8 +550,14 @@ export class PrismaBusinessProfileRepository extends IBusinessProfileRepository 
         location: r.location,
         latitude: r.latitude,
         longitude: r.longitude,
-        primaryCategoryId: (r.categories_json as any[])?.find(c => c.isPrimary)?.categoryId ?? null,
-        secondaryCategoryIds: (r.categories_json as any[])?.filter(c => !c.isPrimary).map(c => c.categoryId) ?? [],
+        primaryCategoryId:
+          (r.categories_json as { categoryId: string; isPrimary: boolean }[])?.find(
+            (c) => c.isPrimary,
+          )?.categoryId ?? null,
+        secondaryCategoryIds:
+          (r.categories_json as { categoryId: string; isPrimary: boolean }[])
+            ?.filter((c) => !c.isPrimary)
+            .map((c) => c.categoryId) ?? [],
         distanceKm: Number(r.distance),
       }));
 
@@ -595,7 +604,8 @@ export class PrismaBusinessProfileRepository extends IBusinessProfileRepository 
       latitude: r.latitude,
       longitude: r.longitude,
       primaryCategoryId: r.categories?.find((c) => c.isPrimary)?.categoryId ?? null,
-      secondaryCategoryIds: r.categories?.filter((c) => !c.isPrimary).map((c) => c.categoryId) ?? [],
+      secondaryCategoryIds:
+        r.categories?.filter((c) => !c.isPrimary).map((c) => c.categoryId) ?? [],
     }));
 
     return this.enrichWithFollowedStatus(

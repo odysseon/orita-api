@@ -20,25 +20,31 @@ export class LocationsService {
    * If fewer than 3 DB results, falls back to the geocoder for suggestions.
    * Geocoder results are NOT persisted here — only on explicit selection via `ensure()`.
    */
-  async search(query: string, identity?: RequestIdentity): Promise<(LocationRecord & { persisted: boolean, isFollowed: boolean })[]> {
+  async search(
+    query: string,
+    identity?: RequestIdentity,
+  ): Promise<(LocationRecord & { persisted: boolean; isFollowed: boolean })[]> {
     const trimmed = query.trim();
     if (!trimmed || trimmed.length < 2) return [];
 
     const dbResults = await this.repo.searchByText(trimmed, 6);
-    
+
     // Resolve user and followed locations
     let followedIds = new Set<string>();
     if (identity) {
       const user = await this.identityService.resolveUser(identity.accountId);
       if (user && dbResults.length > 0) {
-        const ids = dbResults.map(r => r.id);
+        const ids = dbResults.map((r) => r.id);
         const follows = await this.repo.getFollowedLocationIds(user.id, ids);
         followedIds = new Set(follows);
       }
     }
 
     // Map-based canonical deduplication
-    const resultsMap = new Map<string, LocationRecord & { persisted: boolean, isFollowed: boolean }>();
+    const resultsMap = new Map<
+      string,
+      LocationRecord & { persisted: boolean; isFollowed: boolean }
+    >();
     const key = (provider: string, externalId: string) => `${provider}:${String(externalId)}`;
 
     // 1. Insert DB results
@@ -47,7 +53,7 @@ export class LocationsService {
       resultsMap.set(key(db.provider, db.externalId), {
         ...db,
         persisted: true,
-        isFollowed: followedIds.has(db.id)
+        isFollowed: followedIds.has(db.id),
       });
     }
 
@@ -76,8 +82,8 @@ export class LocationsService {
           latitude: p.lat,
           longitude: p.lng,
           persisted: false,
-          isFollowed: false
-        } as LocationRecord & { persisted: boolean, isFollowed: boolean });
+          isFollowed: false,
+        });
       }
     }
 
@@ -101,7 +107,7 @@ export class LocationsService {
     if (nearby) return nearby;
 
     // Fall back to provider
-    let providerCandidate: GeocoderCandidate | null = null;
+    let providerCandidate: GeocoderCandidate | null;
     try {
       providerCandidate = await this.geocoder.reverse(lat, lng);
     } catch {
