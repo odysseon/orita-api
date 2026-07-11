@@ -251,7 +251,7 @@ export class PrismaListingRepository extends IListingRepository {
                (ST_Distance(loc.coordinates::geography, ST_SetSRID(ST_MakePoint(${input.lng}, ${input.lat}), 4326)::geography) / 1000) AS distance
         FROM listings l
         JOIN business_profiles bp ON l."businessProfileId" = bp.id
-        JOIN "Location" loc ON bp."locationId" = loc.id
+        JOIN "locations" loc ON bp."locationId" = loc.id
         WHERE l.status = ${input.status ?? ListingStatus.PUBLISHED}::"ListingStatus"
           AND bp."isPublic" = true
           AND ST_DWithin(loc.coordinates::geography, ST_SetSRID(ST_MakePoint(${input.lng}, ${input.lat}), 4326)::geography, ${radiusMeters})
@@ -279,7 +279,7 @@ export class PrismaListingRepository extends IListingRepository {
         SELECT COUNT(*) as total 
         FROM listings l
         JOIN business_profiles bp ON l."businessProfileId" = bp.id
-        JOIN "Location" loc ON bp."locationId" = loc.id
+        JOIN "locations" loc ON bp."locationId" = loc.id
         WHERE l.status = ${input.status ?? ListingStatus.PUBLISHED}::"ListingStatus"
           AND bp."isPublic" = true
           AND ST_DWithin(loc.coordinates::geography, ST_SetSRID(ST_MakePoint(${input.lng}, ${input.lat}), 4326)::geography, ${radiusMeters})

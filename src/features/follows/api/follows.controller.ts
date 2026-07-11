@@ -12,6 +12,7 @@ import {
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
 import { FollowsService, type FollowTargetType } from '../application/follows.service.js';
 import { CurrentIdentity, type RequestIdentity } from '@odysseon/whoami-adapter-nestjs';
+import { IdentityService } from '../../../shared/identity/identity.service.js';
 
 class UpdateNotificationsDto {
   enabled!: boolean;
@@ -22,13 +23,17 @@ class UpdateNotificationsDto {
 
 @Controller('v1/follows')
 export class FollowsController {
-  constructor(private readonly followsService: FollowsService) {}
+  constructor(
+    private readonly followsService: FollowsService,
+    private readonly identityService: IdentityService,
+  ) {}
 
   @Get()
   @ApiOperation({ summary: 'Get current user follows' })
   @ApiQuery({ name: 'type', required: false, enum: ['business', 'location'] })
   async getFollows(@CurrentIdentity() identity: RequestIdentity, @Query('type') type?: FollowTargetType) {
-    return this.followsService.getFollows(identity.accountId, type);
+    const user = await this.identityService.resolveUserOrThrow(identity.accountId);
+    return this.followsService.getFollows(user.id, type);
   }
 
   @Post(':type/:id')
@@ -38,7 +43,8 @@ export class FollowsController {
     @Param('type') type: FollowTargetType,
     @Param('id') targetId: string,
   ) {
-    return this.followsService.follow(identity.accountId, type, targetId);
+    const user = await this.identityService.resolveUserOrThrow(identity.accountId);
+    return this.followsService.follow(user.id, type, targetId);
   }
 
   @Delete(':type/:id')
@@ -49,7 +55,8 @@ export class FollowsController {
     @Param('type') type: FollowTargetType,
     @Param('id') targetId: string,
   ) {
-    await this.followsService.unfollow(identity.accountId, type, targetId);
+    const user = await this.identityService.resolveUserOrThrow(identity.accountId);
+    await this.followsService.unfollow(user.id, type, targetId);
   }
 
   @Get(':type/:id/status')
@@ -59,7 +66,8 @@ export class FollowsController {
     @Param('type') type: FollowTargetType,
     @Param('id') targetId: string,
   ) {
-    return this.followsService.getStatus(identity.accountId, type, targetId);
+    const user = await this.identityService.resolveUserOrThrow(identity.accountId);
+    return this.followsService.getStatus(user.id, type, targetId);
   }
 
   @Patch(':type/:id')
@@ -70,6 +78,7 @@ export class FollowsController {
     @Param('id') targetId: string,
     @Body() dto: UpdateNotificationsDto,
   ) {
-    return this.followsService.setNotifications(identity.accountId, type, targetId, dto.enabled);
+    const user = await this.identityService.resolveUserOrThrow(identity.accountId);
+    return this.followsService.setNotifications(user.id, type, targetId, dto.enabled);
   }
 }

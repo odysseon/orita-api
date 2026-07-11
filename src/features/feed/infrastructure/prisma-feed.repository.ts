@@ -117,7 +117,7 @@ export class PrismaFeedRepository {
           CASE WHEN (EXTRACT(EPOCH FROM (NOW() - "createdAt")) / 86400) < ${FeedWeights.exploration.newDaysThreshold}::numeric 
             THEN ${FeedWeights.exploration.newBonus}::numeric 
             ELSE 0 
-          END + (random() * ${FeedWeights.exploration.randomJitter}::numeric) AS score_exploration
+          END + CASE WHEN ${hasCursor} = false THEN (random() * ${FeedWeights.exploration.randomJitter}::numeric) ELSE 0 END AS score_exploration
 
         FROM feed_candidates
       ),
