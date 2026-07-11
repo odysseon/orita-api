@@ -9,7 +9,9 @@ import {
   UploadParams,
   UploadResult,
   DeleteResult,
+  UploadSignatureResult,
 } from '../../ports/provider.port.js';
+import { StorageProvider as ProviderEnum } from '../../../../generated/prisma/client.js';
 
 @Injectable()
 export class CloudinaryStorageProvider implements StorageProvider {
@@ -37,6 +39,14 @@ export class CloudinaryStorageProvider implements StorageProvider {
           resolve({
             url: result.secure_url,
             fileId: result.public_id,
+            provider: ProviderEnum.CLOUDINARY,
+            mimeType: `${result.resource_type}/${result.format}`,
+            bytes: result.bytes,
+            width: result.width,
+            height: result.height,
+            duration: result['duration'],
+            version: String(result.version),
+            format: result.format,
           });
         },
       );
@@ -77,5 +87,61 @@ export class CloudinaryStorageProvider implements StorageProvider {
         message: errorMessage,
       };
     }
+  }
+
+  async getMetadata(fileId: string): Promise<UploadResult | null> {
+    try {
+      const result = await this.cloudinary.api.resource(fileId);
+      return {
+        url: result.secure_url,
+        fileId: result.public_id,
+        provider: ProviderEnum.CLOUDINARY,
+        mimeType: `${result.resource_type}/${result.format}`,
+        bytes: result.bytes,
+        width: result.width,
+        height: result.height,
+        duration: result.duration,
+        version: String(result.version),
+        format: result.format,
+      };
+    } catch (err: unknown) {
+      const errorObj = err as Record<string, unknown>;
+      if (
+        errorObj &&
+        typeof errorObj === 'object' &&
+        errorObj['error'] &&
+        typeof errorObj['error'] === 'object' &&
+        (errorObj['error'] as Record<string, unknown>)['http_code'] === 404
+      ) {
+        return null;
+      }
+      throw err;
+    }
+  }
+
+  async generateUploadSignature(folder: string, publicId: string, timestamp: number): Promise<UploadSignatureResult> {
+    const apiSecret = this.cloudinary.config().api_secret;
+    const apiKey = this.cloudinary.config().api_key;
+    const cloudName = this.cloudinary.config().cloud_name;
+
+    if (!apiSecret || !apiKey || !cloudName) {
+      throw new InternalServerErrorException('Cloudinary configuration is incomplete.');
+    }
+
+    const signature = this.cloudinary.utils.api_sign_request(
+      {
+        folder,
+        public_id: publicId,
+        timestamp,
+      },
+      apiSecret
+    );
+
+    return {
+      signature,
+      timestamp,
+      apiKey,
+      cloudName,
+    };
   }
 }

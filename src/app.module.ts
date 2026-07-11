@@ -70,7 +70,7 @@ import { NotificationsModule } from './features/notifications/notifications.modu
     RedisModule,
     IdentityModule,
     AuthModule,
-    StorageModule.register(),
+    StorageModule,
     UsersModule,
     CategoryModule,
     TagModule,

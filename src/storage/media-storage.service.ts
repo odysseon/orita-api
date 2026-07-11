@@ -197,4 +197,12 @@ export class MediaStorageService {
       return { success: false, message: 'Internal cleanup exception' };
     }
   }
+
+  public async getMetadata(fileId: string): Promise<UploadResult | null> {
+    return this.storageProvider.getMetadata(fileId);
+  }
+
+  public async generateUploadSignature(folder: string, publicId: string, timestamp: number) {
+    return this.storageProvider.generateUploadSignature(folder, publicId, timestamp);
+  }
 }

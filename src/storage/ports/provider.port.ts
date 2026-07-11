@@ -1,13 +1,27 @@
 import type { Readable } from 'stream';
+import { StorageProvider as ProviderEnum } from '../../../generated/prisma/client.js';
 
 /**
  * Result returned after a successful file persistence.
  */
 export interface UploadResult {
-  /** The public-facing URL (Delivery) */
   url: string;
-  /** The internal identifier used for management/deletion (Control)  */
   fileId: string;
+  provider: ProviderEnum;
+  mimeType: string;
+  bytes?: number;
+  width?: number;
+  height?: number;
+  duration?: number;
+  version?: string;
+  format?: string;
+}
+
+export interface UploadSignatureResult {
+  signature: string;
+  timestamp: number;
+  apiKey: string;
+  cloudName: string;
 }
 
 /**
@@ -43,4 +57,16 @@ export abstract class StorageProvider {
    * @param fileId - The unique management ID (Key or PublicID).
    */
   abstract delete(fileId: string): Promise<DeleteResult>;
+
+  /**
+   * Retrieves authoritative metadata for an asset directly from the provider.
+   * @param fileId - The unique management ID (Key or PublicID).
+   */
+  abstract getMetadata(fileId: string): Promise<UploadResult | null>;
+
+  /**
+   * Generates a signed upload signature for direct-from-browser uploads.
+   * Throws NotSupportedException if the provider does not support it.
+   */
+  abstract generateUploadSignature(folder: string, publicId: string, timestamp: number): Promise<UploadSignatureResult>;
 }

@@ -1,4 +1,4 @@
-import { Inject, Injectable, InternalServerErrorException, Logger } from '@nestjs/common';
+import { Inject, Injectable, InternalServerErrorException, Logger, NotImplementedException } from '@nestjs/common';
 import { S3Client, DeleteObjectCommand } from '@aws-sdk/client-s3';
 import { Upload } from '@aws-sdk/lib-storage';
 import { isError } from '../../../shared/utils/error.util.js';
@@ -7,8 +7,10 @@ import {
   UploadParams,
   UploadResult,
   DeleteResult,
+  UploadSignatureResult,
 } from '../../ports/provider.port.js';
 import { BACKBLAZE_CLIENT, BACKBLAZE_CONFIG, type BackblazeConfig } from './backblaze.provider.js';
+import { StorageProvider as ProviderEnum } from '../../../../generated/prisma/client.js';
 
 @Injectable()
 export class BackblazeStorageProvider implements StorageProvider {
@@ -42,6 +44,8 @@ export class BackblazeStorageProvider implements StorageProvider {
       return {
         url: `${baseUrl}/${key}`,
         fileId: key,
+        provider: ProviderEnum.BACKBLAZE,
+        mimeType: 'application/octet-stream', // Generic fallback, B2 adapter doesn't inspect
       };
     } catch (error) {
       this.logger.error('Backblaze Upload Error:', error);
@@ -70,5 +74,14 @@ export class BackblazeStorageProvider implements StorageProvider {
         message: errorMessage,
       };
     }
+  }
+
+  async getMetadata(_fileId: string): Promise<UploadResult | null> {
+    // Backblaze does not currently support rich metadata retrieval in this implementation
+    return null;
+  }
+
+  async generateUploadSignature(_folder: string, _publicId: string, _timestamp: number): Promise<UploadSignatureResult> {
+    throw new NotImplementedException('Direct signed uploads are not supported by the Backblaze provider.');
   }
 }
