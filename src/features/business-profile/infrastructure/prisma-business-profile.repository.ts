@@ -238,7 +238,13 @@ export class PrismaBusinessProfileRepository extends IBusinessProfileRepository 
 
   async findById(id: string): Promise<BusinessProfileView | null> {
     const cached = await this.redisService.get<BusinessProfileView>(this.getCacheKey(id));
-    if (cached) return cached;
+    if (cached) {
+      return {
+        ...cached,
+        createdAt: cached.createdAt ? new Date(cached.createdAt) : cached.createdAt,
+        updatedAt: cached.updatedAt ? new Date(cached.updatedAt) : cached.updatedAt,
+      };
+    }
 
     const raw = await this.prisma.businessProfile.findUnique({
       where: { id },
@@ -259,7 +265,13 @@ export class PrismaBusinessProfileRepository extends IBusinessProfileRepository 
 
   async findBySlug(slug: string): Promise<BusinessProfileView | null> {
     const cached = await this.redisService.get<BusinessProfileView>(this.getSlugCacheKey(slug));
-    if (cached) return cached;
+    if (cached) {
+      return {
+        ...cached,
+        createdAt: cached.createdAt ? new Date(cached.createdAt) : cached.createdAt,
+        updatedAt: cached.updatedAt ? new Date(cached.updatedAt) : cached.updatedAt,
+      };
+    }
 
     const raw = await this.prisma.businessProfile.findUnique({
       where: { slug },
