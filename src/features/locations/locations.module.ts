@@ -4,8 +4,10 @@ import { LocationsService } from './application/locations.service.js';
 import { PrismaLocationRepository } from './infrastructure/prisma-location.repository.js';
 import { Geocoder } from './infrastructure/geocoder.interface.js';
 import { NominatimGeocoder } from './infrastructure/nominatim.geocoder.js';
+import { IdentityModule } from '../../shared/identity/identity.module.js';
 
 @Module({
+  imports: [IdentityModule],
   controllers: [LocationsController],
   providers: [
     LocationsService,

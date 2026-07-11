@@ -10,33 +10,54 @@ import {
 } from "@nestjs/common";
 import { ApiTags, ApiOperation, ApiQuery, ApiBody } from "@nestjs/swagger";
 import { LocationsService } from "../application/locations.service.js";
-import { Public } from "@odysseon/whoami-adapter-nestjs";
+import { Public, OptionalAuth, CurrentIdentity, type RequestIdentity } from "@odysseon/whoami-adapter-nestjs";
+
+import { IsString, IsNumber, IsNotEmpty, IsOptional } from 'class-validator';
 
 class EnsureLocationDto {
+  @IsString()
+  @IsNotEmpty()
   externalId!: string;
+
+  @IsString()
+  @IsNotEmpty()
   provider!: string;
+
+  @IsString()
+  @IsNotEmpty()
   name!: string;
+
+  @IsString()
+  @IsOptional()
   formattedAddress!: string;
+
+  @IsNumber()
   lat!: number;
+
+  @IsNumber()
   lng!: number;
 }
 
 @ApiTags("Locations")
 @Controller("v1/locations")
-@Public()
 export class LocationsController {
   constructor(private readonly locationsService: LocationsService) {}
 
+  @OptionalAuth()
   @Get("search")
   @ApiOperation({ summary: "Search for locations" })
   @ApiQuery({ name: "q", required: true, description: "Search query" })
-  async search(@Query("q") q: string) {
+  async search(
+    @Query("q") q: string,
+    @CurrentIdentity({ required: false }) identity?: RequestIdentity
+  ) {
     if (!q || !q.trim()) {
       return [];
     }
-    return this.locationsService.search(q);
+    return this.locationsService.search(q, identity);
   }
 
+  @Public()
   @Get("reverse")
   @ApiOperation({ summary: "Reverse geocode coordinates" })
   @ApiQuery({ name: "lat", required: true, description: "Latitude" })
@@ -56,6 +77,7 @@ export class LocationsController {
     return location;
   }
 
+  @Public()
   @Post("ensure")
   @ApiOperation({ summary: "Ensure a location is persisted from geocoder results" })
   @ApiBody({ type: EnsureLocationDto })
@@ -72,6 +94,7 @@ export class LocationsController {
     return this.locationsService.ensure(dto);
   }
 
+  @Public()
   @Get(":id")
   @ApiOperation({ summary: "Get a location by ID" })
   async getById(@Param("id") id: string) {
