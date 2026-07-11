@@ -352,6 +352,9 @@ importers:
       '@types/streamifier':
         specifier: ^0.1.2
         version: 0.1.2
+      '@types/uuid':
+        specifier: ^11.0.0
+        version: 11.0.0
       eslint:
         specifier: ^10.6.0
         version: 10.6.0(jiti@2.7.0)
@@ -1422,6 +1425,10 @@ packages:
 
   '@types/streamifier@0.1.2':
     resolution: {integrity: sha512-W53GwxY5Tunz3JUoP1YWDidrAadenSZKOBKMRl6RO3yThOFd03w7yx3HypI8ABGuUCGDHCHUml/5e45FWRt1TQ==}
+
+  '@types/uuid@11.0.0':
+    resolution: {integrity: sha512-HVyk8nj2m+jcFRNazzqyVKiZezyhDKrGUA3jlEcg/nZ6Ms+qHwocba1Y/AaVaznJTAM9xpdFSh+ptbNrhOGvZA==}
+    deprecated: This is a stub types definition. uuid provides its own type definitions, so you do not need this installed.
 
   '@types/validator@13.15.10':
     resolution: {integrity: sha512-T8L6i7wCuyoK8A/ZeLYt1+q0ty3Zb9+qbSSvrIVitzT3YjZqkTZ40IbRsPanlB4h1QB3JVL1SYCdR6ngtFYcuA==}
@@ -4601,6 +4608,10 @@ snapshots:
   '@types/streamifier@0.1.2':
     dependencies:
       '@types/node': 26.1.0
+
+  '@types/uuid@11.0.0':
+    dependencies:
+      uuid: 14.0.1
 
   '@types/validator@13.15.10': {}
 
