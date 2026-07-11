@@ -8,10 +8,31 @@ import { MediaRole } from '../../domain/types/media-role.enum.js';
 // Request
 // ---------------------------------------------------------------------------
 
-export class UploadMediaDto {
+export class UploadIntentRequestDto {
   @ApiProperty({ enum: MediaRole, description: 'Semantic role of the media item.' })
   @IsEnum(MediaRole)
   role!: MediaRole;
+}
+
+export class ConsumeIntentRequestDto {
+  @IsString()
+  intentId!: string;
+
+  @IsString()
+  publicId!: string;
+
+  @IsString()
+  version!: string;
+}
+
+export class UploadIntentResponseDto {
+  signature!: string;
+  timestamp!: number;
+  apiKey!: string;
+  cloudName!: string;
+  intentId!: string;
+  folder!: string;
+  publicId!: string;
 }
 
 export class ReorderMediaDto {

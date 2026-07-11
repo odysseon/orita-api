@@ -6,135 +6,130 @@ import {
   Patch,
   Param,
   Body,
-  UploadedFile,
-  UseInterceptors,
   BadRequestException,
   NotFoundException,
   ForbiddenException,
   HttpCode,
 } from '@nestjs/common';
-import { FileInterceptor } from '@nestjs/platform-express';
-import { Readable } from 'stream';
+
 import { CurrentIdentity, Public } from '@odysseon/whoami-adapter-nestjs';
 import type { RequestIdentity } from '@odysseon/whoami-adapter-nestjs';
 import { PrismaService } from '../../../../prisma/prisma.service.js';
-import { AddMediaUseCase } from '../../application/use-cases/add-media.use-case.js';
+
 import { DeleteMediaUseCase } from '../../application/use-cases/delete-media.use-case.js';
 import { ReorderMediaUseCase } from '../../application/use-cases/reorder-media.use-case.js';
 import { GetResourceMediaUseCase } from '../../application/use-cases/get-resource-media.use-case.js';
 import { MediaOwnerKey } from '../../domain/ports/media.repository.port.js';
 import { MediaRole } from '../../domain/types/media-role.enum.js';
-import { MediaType } from '../../domain/types/media-type.enum.js';
+
 import { ModeratorOrAdminGuard } from '../../../../shared/decorators/moderator-or-admin-guard.decorator.js';
 import {
   MediaResponseDto,
   ReorderMediaDto,
-  UploadMediaDto,
+  UploadIntentRequestDto,
+  ConsumeIntentRequestDto,
+  UploadIntentResponseDto,
   BusinessProfileMediaDto,
   ListingMediaDto,
   ReviewMediaDto,
   BusinessTourMediaDto,
 } from '../dto/media.dto.js';
-import { ApiTags, ApiConsumes, ApiBody } from '@nestjs/swagger';
+import { GenerateUploadIntentUseCase } from '../../application/use-cases/generate-upload-intent.use-case.js';
+import { ConsumeUploadIntentUseCase } from '../../application/use-cases/consume-upload-intent.use-case.js';
+import { ApiTags } from '@nestjs/swagger';
 
 @ApiTags('Media')
 @Controller()
 export class MediaController {
   constructor(
     private readonly prisma: PrismaService,
-    private readonly addMedia: AddMediaUseCase,
     private readonly deleteMedia: DeleteMediaUseCase,
     private readonly reorderMedia: ReorderMediaUseCase,
     private readonly getResourceMedia: GetResourceMediaUseCase,
+    private readonly generateUploadIntent: GenerateUploadIntentUseCase,
+    private readonly consumeUploadIntent: ConsumeUploadIntentUseCase,
   ) {}
 
   // ---------------------------------------------------------------------------
-  // Upload
+  // Upload Intents (Direct Upload flow)
   // ---------------------------------------------------------------------------
 
-  /**
-   * POST /listings/:resourceId/media
-   *
-   * Accepts multipart/form-data with:
-   *   - file:  the image or video file
-   *   - role:  "COVER" | "GALLERY"
-   */
-  @Post('listings/:resourceId/media')
-  @UseInterceptors(FileInterceptor('file'))
-  @ApiConsumes('multipart/form-data')
-  @ApiBody({ type: UploadMediaDto })
-  async addListingMedia(
+  @Post('listings/:resourceId/media/upload-intent')
+  async generateListingIntent(
     @CurrentIdentity() identity: RequestIdentity,
     @Param('resourceId') resourceId: string,
-    @UploadedFile() file: Express.Multer.File | undefined,
-    @Body() dto: UploadMediaDto,
-  ): Promise<MediaResponseDto> {
-    return this.#handleAdd(identity, 'listingId', resourceId, file, dto.role);
+    @Body() dto: UploadIntentRequestDto,
+  ): Promise<UploadIntentResponseDto> {
+    return this.#handleGenerateIntent(identity, 'listingId', resourceId, dto.role);
   }
 
-  /**
-   * POST /business-profiles/:resourceId/media
-   *
-   * Accepts multipart/form-data with:
-   *   - file:  the image or video file
-   *   - role:  "LOGO" | "BANNER" | "GALLERY"
-   */
-  @Post('business-profiles/:resourceId/media')
-  @UseInterceptors(FileInterceptor('file'))
-  @ApiConsumes('multipart/form-data')
-  @ApiBody({ type: UploadMediaDto })
-  async addBusinessProfileMedia(
+  @Post('business-profiles/:resourceId/media/upload-intent')
+  async generateBusinessProfileIntent(
     @CurrentIdentity() identity: RequestIdentity,
     @Param('resourceId') resourceId: string,
-    @UploadedFile() file: Express.Multer.File | undefined,
-    @Body() dto: UploadMediaDto,
-  ): Promise<MediaResponseDto> {
-    return this.#handleAdd(identity, 'businessProfileId', resourceId, file, dto.role);
+    @Body() dto: UploadIntentRequestDto,
+  ): Promise<UploadIntentResponseDto> {
+    return this.#handleGenerateIntent(identity, 'businessProfileId', resourceId, dto.role);
   }
 
-  /**
-   * POST /reviews/:resourceId/media
-   *
-   * Accepts multipart/form-data with:
-   *   - file: the image file
-   *   - role: "GALLERY" (only valid role for reviews)
-   *
-   * Only the reviewer who created the review may upload media.
-   */
-  @Post('reviews/:resourceId/media')
-  @UseInterceptors(FileInterceptor('file'))
-  @ApiConsumes('multipart/form-data')
-  @ApiBody({ type: UploadMediaDto })
-  async addReviewMedia(
+  @Post('reviews/:resourceId/media/upload-intent')
+  async generateReviewIntent(
     @CurrentIdentity() identity: RequestIdentity,
     @Param('resourceId') resourceId: string,
-    @UploadedFile() file: Express.Multer.File | undefined,
-    @Body() dto: UploadMediaDto,
-  ): Promise<MediaResponseDto> {
-    return this.#handleAdd(identity, 'reviewId', resourceId, file, dto.role);
+    @Body() dto: UploadIntentRequestDto,
+  ): Promise<UploadIntentResponseDto> {
+    return this.#handleGenerateIntent(identity, 'reviewId', resourceId, dto.role);
   }
 
-  /**
-   * POST /business-tours/:resourceId/media
-   *
-   * Accepts multipart/form-data with:
-   *   - file: the image or video file
-   *   - role: "GALLERY" (only valid role for store tours)
-   *
-   * Only the creator who created the store tour may upload media.
-   */
-  @Post('business-tours/:resourceId/media')
   @ModeratorOrAdminGuard()
-  @UseInterceptors(FileInterceptor('file'))
-  @ApiConsumes('multipart/form-data')
-  @ApiBody({ type: UploadMediaDto })
-  async addBusinessTourMedia(
+  @Post('business-tours/:resourceId/media/upload-intent')
+  async generateBusinessTourIntent(
     @CurrentIdentity() identity: RequestIdentity,
     @Param('resourceId') resourceId: string,
-    @UploadedFile() file: Express.Multer.File | undefined,
-    @Body() dto: UploadMediaDto,
+    @Body() dto: UploadIntentRequestDto,
+  ): Promise<UploadIntentResponseDto> {
+    return this.#handleGenerateIntent(identity, 'businessTourId', resourceId, dto.role);
+  }
+
+  // ---------------------------------------------------------------------------
+  // Persist Direct Uploads
+  // ---------------------------------------------------------------------------
+
+  @Post('listings/:resourceId/media')
+  async consumeListingIntent(
+    @CurrentIdentity() identity: RequestIdentity,
+    @Param('resourceId') resourceId: string,
+    @Body() dto: ConsumeIntentRequestDto,
   ): Promise<MediaResponseDto> {
-    return this.#handleAdd(identity, 'businessTourId', resourceId, file, dto.role);
+    return this.#handleConsumeIntent(identity, 'listingId', resourceId, dto);
+  }
+
+  @Post('business-profiles/:resourceId/media')
+  async consumeBusinessProfileIntent(
+    @CurrentIdentity() identity: RequestIdentity,
+    @Param('resourceId') resourceId: string,
+    @Body() dto: ConsumeIntentRequestDto,
+  ): Promise<MediaResponseDto> {
+    return this.#handleConsumeIntent(identity, 'businessProfileId', resourceId, dto);
+  }
+
+  @Post('reviews/:resourceId/media')
+  async consumeReviewIntent(
+    @CurrentIdentity() identity: RequestIdentity,
+    @Param('resourceId') resourceId: string,
+    @Body() dto: ConsumeIntentRequestDto,
+  ): Promise<MediaResponseDto> {
+    return this.#handleConsumeIntent(identity, 'reviewId', resourceId, dto);
+  }
+
+  @ModeratorOrAdminGuard()
+  @Post('business-tours/:resourceId/media')
+  async consumeBusinessTourIntent(
+    @CurrentIdentity() identity: RequestIdentity,
+    @Param('resourceId') resourceId: string,
+    @Body() dto: ConsumeIntentRequestDto,
+  ): Promise<MediaResponseDto> {
+    return this.#handleConsumeIntent(identity, 'businessTourId', resourceId, dto);
   }
 
   // ---------------------------------------------------------------------------
@@ -275,39 +270,43 @@ export class MediaController {
   // Private helpers
   // ---------------------------------------------------------------------------
 
-  async #handleAdd(
+  async #handleGenerateIntent(
     identity: RequestIdentity,
     ownerKey: MediaOwnerKey,
     resourceId: string,
-    file: Express.Multer.File | undefined,
     role: MediaRole,
-  ): Promise<MediaResponseDto> {
-    if (!file) {
-      throw new BadRequestException('No file uploaded.');
-    }
-
+  ): Promise<UploadIntentResponseDto> {
     await this.#assertResourceOwnership(ownerKey, resourceId, identity.accountId);
-
-    const mediaType = this.#detectMediaType(file.mimetype);
     const userId = await this.#resolveUserId(identity.accountId);
 
-    const media = await this.addMedia.execute({
+    return this.generateUploadIntent.execute({
+      ownerKey,
+      ownerId: resourceId,
+      role,
+      createdById: userId,
+    });
+  }
+
+  async #handleConsumeIntent(
+    identity: RequestIdentity,
+    ownerKey: MediaOwnerKey,
+    resourceId: string,
+    dto: ConsumeIntentRequestDto,
+  ): Promise<MediaResponseDto> {
+    // Assert resource ownership again at persistence time for safety
+    await this.#assertResourceOwnership(ownerKey, resourceId, identity.accountId);
+    const userId = await this.#resolveUserId(identity.accountId);
+
+    const media = await this.consumeUploadIntent.execute({
+      intentId: dto.intentId,
+      publicId: dto.publicId,
+      version: dto.version,
       ownerKey,
       ownerId: resourceId,
       requesterId: userId,
-      fileName: file.originalname,
-      fileStream: Readable.from(file.buffer),
-      mediaType,
-      role,
     });
 
     return MediaResponseDto.from(media);
-  }
-
-  #detectMediaType(mimetype: string): MediaType {
-    if (mimetype.startsWith('image/')) return MediaType.IMAGE;
-    if (mimetype.startsWith('video/')) return MediaType.VIDEO;
-    throw new BadRequestException(`Unsupported media type: ${mimetype}`);
   }
 
   async #assertResourceOwnership(
