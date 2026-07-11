@@ -36,17 +36,28 @@ export class CloudinaryStorageProvider implements StorageProvider {
           }
 
           this.logger.log(`Uploaded image to Cloudinary: ${result.public_id}`);
+          const cloudinaryResult = result as unknown as {
+            secure_url: string;
+            public_id: string;
+            resource_type: string;
+            format?: string;
+            bytes?: number;
+            width?: number;
+            height?: number;
+            duration?: number;
+            version?: string | number;
+          };
           resolve({
-            url: result.secure_url,
-            fileId: result.public_id,
+            url: cloudinaryResult.secure_url,
+            fileId: cloudinaryResult.public_id,
             provider: ProviderEnum.CLOUDINARY,
-            mimeType: `${result.resource_type}/${result.format}`,
-            bytes: result.bytes,
-            width: result.width,
-            height: result.height,
-            duration: result['duration'],
-            version: String(result.version),
-            format: result.format,
+            mimeType: `${cloudinaryResult.resource_type}/${cloudinaryResult.format || 'unknown'}`,
+            bytes: cloudinaryResult.bytes,
+            width: cloudinaryResult.width,
+            height: cloudinaryResult.height,
+            duration: cloudinaryResult.duration,
+            version: String(cloudinaryResult.version),
+            format: cloudinaryResult.format,
           });
         },
       );
@@ -91,18 +102,30 @@ export class CloudinaryStorageProvider implements StorageProvider {
 
   async getMetadata(fileId: string): Promise<UploadResult | null> {
     try {
-      const result = await this.cloudinary.api.resource(fileId);
+      const result = (await this.cloudinary.api.resource(fileId)) as unknown;
+      const cloudinaryResult = result as {
+        secure_url: string;
+        public_id: string;
+        resource_type: string;
+        format?: string;
+        bytes?: number;
+        width?: number;
+        height?: number;
+        duration?: number;
+        version?: string | number;
+      };
+
       return {
-        url: result.secure_url,
-        fileId: result.public_id,
+        url: cloudinaryResult.secure_url,
+        fileId: cloudinaryResult.public_id,
         provider: ProviderEnum.CLOUDINARY,
-        mimeType: `${result.resource_type}/${result.format}`,
-        bytes: result.bytes,
-        width: result.width,
-        height: result.height,
-        duration: result.duration,
-        version: String(result.version),
-        format: result.format,
+        mimeType: `${cloudinaryResult.resource_type}/${cloudinaryResult.format || 'unknown'}`,
+        bytes: cloudinaryResult.bytes,
+        width: cloudinaryResult.width,
+        height: cloudinaryResult.height,
+        duration: cloudinaryResult.duration,
+        version: String(cloudinaryResult.version),
+        format: cloudinaryResult.format,
       };
     } catch (err: unknown) {
       const errorObj = err as Record<string, unknown>;
@@ -119,7 +142,12 @@ export class CloudinaryStorageProvider implements StorageProvider {
     }
   }
 
-  async generateUploadSignature(folder: string, publicId: string, timestamp: number): Promise<UploadSignatureResult> {
+  // eslint-disable-next-line @typescript-eslint/require-await
+  async generateUploadSignature(
+    folder: string,
+    publicId: string,
+    timestamp: number,
+  ): Promise<UploadSignatureResult> {
     const apiSecret = this.cloudinary.config().api_secret;
     const apiKey = this.cloudinary.config().api_key;
     const cloudName = this.cloudinary.config().cloud_name;
@@ -134,7 +162,7 @@ export class CloudinaryStorageProvider implements StorageProvider {
         public_id: publicId,
         timestamp,
       },
-      apiSecret
+      apiSecret,
     );
 
     return {

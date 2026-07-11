@@ -65,12 +65,12 @@ export class PrismaMediaRepository extends IMediaRepository {
       provider: input.provider,
       mimeType: input.mimeType,
     };
-    
+
     if (input.businessProfileId !== undefined) data.businessProfileId = input.businessProfileId;
     if (input.listingId !== undefined) data.listingId = input.listingId;
     if (input.businessTourId !== undefined) data.businessTourId = input.businessTourId;
     if (input.reviewId !== undefined) data.reviewId = input.reviewId;
-    
+
     if (input.bytes !== undefined) data.bytes = input.bytes;
     if (input.width !== undefined) data.width = input.width;
     if (input.height !== undefined) data.height = input.height;

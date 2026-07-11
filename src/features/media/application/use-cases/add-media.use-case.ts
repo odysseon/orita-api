@@ -15,12 +15,12 @@ export interface AddMediaInput {
   readonly ownerId: string;
   readonly role: MediaRole;
   readonly mediaType: MediaType;
-  
+
   readonly url: string;
   readonly fileId: string;
   readonly provider: StorageProvider;
   readonly mimeType: string;
-  
+
   readonly bytes?: number | undefined;
   readonly width?: number | undefined;
   readonly height?: number | undefined;
@@ -38,11 +38,16 @@ const MAX_GALLERY_ITEMS: Record<MediaOwnerKey, number> = {
   reviewId: 8,
 };
 
-export const STORAGE_DESTINATION: Record<MediaOwnerKey, (ownerId: string, role: MediaRole) => string> = {
+export const STORAGE_DESTINATION: Record<
+  MediaOwnerKey,
+  (ownerId: string, role: MediaRole) => string
+> = {
   businessProfileId: (id, role) =>
-    role === MediaRole.LOGO ? `business/${id}/logo`
-      : role === MediaRole.BANNER ? `business/${id}/banner`
-      : `business/${id}/gallery`,
+    role === MediaRole.LOGO
+      ? `business/${id}/logo`
+      : role === MediaRole.BANNER
+        ? `business/${id}/banner`
+        : `business/${id}/gallery`,
   listingId: (id) => `listing/${id}`,
   businessTourId: (id) => `tour/${id}`,
   reviewId: (id) => `review/${id}`,
@@ -50,9 +55,7 @@ export const STORAGE_DESTINATION: Record<MediaOwnerKey, (ownerId: string, role: 
 
 @Injectable()
 export class AddMediaUseCase {
-  constructor(
-    private readonly mediaRepo: IMediaRepository,
-  ) {}
+  constructor(private readonly mediaRepo: IMediaRepository) {}
 
   async execute(input: AddMediaInput): Promise<Media> {
     // 1. Validate role is legal for this resource owner

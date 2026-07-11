@@ -14,11 +14,11 @@ import {
 } from './adapters/backblaze/backblaze.provider.js';
 import { BackblazeStorageProvider } from './adapters/backblaze/backblaze.adapter.js';
 
-import { UploadParams, UploadResult, DeleteResult, UploadSignatureResult } from './ports/provider.port.js';
+import { UploadResult, DeleteResult, UploadSignatureResult } from './ports/provider.port.js';
 
 // No-op storage provider for development/testing when no provider is configured
 class NoopStorageProvider implements StorageProvider {
-  async upload(_params: UploadParams): Promise<UploadResult> {
+  async upload(): Promise<UploadResult> {
     return Promise.resolve({
       url: 'noop://placeholder',
       fileId: 'noop-placeholder',
@@ -28,15 +28,15 @@ class NoopStorageProvider implements StorageProvider {
     } as unknown as UploadResult); // We cast to unknown first to avoid deep mocking, but technically we should provide all fields or a valid partial, but this is a mock. Wait, I should just return the fields.
   }
 
-  async delete(_fileId: string): Promise<DeleteResult> {
+  async delete(): Promise<DeleteResult> {
     return Promise.resolve({ success: true });
   }
-  
-  async getMetadata(_fileId: string): Promise<UploadResult | null> {
+
+  async getMetadata(): Promise<UploadResult | null> {
     return Promise.resolve(null);
   }
 
-  async generateUploadSignature(_folder: string, _publicId: string, _timestamp: number): Promise<UploadSignatureResult> {
+  async generateUploadSignature(): Promise<UploadSignatureResult> {
     return Promise.resolve({
       signature: 'noop-sig',
       timestamp: 0,
@@ -62,20 +62,20 @@ class NoopStorageProvider implements StorageProvider {
       useFactory: (
         config: ConfigService,
         cloudinary: CloudinaryStorageProvider,
-        backblaze: BackblazeStorageProvider
+        backblaze: BackblazeStorageProvider,
       ) => {
         const provider = config.get<string>('STORAGE_PROVIDER')?.toLowerCase();
-        
+
         if (provider === 'cloudinary') {
           return cloudinary;
         }
-        
+
         if (provider === 'backblaze') {
           // Note: In production you might want to log a warning here if B2 credentials aren't set,
           // but we let BackblazeClientProvider fail on initialization if missing.
           return backblaze;
         }
-        
+
         // Fallback for missing or unsupported config
         return new NoopStorageProvider();
       },

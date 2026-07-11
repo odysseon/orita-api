@@ -1,4 +1,10 @@
-import { Inject, Injectable, InternalServerErrorException, Logger, NotImplementedException } from '@nestjs/common';
+import {
+  Inject,
+  Injectable,
+  InternalServerErrorException,
+  Logger,
+  NotImplementedException,
+} from '@nestjs/common';
 import { S3Client, DeleteObjectCommand } from '@aws-sdk/client-s3';
 import { Upload } from '@aws-sdk/lib-storage';
 import { isError } from '../../../shared/utils/error.util.js';
@@ -76,12 +82,15 @@ export class BackblazeStorageProvider implements StorageProvider {
     }
   }
 
-  async getMetadata(_fileId: string): Promise<UploadResult | null> {
+  // eslint-disable-next-line @typescript-eslint/require-await
+  async getMetadata(): Promise<UploadResult | null> {
     // Backblaze does not currently support rich metadata retrieval in this implementation
     return null;
   }
 
-  async generateUploadSignature(_folder: string, _publicId: string, _timestamp: number): Promise<UploadSignatureResult> {
-    throw new NotImplementedException('Direct signed uploads are not supported by the Backblaze provider.');
+  generateUploadSignature(): Promise<UploadSignatureResult> {
+    throw new NotImplementedException(
+      'Direct signed uploads are not supported by the Backblaze provider.',
+    );
   }
 }
