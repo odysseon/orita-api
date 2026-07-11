@@ -7,6 +7,11 @@ import { ReorderMediaUseCase } from './application/use-cases/reorder-media.use-c
 import { GetResourceMediaUseCase } from './application/use-cases/get-resource-media.use-case.js';
 import { MediaController } from './api/controllers/media.controller.js';
 
+import { PrismaUploadIntentRepository } from './infrastructure/prisma-upload-intent.repository.js';
+import { IUploadIntentRepository } from './domain/ports/upload-intent.repository.port.js';
+import { GenerateUploadIntentUseCase } from './application/use-cases/generate-upload-intent.use-case.js';
+import { ConsumeUploadIntentUseCase } from './application/use-cases/consume-upload-intent.use-case.js';
+
 @Module({
   controllers: [MediaController],
   providers: [
@@ -14,10 +19,24 @@ import { MediaController } from './api/controllers/media.controller.js';
       provide: IMediaRepository,
       useClass: PrismaMediaRepository,
     },
+    {
+      provide: IUploadIntentRepository,
+      useClass: PrismaUploadIntentRepository,
+    },
     AddMediaUseCase,
     DeleteMediaUseCase,
     ReorderMediaUseCase,
     GetResourceMediaUseCase,
+    GenerateUploadIntentUseCase,
+    ConsumeUploadIntentUseCase,
   ],
+  exports: [
+    AddMediaUseCase,
+    DeleteMediaUseCase,
+    ReorderMediaUseCase,
+    GetResourceMediaUseCase,
+    GenerateUploadIntentUseCase,
+    ConsumeUploadIntentUseCase,
+  ]
 })
 export class MediaModule {}
