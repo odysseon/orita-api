@@ -72,7 +72,7 @@ export class NominatimGeocoder implements Geocoder {
       (r.display_name?.split(',')[0] || '').trim();
 
     return {
-      externalId: r.place_id,
+      externalId: String(r.place_id),
       provider: 'osm',
       name: shortName,
       formattedAddress: r.display_name,
