@@ -197,8 +197,8 @@ model Location {
   name             String
   formattedAddress String?
   searchText       String?
-  provider         String?
-  externalId       String?
+  provider         String
+  externalId       String
   latitude         Float
   longitude        Float
   coordinates      Unsupported("geometry(Point, 4326)")

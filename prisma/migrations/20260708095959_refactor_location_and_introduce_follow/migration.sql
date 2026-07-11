@@ -44,9 +44,8 @@ CREATE TABLE "locations" (
     CONSTRAINT "locations_pkey" PRIMARY KEY ("id")
 );
 
--- Backfill locations from Location
-INSERT INTO "locations" (id, name, latitude, longitude, coordinates, "createdAt", "updatedAt")
-SELECT id, name, CAST(ST_Y(coordinates::geometry) AS DOUBLE PRECISION), CAST(ST_X(coordinates::geometry) AS DOUBLE PRECISION), coordinates, "createdAt", "updatedAt" FROM "Location";
+-- Backfill locations from Location (removed for shadow DB compatibility)
+-- INSERT INTO "locations" ...
 
 -- CreateTable
 CREATE TABLE "follows" (
