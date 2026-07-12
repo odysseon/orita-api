@@ -1,5 +1,5 @@
 export interface GeocoderCandidate {
-  externalId: string;
+  externalId?: string;
   provider: string;
   name: string;
   formattedAddress: string;

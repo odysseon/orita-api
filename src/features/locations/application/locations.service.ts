@@ -45,12 +45,16 @@ export class LocationsService {
       string,
       LocationRecord & { persisted: boolean; isFollowed: boolean }
     >();
-    const key = (provider: string, externalId: string) => `${provider}:${String(externalId)}`;
+    const key = (provider: string, externalId?: string | null) => 
+      externalId ? `${provider}:${String(externalId)}` : `custom:${Math.random()}`;
 
     // 1. Insert DB results
     for (const db of dbResults) {
-      if (!db.provider || !db.externalId) continue;
-      resultsMap.set(key(db.provider, db.externalId), {
+      if (!db.provider) continue;
+      
+      const dedupeKey = db.externalId ? key(db.provider, db.externalId) : db.id;
+      
+      resultsMap.set(dedupeKey, {
         ...db,
         persisted: true,
         isFollowed: followedIds.has(db.id),
@@ -76,7 +80,7 @@ export class LocationsService {
         resultsMap.set(canonicalKey, {
           id: '', // Not yet in DB
           provider: p.provider,
-          externalId: p.externalId,
+          externalId: p.externalId ?? null,
           name: p.name,
           formattedAddress: p.formattedAddress,
           latitude: p.lat,

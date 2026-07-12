@@ -68,15 +68,15 @@ export class PrismaLocationRepository {
 
     const newId = randomUUID();
 
-    // Create using raw SQL to set geometry column
-    await this.prisma.$executeRaw(Prisma.sql`
+    // Create using raw SQL to set geometry column and use RETURNING to fetch the exact row
+    const result = await this.prisma.$queryRaw<LocationRecord[]>(Prisma.sql`
       INSERT INTO locations (id, "externalId", provider, name, "formattedAddress", "searchText", latitude, longitude, coordinates, "createdAt", "updatedAt")
       VALUES (
         ${newId},
-        ${candidate.externalId},
+        ${candidate.externalId ?? null},
         ${candidate.provider},
         ${candidate.name},
-        ${candidate.formattedAddress},
+        ${candidate.formattedAddress ?? null},
         ${searchText},
         ${candidate.lat},
         ${candidate.lng},
@@ -92,22 +92,13 @@ export class PrismaLocationRepository {
         longitude = EXCLUDED.longitude,
         coordinates = EXCLUDED.coordinates,
         "updatedAt" = NOW()
+      RETURNING id, provider, "externalId", name, "formattedAddress", latitude, longitude
     `);
 
-    const created = await this.prisma.location.findFirst({
-      where: { provider: candidate.provider, externalId: candidate.externalId },
-      select: {
-        id: true,
-        provider: true,
-        externalId: true,
-        name: true,
-        formattedAddress: true,
-        latitude: true,
-        longitude: true,
-      },
-    });
-
-    return created!;
+    if (!result[0]) {
+      throw new Error('Failed to upsert location');
+    }
+    return result[0];
   }
 
   async findById(id: string): Promise<LocationRecord | null> {

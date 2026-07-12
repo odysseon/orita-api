@@ -21,8 +21,8 @@ import { IsString, IsNumber, IsNotEmpty, IsOptional } from 'class-validator';
 
 class EnsureLocationDto {
   @IsString()
-  @IsNotEmpty()
-  externalId!: string;
+  @IsOptional()
+  externalId?: string;
 
   @IsString()
   @IsNotEmpty()
@@ -89,7 +89,6 @@ export class LocationsController {
   async ensure(@Body() dto: EnsureLocationDto) {
     if (
       !dto.provider ||
-      !dto.externalId ||
       !dto.name ||
       dto.lat === undefined ||
       dto.lng === undefined
