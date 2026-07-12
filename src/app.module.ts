@@ -31,6 +31,7 @@ import { EventEmitterModule } from '@nestjs/event-emitter';
 import { DomainEventsModule } from './shared/events/domain-events.module.js';
 import { SearchModule } from './features/search/search.module.js';
 import { NotificationsModule } from './features/notifications/notifications.module.js';
+import { SeoModule } from './features/seo/seo.module.js';
 import { ScheduleModule } from '@nestjs/schedule';
 
 @Module({
@@ -93,6 +94,7 @@ import { ScheduleModule } from '@nestjs/schedule';
     RedisModule,
     SearchModule,
     NotificationsModule,
+    SeoModule,
   ],
   controllers: [HealthController],
   providers: [

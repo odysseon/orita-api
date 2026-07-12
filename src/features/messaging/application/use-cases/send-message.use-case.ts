@@ -4,6 +4,7 @@ import { IConversationRepository } from '../../domain/ports/conversation.reposit
 import { SendMessageInput, MessageView } from '../../domain/types/messaging.types.js';
 import { EventBusService } from '../../../../shared/events/event-bus.service.js';
 import { PrismaService } from '../../../../prisma/prisma.service.js';
+import { ResourcePreviewService } from '../services/resource-preview.service.js';
 
 @Injectable()
 export class SendMessageUseCase {
@@ -12,6 +13,7 @@ export class SendMessageUseCase {
     private readonly eventBus: EventBusService,
     private readonly prisma: PrismaService,
     private readonly mediaUrlService: MediaUrlService,
+    private readonly resourcePreviewService: ResourcePreviewService,
   ) {}
 
   async execute(input: SendMessageInput): Promise<MessageView> {
@@ -58,6 +60,12 @@ export class SendMessageUseCase {
     } else if (participant.user) {
       senderDisplayName = participant.user.username;
       senderAvatarUrl = participant.user.avatarUrl;
+    }
+
+    // Extract resource previews
+    const autoEmbeds = await this.resourcePreviewService.extractPreviews(input.content);
+    if (autoEmbeds.length > 0) {
+      input.embeds = [...(input.embeds || []), ...autoEmbeds];
     }
 
     const message = await this.repo.addMessage(input, senderDisplayName, senderAvatarUrl);

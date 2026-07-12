@@ -13,6 +13,7 @@ import { UpdateConversationStatusUseCase } from './application/use-cases/update-
 import { MarkMessagesReadUseCase } from './application/use-cases/mark-messages-read.use-case.js';
 import { ParticipantService } from './application/services/participant.service.js';
 import { AnchorService } from './application/services/anchor.service.js';
+import { ResourcePreviewService } from './application/services/resource-preview.service.js';
 import { WsAuthGuard } from './api/gateways/ws-auth.guard.js';
 import { MessagingGateway } from './api/gateways/messaging.gateway.js';
 import { ConversationsController } from './api/controllers/conversations.controller.js';
@@ -37,6 +38,7 @@ import { ConversationsController } from './api/controllers/conversations.control
     // Services
     ParticipantService,
     AnchorService,
+    ResourcePreviewService,
     // Use cases
     CreateConversationUseCase,
     SendMessageUseCase,

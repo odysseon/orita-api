@@ -1,6 +1,4 @@
 import { Module } from '@nestjs/common';
-import { RequestContactVerificationUseCase } from './application/use-cases/request-contact-verification.use-case.js';
-import { VerifyContactOtpUseCase } from './application/use-cases/verify-contact-otp.use-case.js';
 import { CreateBusinessProfileUseCase } from './application/use-cases/create-business-profile.use-case.js';
 import { DeleteBusinessProfileUseCase } from './application/use-cases/delete-business-profile.use-case.js';
 import { DiscoverBusinessesUseCase } from './application/use-cases/discover-businesses.use-case.js';
@@ -29,8 +27,6 @@ import { RedisModule } from '../../shared/redis/redis.module.js';
     { provide: ITagRepository, useClass: PrismaTagRepository },
 
     CreateBusinessProfileUseCase,
-    RequestContactVerificationUseCase,
-    VerifyContactOtpUseCase,
     UpdateBusinessProfileUseCase,
     DeleteBusinessProfileUseCase,
     GetPublicBusinessProfileUseCase,
