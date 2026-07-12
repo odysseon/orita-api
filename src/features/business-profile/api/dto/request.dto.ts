@@ -25,7 +25,7 @@ export class CreateBusinessProfileDto {
   @IsOptional()
   @IsString()
   @MaxLength(30)
-  phoneNumber?: string;
+  contactPhone?: string;
 
   @IsOptional()
   @IsString()
@@ -34,7 +34,7 @@ export class CreateBusinessProfileDto {
 
   @IsOptional()
   @IsEmail()
-  email?: string;
+  contactEmail?: string;
 
   @IsOptional()
   @IsEnum(BusinessType)
@@ -94,7 +94,7 @@ export class UpdateBusinessProfileDto {
   @IsOptional()
   @IsString()
   @MaxLength(30)
-  phoneNumber?: string;
+  contactPhone?: string;
 
   @IsOptional()
   @IsString()
@@ -103,7 +103,7 @@ export class UpdateBusinessProfileDto {
 
   @IsOptional()
   @IsEmail()
-  email?: string;
+  contactEmail?: string;
 
   @IsOptional()
   @IsString()
@@ -158,23 +158,4 @@ export class GetBusinessesQueryDto {
   radius?: string;
 }
 
-export enum ContactMethod {
-  EMAIL = 'EMAIL',
-  PHONE = 'PHONE',
-  WHATSAPP = 'WHATSAPP',
-}
 
-export class RequestContactVerificationDto {
-  @IsEnum(ContactMethod)
-  method!: ContactMethod;
-}
-
-export class VerifyContactOtpDto {
-  @IsEnum(ContactMethod)
-  method!: ContactMethod;
-
-  @IsString()
-  @MinLength(6)
-  @MaxLength(6)
-  otp!: string;
-}

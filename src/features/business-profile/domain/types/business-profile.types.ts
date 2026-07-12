@@ -1,4 +1,4 @@
-import { VerificationStatus } from './verification-status.enum.js';
+
 import { OperatingHours } from './operating-hours.types.js';
 import { Tag } from './tag.types.js';
 import { BusinessType } from '../../../../../generated/prisma/client.js';
@@ -7,9 +7,9 @@ export interface CreateBusinessProfileInput {
   readonly ownerId: string;
   readonly name: string;
   readonly businessType?: BusinessType;
-  readonly phoneNumber?: string;
+  readonly contactPhone?: string;
   readonly whatsapp?: string;
-  readonly email?: string;
+  readonly contactEmail?: string;
   readonly description?: string;
   readonly websiteUrl?: string;
   readonly location?: string;
@@ -25,18 +25,15 @@ export interface UpdateBusinessProfileInput {
   readonly businessType?: BusinessType;
   readonly description?: string;
   readonly websiteUrl?: string;
-  readonly phoneNumber?: string;
+  readonly contactPhone?: string;
   readonly whatsapp?: string;
-  readonly email?: string;
+  readonly contactEmail?: string;
   readonly location?: string;
   readonly latitude?: number;
   readonly longitude?: number;
   readonly isPublic?: boolean;
   readonly primaryCategoryId?: string;
   readonly secondaryCategoryIds?: string[];
-  readonly isEmailVerified?: boolean;
-  readonly isPhoneVerified?: boolean;
-  readonly verificationStatus?: VerificationStatus;
 }
 
 export interface BusinessProfileView {
@@ -45,14 +42,11 @@ export interface BusinessProfileView {
   readonly name: string;
   readonly slug: string;
   readonly isPublic: boolean;
-  readonly verificationStatus: VerificationStatus;
   readonly businessType: BusinessType;
-  readonly isEmailVerified: boolean;
-  readonly isPhoneVerified: boolean;
   readonly description: string | null;
-  readonly phoneNumber: string | null;
+  readonly contactPhone: string | null;
   readonly whatsapp: string | null;
-  readonly email: string | null;
+  readonly contactEmail: string | null;
   readonly websiteUrl: string | null;
   readonly locationId: string | null;
   readonly location: string | null;
@@ -73,7 +67,6 @@ export interface BusinessSummary {
   readonly id: string;
   readonly name: string;
   readonly slug: string;
-  readonly verificationStatus: VerificationStatus;
   readonly businessType: BusinessType;
   readonly description: string | null;
   readonly location: string | null;
@@ -86,7 +79,6 @@ export interface BusinessSummary {
 }
 
 export interface DiscoverBusinessesInput {
-  readonly verificationStatus?: VerificationStatus;
   readonly search?: string;
   /** Filter by an exact categoryId */
   readonly categoryId?: string;

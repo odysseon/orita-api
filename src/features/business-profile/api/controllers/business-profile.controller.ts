@@ -19,13 +19,9 @@ import { CreateBusinessProfileUseCase } from '../../application/use-cases/create
 import { SetOperatingHoursUseCase } from '../../application/use-cases/set-operating-hours.use-case.js';
 import { SetBusinessTagsUseCase } from '../../application/use-cases/set-business-tags.use-case.js';
 import { GetDashboardStatsUseCase } from '../../application/use-cases/get-dashboard-stats.use-case.js';
-import { RequestContactVerificationUseCase } from '../../application/use-cases/request-contact-verification.use-case.js';
-import { VerifyContactOtpUseCase } from '../../application/use-cases/verify-contact-otp.use-case.js';
 import {
   CreateBusinessProfileDto,
   UpdateBusinessProfileDto,
-  RequestContactVerificationDto,
-  VerifyContactOtpDto,
 } from '../dto/request.dto.js';
 import { BusinessProfileResponseDto, DashboardStatsResponseDto } from '../dto/response.dto.js';
 import { SetOperatingHoursDto } from '../dto/operating-hours.dto.js';
@@ -39,8 +35,6 @@ export class BusinessProfileController {
   constructor(
     private readonly identityService: IdentityService,
     private readonly createBusinessProfile: CreateBusinessProfileUseCase,
-    private readonly requestContactVerification: RequestContactVerificationUseCase,
-    private readonly verifyContactOtp: VerifyContactOtpUseCase,
     private readonly updateBusinessProfile: UpdateBusinessProfileUseCase,
     private readonly deleteBusinessProfile: DeleteBusinessProfileUseCase,
     private readonly getMyBusinessProfile: GetMyBusinessProfileUseCase,
@@ -62,28 +56,7 @@ export class BusinessProfileController {
     return BusinessProfileResponseDto.from(profile);
   }
 
-  @Post('business/:id/contacts/request-verification')
-  @HttpCode(HttpStatus.OK)
-  async requestContactVerificationEndpoint(
-    @CurrentIdentity() identity: RequestIdentity,
-    @Param('id') id: string,
-    @Body() dto: RequestContactVerificationDto,
-  ): Promise<void> {
-    const user = await this.identityService.resolveUserOrThrow(identity.accountId);
-    await this.requestContactVerification.execute(id, user.id, dto.method);
-  }
 
-  @Post('business/:id/contacts/verify')
-  @HttpCode(HttpStatus.OK)
-  async verifyContactOtpEndpoint(
-    @CurrentIdentity() identity: RequestIdentity,
-    @Param('id') id: string,
-    @Body() dto: VerifyContactOtpDto,
-  ): Promise<BusinessProfileResponseDto> {
-    const user = await this.identityService.resolveUserOrThrow(identity.accountId);
-    const profile = await this.verifyContactOtp.execute(id, user.id, dto.method, dto.otp);
-    return BusinessProfileResponseDto.from(profile);
-  }
 
   @Patch('business/:id')
   async update(
