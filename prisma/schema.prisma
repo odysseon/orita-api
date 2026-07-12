@@ -120,8 +120,10 @@ model User {
   notificationPreferences NotificationPreference?
   inAppNotifications      InAppNotification[]
   uploadIntents           UploadIntent[]
+  businessVerifications   BusinessVerification[]
 
   @@index([accountId])
+  @@map("users")
 }
 
 // ============================================
@@ -135,10 +137,59 @@ enum VerificationStatus {
   REJECTED
 }
 
+enum BusinessVerificationDocumentType {
+  CAC_CERTIFICATE
+  CAC_STATUS_REPORT
+  GOVERNMENT_ID
+  SELFIE
+  PROOF_OF_ADDRESS
+  OTHER
+}
+
 enum BusinessType {
   ONLINE
   PHYSICAL
   HYBRID
+}
+
+model BusinessVerification {
+  id         String          @id @default(cuid())
+  businessId String          @unique
+  business   BusinessProfile @relation(fields: [businessId], references: [id], onDelete: Cascade)
+
+  status          VerificationStatus @default(PENDING)
+  submittedAt     DateTime           @default(now())
+  updatedAt       DateTime           @updatedAt
+  reviewedAt      DateTime?
+  reviewedById    String?
+  reviewer        User?              @relation(fields: [reviewedById], references: [id])
+  rejectionReason String?
+
+  documents BusinessVerificationDocument[]
+
+  @@index([status])
+  @@map("business_verifications")
+}
+
+model BusinessVerificationDocument {
+  id                     String               @id @default(cuid())
+  businessVerificationId String
+  businessVerification   BusinessVerification @relation(fields: [businessVerificationId], references: [id], onDelete: Cascade)
+
+  type            BusinessVerificationDocumentType
+  status          VerificationStatus               @default(PENDING)
+  rejectionReason String?
+
+  storageProvider String
+  storageKey      String // Path/key in secure private bucket
+  mimeType        String
+  fileSize        Int?
+  checksum        String?
+
+  createdAt DateTime @default(now())
+
+  @@index([businessVerificationId])
+  @@map("business_verification_documents")
 }
 
 model BusinessProfile {
@@ -150,24 +201,21 @@ model BusinessProfile {
   name String
   slug String @unique
 
-  // Trust signal — not a permission or role
-  verificationStatus VerificationStatus @default(UNVERIFIED)
+  // Trust signal — derived from BusinessVerification
+  verification BusinessVerification?
 
   isPublic     Boolean      @default(false)
   description  String?
   businessType BusinessType @default(ONLINE)
   websiteUrl   String?
 
-  isEmailVerified Boolean @default(false)
-  isPhoneVerified Boolean @default(false)
-
   // External contact — Pulse does not execute commerce
-  phoneNumber String?
-  whatsapp    String?
-  email       String?
+  contactPhone String?
+  whatsapp     String?
+  contactEmail String?
   // Physical location using PostGIS
-  locationId  String?
-  geoEntity   Location? @relation(fields: [locationId], references: [id])
+  locationId   String?
+  geoEntity    Location? @relation(fields: [locationId], references: [id])
 
   // Commercial identity — explicit many-to-many relations with Category
   categories    BusinessCategory[] @relation("BusinessCategories")
@@ -187,7 +235,6 @@ model BusinessProfile {
   discoveryItems      DiscoveryItem[]
 
   @@index([slug])
-  @@index([verificationStatus])
   @@index([isPublic])
   @@index([locationId])
   @@map("business_profiles")
@@ -199,7 +246,7 @@ model Location {
   formattedAddress String?
   searchText       String?
   provider         String
-  externalId       String
+  externalId       String?
   latitude         Float
   longitude        Float
   coordinates      Unsupported("geometry(Point, 4326)")
