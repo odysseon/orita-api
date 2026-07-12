@@ -69,12 +69,13 @@ export class PrismaFeedRepository {
           d."sharesCount",
           d."hidesCount",
           d."reportsCount",
-          bp."verificationStatus",
+          bv."status" as "verificationStatus",
           ST_Distance(loc.coordinates::geography, user_loc.pt) AS dist_meters,
           CASE WHEN fb."businessId" IS NOT NULL THEN 1 ELSE 0 END AS is_followed_business,
           CASE WHEN fl."locationId" IS NOT NULL THEN 1 ELSE 0 END AS is_followed_location
         FROM "discovery_items" d
         JOIN "business_profiles" bp ON d."businessProfileId" = bp.id
+        LEFT JOIN "business_verifications" bv ON bv."businessId" = bp.id
         JOIN "locations" loc ON bp."locationId" = loc.id
         CROSS JOIN user_loc
         LEFT JOIN "follows" fb ON fb."businessId" = bp.id AND fb."followerId" = ${params.userId ?? ''}
