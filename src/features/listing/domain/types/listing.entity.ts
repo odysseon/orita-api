@@ -82,6 +82,9 @@ export interface Listing {
   readonly createdAt: Date;
   readonly updatedAt: Date;
 
+  readonly coverUrl?: string;
+  readonly galleryUrls?: string[];
+
   readonly reviews?: {
     readonly id: string;
     readonly reviewerId: string;

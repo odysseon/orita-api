@@ -42,6 +42,7 @@ import { OrphanCleanupJob } from './application/jobs/orphan-cleanup.job.js';
     GenerateUploadIntentUseCase,
     ConsumeUploadIntentUseCase,
     MediaUrlService,
+    IMediaRepository,
   ],
 })
 export class MediaModule {}

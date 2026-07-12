@@ -28,9 +28,20 @@ type PrismaListingExtended = PrismaListing & {
     comment: string | null;
     createdAt: Date;
   }[];
+  media?: {
+    provider: StorageProvider;
+    fileId: string;
+    mimeType: string;
+    version: string | null;
+    format: string | null;
+    role: string;
+    order: number | null;
+  }[];
 };
 
-function toDomain(raw: PrismaListingExtended): Listing {
+function toDomain(raw: PrismaListingExtended, mediaUrlService?: MediaUrlService): Listing {
+  const coverMedia = raw.media?.find(m => m.role === 'COVER');
+  const galleryMedia = raw.media?.filter(m => m.role === 'GALLERY').sort((a, b) => (a.order || 0) - (b.order || 0));
   return {
     id: raw.id,
     businessProfileId: raw.businessProfileId,
@@ -56,6 +67,24 @@ function toDomain(raw: PrismaListingExtended): Listing {
         comment: r.comment,
         createdAt: r.createdAt,
       })),
+    }),
+    ...(mediaUrlService && coverMedia && {
+      coverUrl: mediaUrlService.getMediaUrl(
+        coverMedia.provider,
+        coverMedia.fileId,
+        coverMedia.mimeType,
+        coverMedia.version,
+        coverMedia.format
+      )
+    }),
+    ...(mediaUrlService && galleryMedia && galleryMedia.length > 0 && {
+      galleryUrls: galleryMedia.map(m => mediaUrlService.getMediaUrl(
+        m.provider,
+        m.fileId,
+        m.mimeType,
+        m.version,
+        m.format
+      ))
     }),
   };
 }
@@ -124,9 +153,9 @@ export class PrismaListingRepository extends IListingRepository {
 
     const raw = await this.prisma.listing.findUnique({
       where: { id },
-      include: { reviews: true },
+      include: { reviews: true, media: true },
     });
-    const domain = raw ? toDomain(raw) : null;
+    const domain = raw ? toDomain(raw, this.mediaUrlService) : null;
     if (domain) {
       this.updateCacheAsync(domain);
     }
@@ -139,9 +168,9 @@ export class PrismaListingRepository extends IListingRepository {
 
     const raw = await this.prisma.listing.findFirst({
       where: { slug },
-      include: { reviews: true },
+      include: { reviews: true, media: true },
     });
-    const domain = raw ? toDomain(raw) : null;
+    const domain = raw ? toDomain(raw, this.mediaUrlService) : null;
     if (domain) {
       this.updateCacheAsync(domain);
     }
@@ -158,10 +187,10 @@ export class PrismaListingRepository extends IListingRepository {
   async findByBusinessProfile(businessProfileId: string): Promise<Listing[]> {
     const rows = await this.prisma.listing.findMany({
       where: { businessProfileId },
-      include: { reviews: true },
+      include: { reviews: true, media: true },
       orderBy: { createdAt: 'desc' },
     });
-    return rows.map((r) => toDomain(r as PrismaListingExtended));
+    return rows.map((r) => toDomain(r as PrismaListingExtended, this.mediaUrlService));
   }
 
   async update(id: string, input: UpdateListingInput): Promise<Listing> {
@@ -182,8 +211,9 @@ export class PrismaListingRepository extends IListingRepository {
             input.attributes === null ? Prisma.DbNull : (input.attributes as Prisma.InputJsonValue),
         }),
       },
+      include: { media: true },
     });
-    const domain = toDomain(raw);
+    const domain = toDomain(raw, this.mediaUrlService);
     this.updateCacheAsync(domain);
     return domain;
   }
@@ -192,8 +222,9 @@ export class PrismaListingRepository extends IListingRepository {
     const raw = await this.prisma.listing.update({
       where: { id },
       data: { status: input.status },
+      include: { media: true },
     });
-    const domain = toDomain(raw);
+    const domain = toDomain(raw, this.mediaUrlService);
     this.updateCacheAsync(domain);
     return domain;
   }

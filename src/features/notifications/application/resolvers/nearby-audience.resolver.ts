@@ -18,7 +18,7 @@ export class NearbyAudienceResolver {
 
     const nearbyUsers = await this.prisma.$queryRaw<{ id: string }[]>`
       SELECT u.id
-      FROM "User" u
+      FROM "users" u
       JOIN "locations" target_loc ON target_loc.id = ${locationId}
       WHERE u."activeExplorationLat" IS NOT NULL 
         AND u."activeExplorationLng" IS NOT NULL

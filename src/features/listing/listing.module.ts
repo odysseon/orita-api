@@ -14,6 +14,7 @@ import { GetBusinessListingsUseCase } from './application/use-cases/get-business
 import { GetPrivateListingUseCase } from './application/use-cases/get-private-listing.use-case.js';
 import { DiscoverListingsUseCase } from './application/use-cases/discover-listings.use-case.js';
 import { ValidateListingAttributesService } from './application/services/validate-listing-attributes.service.js';
+import { ListingPublicationValidator } from './application/services/listing-publication-validator.service.js';
 import { CategoryModule } from '../category/category.module.js';
 import { PublicListingController } from './api/controllers/public-listing.controller.js';
 import { ListingController } from './api/controllers/listing.controller.js';
@@ -25,6 +26,7 @@ import { ListingController } from './api/controllers/listing.controller.js';
     { provide: IListingRepository, useClass: PrismaListingRepository },
     { provide: IBusinessProfileRepository, useClass: PrismaBusinessProfileRepository },
     ValidateListingAttributesService,
+    ListingPublicationValidator,
     CreateListingUseCase,
     UpdateListingUseCase,
     TransitionListingStatusUseCase,

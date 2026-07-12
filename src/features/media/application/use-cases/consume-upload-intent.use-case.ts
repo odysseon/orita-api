@@ -36,7 +36,8 @@ export class ConsumeUploadIntentUseCase {
     if (intent.ownerId !== input.ownerId) {
       throw new BadRequestException('Upload intent does not belong to this resource.');
     }
-    if (intent.publicId !== input.publicId) {
+    const expectedFullPublicId = `${intent.folder}/${intent.publicId}`;
+    if (expectedFullPublicId !== input.publicId) {
       throw new BadRequestException('Public ID does not match the authorized intent.');
     }
     if (intent.consumedAt) {
@@ -47,7 +48,7 @@ export class ConsumeUploadIntentUseCase {
     }
 
     // 3. Fetch authoritative metadata from Cloudinary
-    const metadata = await this.storage.getMetadata(intent.publicId);
+    const metadata = await this.storage.getMetadata(input.publicId);
     if (!metadata) {
       throw new BadRequestException(
         'Media asset not found in storage provider. Did the upload complete?',

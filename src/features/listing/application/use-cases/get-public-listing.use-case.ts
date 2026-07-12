@@ -14,8 +14,21 @@ export class GetPublicListingUseCase {
   async execute(slug: string, currentUserId?: string): Promise<Listing & { isSaved?: boolean }> {
     const listing = await this.repo.findBySlug(slug);
 
-    if (!listing || listing.status !== ListingStatus.PUBLISHED) {
+    if (!listing) {
       throw new NotFoundException('Listing not found.');
+    }
+
+    if (listing.status !== ListingStatus.PUBLISHED) {
+      if (!currentUserId) {
+        throw new NotFoundException('Listing not found.');
+      }
+      const bp = await this.prisma.businessProfile.findUnique({
+        where: { id: listing.businessProfileId },
+        select: { ownerId: true },
+      });
+      if (bp?.ownerId !== currentUserId) {
+        throw new NotFoundException('Listing not found.');
+      }
     }
 
     let isSaved = false;

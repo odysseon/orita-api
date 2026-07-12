@@ -8,6 +8,7 @@ import { IListingRepository } from '../../domain/ports/listing.repository.port.j
 import { IBusinessProfileRepository } from '../../../business-profile/domain/ports/business-profile.repository.port.js';
 import { ListingStatus } from '../../domain/types/listing-status.enum.js';
 import { Listing } from '../../domain/types/listing.entity.js';
+import { ListingPublicationValidator } from '../services/listing-publication-validator.service.js';
 
 /**
  * Valid lifecycle transitions.
@@ -29,6 +30,7 @@ export class TransitionListingStatusUseCase {
   constructor(
     private readonly listingRepo: IListingRepository,
     private readonly businessRepo: IBusinessProfileRepository,
+    private readonly publicationValidator: ListingPublicationValidator,
   ) {}
 
   async execute(id: string, requesterId: string, targetStatus: ListingStatus): Promise<Listing> {
@@ -46,6 +48,10 @@ export class TransitionListingStatusUseCase {
       throw new BadRequestException(
         `Cannot transition listing from ${listing.status} to ${targetStatus}.`,
       );
+    }
+
+    if (targetStatus === ListingStatus.PUBLISHED) {
+      await this.publicationValidator.validate(listing);
     }
 
     return this.listingRepo.transitionStatus(id, { status: targetStatus });

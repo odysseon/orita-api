@@ -50,7 +50,7 @@ export class GenerateUploadIntentUseCase {
 
     // 2. Compute semantic folder and publicId
     const folder = STORAGE_DESTINATION[input.ownerKey](input.ownerId, input.role);
-    const publicId = `${folder}/media_${uuidv4()}`;
+    const publicId = `media_${uuidv4()}`;
     const timestamp = Math.round(new Date().getTime() / 1000);
 
     // 3. Generate Cloudinary signature (assuming Cloudinary is active provider)

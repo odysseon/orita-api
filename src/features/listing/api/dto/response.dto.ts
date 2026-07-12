@@ -19,6 +19,8 @@ export class ListingResponseDto {
   @ApiPropertyOptional() attributes: Record<string, unknown> | null;
   @ApiProperty() createdAt: string;
   @ApiProperty() updatedAt: string;
+  @ApiPropertyOptional() coverUrl?: string;
+  @ApiPropertyOptional() galleryUrls?: string[];
   @ApiPropertyOptional() reviews?: any[];
   @ApiPropertyOptional() isSaved?: boolean;
 
@@ -45,6 +47,12 @@ export class ListingResponseDto {
     }
     if (listing.isSaved !== undefined) {
       this.isSaved = listing.isSaved;
+    }
+    if (listing.coverUrl !== undefined) {
+      this.coverUrl = listing.coverUrl;
+    }
+    if (listing.galleryUrls !== undefined) {
+      this.galleryUrls = listing.galleryUrls;
     }
   }
 
