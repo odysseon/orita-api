@@ -34,7 +34,7 @@ export class GoogleAuthController {
   @Public()
   @Get('client-id')
   getClientId(): { clientId: string } {
-    // We get this safely from the environment; since it's a public client ID, 
+    // We get this safely from the environment; since it's a public client ID,
     // exposing it to the frontend via API is perfectly safe.
     const clientId = this.configService.getOrThrow<string>('GOOGLE_CLIENT_ID');
     return { clientId };

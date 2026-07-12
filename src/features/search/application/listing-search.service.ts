@@ -117,7 +117,11 @@ export class ListingSearchService {
               name: true,
               slug: true,
               locationId: true,
-              verificationStatus: true,
+              verification: {
+                select: {
+                  status: true,
+                },
+              },
             },
           },
           category: {

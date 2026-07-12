@@ -39,7 +39,7 @@ export class AdminMetricsService {
       // Business Profiles
       this.prisma.businessProfile.count(),
       this.prisma.businessProfile.count({ where: { isPublic: true } }),
-      this.prisma.businessProfile.count({ where: { verificationStatus: 'VERIFIED' } }),
+      this.prisma.businessProfile.count({ where: { verification: { status: 'VERIFIED' } } }),
 
       // Listings
       this.prisma.listing.count(),
