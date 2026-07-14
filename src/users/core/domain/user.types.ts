@@ -12,6 +12,7 @@ export interface UserEntity {
   activeExplorationLat?: number | null;
   activeExplorationLng?: number | null;
   activeExplorationName?: string | null;
+  interestedCategories?: string[];
   createdAt: Date;
   updatedAt: Date;
 }

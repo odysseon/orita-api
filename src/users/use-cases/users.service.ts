@@ -45,4 +45,12 @@ export class UsersService {
   async updateExplorationContext(accountId: string, payload: UpdateExplorationContextDto) {
     return this.userRepository.updateExplorationContext(accountId, payload);
   }
+
+  async addInterest(accountId: string, categoryId: string) {
+    return this.userRepository.addInterest(accountId, categoryId);
+  }
+
+  async removeInterest(accountId: string, categoryId: string) {
+    return this.userRepository.removeInterest(accountId, categoryId);
+  }
 }
