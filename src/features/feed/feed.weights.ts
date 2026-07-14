@@ -23,8 +23,9 @@ export const FeedWeights = {
     REJECTED: 0.85,
   },
 
-  // Personalization: Additive bonus for followed entities
+  // Personalization: Additive bonus for followed entities and explicit interests
   followBonus: 2.0,
+  interestBonus: 1.5,
 
   // Exploration: Bonus for brand new items (within X days) to solve cold-start
   exploration: {
