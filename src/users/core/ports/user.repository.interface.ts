@@ -31,4 +31,14 @@ export interface IUserRepository {
     accountId: string,
     payload: UpdateExplorationContextDto,
   ): Promise<UserEntity>;
+
+  /**
+   * Add a specific category to user's explicit interests.
+   */
+  addInterest(accountId: string, categoryId: string): Promise<void>;
+
+  /**
+   * Remove a specific category from user's explicit interests.
+   */
+  removeInterest(accountId: string, categoryId: string): Promise<void>;
 }

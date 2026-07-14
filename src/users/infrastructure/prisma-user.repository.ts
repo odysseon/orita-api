@@ -67,6 +67,9 @@ export class PrismaUserRepository implements IUserRepository {
         businessProfile: {
           select: { id: true },
         },
+        interestedCategories: {
+          select: { categoryId: true },
+        },
       },
     });
 
@@ -78,6 +81,7 @@ export class PrismaUserRepository implements IUserRepository {
       role: user.role,
       email: account.email,
       businessId: businessProfile?.id || null,
+      interestedCategories: user.interestedCategories.map((c) => c.categoryId),
     };
     this.updateCacheAsync(domain);
     return domain;
@@ -169,6 +173,56 @@ export class PrismaUserRepository implements IUserRepository {
         throw new NotFoundException('User profile not found for this account.');
       }
       throw error;
+    }
+  }
+
+  async addInterest(accountId: string, categoryId: string): Promise<void> {
+    const user = await this.prisma.user.findUnique({
+      where: { accountId },
+      select: { id: true },
+    });
+    if (!user) throw new NotFoundException('User not found');
+
+    await this.prisma.userInterestedCategory.upsert({
+      where: {
+        userId_categoryId: {
+          userId: user.id,
+          categoryId,
+        },
+      },
+      update: {},
+      create: {
+        userId: user.id,
+        categoryId,
+      },
+    });
+
+    await this.redisService.del(this.getCacheKey(accountId));
+  }
+
+  async removeInterest(accountId: string, categoryId: string): Promise<void> {
+    const user = await this.prisma.user.findUnique({
+      where: { accountId },
+      select: { id: true },
+    });
+    if (!user) throw new NotFoundException('User not found');
+
+    try {
+      await this.prisma.userInterestedCategory.delete({
+        where: {
+          userId_categoryId: {
+            userId: user.id,
+            categoryId,
+          },
+        },
+      });
+      await this.redisService.del(this.getCacheKey(accountId));
+    } catch (e: any) {
+      if (e.code === 'P2025') {
+        // Not found, silently ignore
+        return;
+      }
+      throw e;
     }
   }
 }
