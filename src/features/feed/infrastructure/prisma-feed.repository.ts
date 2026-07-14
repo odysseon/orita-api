@@ -35,7 +35,6 @@ export class PrismaFeedRepository {
 
   async getFeed(params: FeedQueryParams): Promise<FeedItemView[]> {
     const limit = params.limit ?? 20;
-    const maxDistance = 15000; // 15km
 
     const hasCursor = params.cursorScore !== undefined && params.cursorId !== undefined;
     const cursorScore = hasCursor ? params.cursorScore : 0;
@@ -52,8 +51,17 @@ export class PrismaFeedRepository {
         createdAt: Date;
       }[]
     >`
-      WITH user_loc AS (
+            WITH RECURSIVE user_loc AS (
         SELECT ST_SetSRID(ST_MakePoint(${params.userLng}, ${params.userLat}), 4326)::geography AS pt
+      ),
+      user_interests_tree AS (
+        SELECT "categoryId" as id
+        FROM "user_interested_categories"
+        WHERE "userId" = ${params.userId ?? ''}
+        UNION
+        SELECT c.id
+        FROM "categories" c
+        INNER JOIN user_interests_tree uit ON c."parentId" = uit.id
       ),
       feed_candidates AS (
         SELECT 
@@ -72,7 +80,25 @@ export class PrismaFeedRepository {
           bv."status" as "verificationStatus",
           ST_Distance(loc.coordinates::geography, user_loc.pt) AS dist_meters,
           CASE WHEN fb."businessId" IS NOT NULL THEN 1 ELSE 0 END AS is_followed_business,
-          CASE WHEN fl."locationId" IS NOT NULL THEN 1 ELSE 0 END AS is_followed_location
+          CASE WHEN fl."locationId" IS NOT NULL THEN 1 ELSE 0 END AS is_followed_location,
+          CASE 
+            WHEN d."itemType" = 'LISTING' THEN 
+              (SELECT CASE WHEN COUNT(*) > 0 THEN 1 ELSE 0 END FROM "listings" l 
+               JOIN user_interests_tree u ON u.id = l."categoryId"
+               WHERE l.id = d."referenceId")
+            WHEN d."itemType" = 'BUSINESS' THEN
+              (SELECT CASE WHEN COUNT(*) > 0 THEN 1 ELSE 0 END FROM "business_categories" bc
+               JOIN user_interests_tree u ON u.id = bc."categoryId"
+               WHERE bc."businessProfileId" = bp.id)
+            ELSE 0
+          END AS is_interested,
+          CASE 
+            WHEN d."itemType" = 'LISTING' THEN
+              COALESCE((SELECT cdp."feedRadiusKm" FROM "listings" l JOIN "category_discovery_policies" cdp ON cdp."categoryId" = l."categoryId" WHERE l.id = d."referenceId"), 15)
+            WHEN d."itemType" = 'BUSINESS' THEN
+              COALESCE((SELECT MAX(cdp."feedRadiusKm") FROM "business_categories" bc JOIN "category_discovery_policies" cdp ON cdp."categoryId" = bc."categoryId" WHERE bc."businessProfileId" = bp.id), 15)
+            ELSE 15
+          END AS item_radius_km
         FROM "discovery_items" d
         JOIN "business_profiles" bp ON d."businessProfileId" = bp.id
         LEFT JOIN "business_verifications" bv ON bv."businessId" = bp.id
@@ -80,7 +106,7 @@ export class PrismaFeedRepository {
         CROSS JOIN user_loc
         LEFT JOIN "follows" fb ON fb."businessId" = bp.id AND fb."followerId" = ${params.userId ?? ''}
         LEFT JOIN "follows" fl ON fl."locationId" = loc.id AND fl."followerId" = ${params.userId ?? ''}
-        WHERE ST_DWithin(loc.coordinates::geography, user_loc.pt, ${maxDistance})
+        WHERE ST_DWithin(loc.coordinates::geography, user_loc.pt, 50000)
       ),
       scored_candidates AS (
         SELECT 
@@ -91,8 +117,8 @@ export class PrismaFeedRepository {
           "createdAt",
           dist_meters,
           
-          -- Proximity
-          (50.0 * EXP(-dist_meters / ${FeedWeights.distanceScale}::numeric)) AS score_proximity,
+          -- Proximity Score
+          (50.0 * EXP(-dist_meters / ((item_radius_km * 1000.0) / 5.0)::numeric)) AS score_proximity,
           
           -- Trust
           CASE 
@@ -102,7 +128,7 @@ export class PrismaFeedRepository {
             ELSE ${FeedWeights.verification.UNVERIFIED}::numeric
           END AS score_trust_multiplier,
           
-          -- Popularity (Logarithmic)
+          -- Popularity Score
           (
             ${FeedWeights.engagement.clicks}::numeric * LN(1 + "clicksCount") +
             ${FeedWeights.engagement.saves}::numeric * LN(1 + "savesCount") +
@@ -112,13 +138,16 @@ export class PrismaFeedRepository {
             ${FeedWeights.engagement.reports}::numeric * LN(1 + "reportsCount")
           ) AS score_popularity_raw,
           
-          -- Gravity Decay based on freshness (updatedAt)
+          -- Gravity Penalty
           POWER(GREATEST(0, EXTRACT(EPOCH FROM (NOW() - "updatedAt")) / 3600) + 2, ${FeedWeights.gravity}::numeric) AS gravity_penalty,
           
-          -- Personalization
-          ((is_followed_business + is_followed_location) * ${FeedWeights.followBonus}::numeric) AS score_personalization,
+          -- Personalization Score
+          (
+            ((is_followed_business + is_followed_location) * ${FeedWeights.followBonus}::numeric) +
+            (is_interested * ${FeedWeights.interestBonus}::numeric)
+          ) AS score_personalization,
           
-          -- Exploration
+          -- Exploration Score
           CASE WHEN (EXTRACT(EPOCH FROM (NOW() - "createdAt")) / 86400) < ${FeedWeights.exploration.newDaysThreshold}::numeric 
             THEN ${FeedWeights.exploration.newBonus}::numeric 
             ELSE 0 
