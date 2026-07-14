@@ -117,6 +117,7 @@ model User {
   participant             Participant?
   savedListings           SavedListing[]          @relation("SavedListings")
   follows                 Follow[]                @relation("UserFollows")
+  interestedCategories    UserInterestedCategory[]
   notificationPreferences NotificationPreference?
   inAppNotifications      InAppNotification[]
   uploadIntents           UploadIntent[]
@@ -462,11 +463,48 @@ model Category {
   businessProfiles BusinessCategory[]  @relation("BusinessCategories")
   listings         Listing[]           @relation("ListingCategory")
   attributes       CategoryAttribute[]
+  interestedUsers  UserInterestedCategory[]
+  discoveryPolicy  CategoryDiscoveryPolicy?
 
   @@index([parentId])
   @@index([slug])
   @@index([isActive])
   @@map("categories")
+}
+
+// ============================================
+// User Interested Categories
+// ============================================
+
+model UserInterestedCategory {
+  userId     String
+  categoryId String
+
+  createdAt  DateTime @default(now())
+
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  category Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  @@id([userId, categoryId])
+  @@index([userId])
+  @@index([categoryId])
+  @@map("user_interested_categories")
+}
+
+// ============================================
+// Category Discovery Policy
+// ============================================
+
+model CategoryDiscoveryPolicy {
+  categoryId String @id
+
+  feedRadiusKm         Int @default(15)
+  notificationRadiusKm Int @default(5)
+  searchRadiusKm       Int @default(10)
+
+  category Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  @@map("category_discovery_policies")
 }
 
 // ============================================
