@@ -115,14 +115,14 @@ run_test_with_json() {
 # Phase 0: Register accounts (idempotent)
 # ---------------------------------------------------------------------------
 echo "── Phase 0: Account Setup ──────────────────"
-run_test "Register accounts" "$ROOT/business-profile/00-setup.hurl"
+run_test "Register accounts" "$ROOT/auth/00-register.hurl"
 
 # ---------------------------------------------------------------------------
 # Phase 1: Login — capture all tokens once for the entire run
 # ---------------------------------------------------------------------------
 echo ""
 echo "── Phase 1: Login ──────────────────────────"
-run_test_with_json "Login" "$ROOT/business-profile/01-login.hurl" "owner_token" "reviewer_token" "intruder_token"
+run_test_with_json "Login" "$ROOT/auth/01-login.hurl" "owner_token" "reviewer_token" "intruder_token"
 
 [[ -z "$HURL_owner_token"    || "$HURL_owner_token"    == "null" ]] && { echo "❌ Failed to capture owner_token";    exit 1; }
 [[ -z "$HURL_reviewer_token" || "$HURL_reviewer_token" == "null" ]] && { echo "❌ Failed to capture reviewer_token"; exit 1; }
@@ -137,7 +137,17 @@ SUITE_FILTER="${TEST_SUITE:-all}"
 run_suite() { [[ "$SUITE_FILTER" == "all" || "$SUITE_FILTER" == "$1" ]]; }
 
 # ---------------------------------------------------------------------------
-# Phase 2: Business Profile Suite
+# Phase 2: Auth Suite
+# ---------------------------------------------------------------------------
+if run_suite "auth"; then
+    echo ""
+    echo "── Suite: Auth ───────────────────────────────"
+    run_test "AUTH 02 Identity" "$ROOT/auth/02-identity.hurl"
+    run_test "AUTH 03 Interests" "$ROOT/auth/03-interests.hurl"
+fi
+
+# ---------------------------------------------------------------------------
+# Phase 3: Business Profile Suite
 # ---------------------------------------------------------------------------
 if run_suite "business-profile"; then
     echo ""
