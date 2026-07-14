@@ -3,17 +3,26 @@ import { OnEvent } from '@nestjs/event-emitter';
 import { PrismaService } from '../../../prisma/prisma.service.js';
 import { DiscoveryItemType } from '../../../../generated/prisma/client.js';
 import type { EnrichedDomainEvent } from '../../../shared/events/event-bus.service.js';
+import { NotificationEngine } from './services/notification.engine.js';
 
 @Injectable()
 export class FeedConsumer {
   private readonly logger = new Logger(FeedConsumer.name);
 
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly notificationEngine: NotificationEngine,
+  ) {}
 
   @OnEvent('business.created')
   async handleBusinessCreated(payload: EnrichedDomainEvent<{ businessProfileId: string }>) {
     this.logger.log(`Handling business.created for ${payload.data.businessProfileId}`);
     await this.upsertDiscoveryItem(
+      DiscoveryItemType.BUSINESS,
+      payload.data.businessProfileId,
+      payload.data.businessProfileId,
+    );
+    await this.notificationEngine.evaluateAndDispatch(
       DiscoveryItemType.BUSINESS,
       payload.data.businessProfileId,
       payload.data.businessProfileId,
@@ -26,6 +35,11 @@ export class FeedConsumer {
   ) {
     this.logger.log(`Handling listing.published for ${payload.data.listingId}`);
     await this.upsertDiscoveryItem(
+      DiscoveryItemType.LISTING,
+      payload.data.businessProfileId,
+      payload.data.listingId,
+    );
+    await this.notificationEngine.evaluateAndDispatch(
       DiscoveryItemType.LISTING,
       payload.data.businessProfileId,
       payload.data.listingId,
