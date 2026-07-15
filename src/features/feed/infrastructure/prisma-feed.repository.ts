@@ -89,14 +89,14 @@ export class PrismaFeedRepository {
             WHEN d."itemType" = 'BUSINESS' THEN
               (SELECT CASE WHEN COUNT(*) > 0 THEN 1 ELSE 0 END FROM "business_categories" bc
                JOIN user_interests_tree u ON u.id = bc."categoryId"
-               WHERE bc."businessProfileId" = bp.id)
+               WHERE bc."businessId" = bp.id)
             ELSE 0
           END AS is_interested,
           CASE 
             WHEN d."itemType" = 'LISTING' THEN
               COALESCE((SELECT cdp."feedRadiusKm" FROM "listings" l JOIN "category_discovery_policies" cdp ON cdp."categoryId" = l."categoryId" WHERE l.id = d."referenceId"), 15)
             WHEN d."itemType" = 'BUSINESS' THEN
-              COALESCE((SELECT MAX(cdp."feedRadiusKm") FROM "business_categories" bc JOIN "category_discovery_policies" cdp ON cdp."categoryId" = bc."categoryId" WHERE bc."businessProfileId" = bp.id), 15)
+              COALESCE((SELECT MAX(cdp."feedRadiusKm") FROM "business_categories" bc JOIN "category_discovery_policies" cdp ON cdp."categoryId" = bc."categoryId" WHERE bc."businessId" = bp.id), 15)
             ELSE 15
           END AS item_radius_km
         FROM "discovery_items" d
