@@ -234,7 +234,15 @@ export class PrismaConversationRepository implements IConversationRepository {
 
       // Context-aware title for DIRECT conversations
       if (c.type === 'DIRECT') {
-        const other = c.participants.find((p) => !myParticipantIds.includes(p.participantId));
+        // Find a participant the user doesn't own
+        let other = c.participants.find((p) => !myParticipantIds.includes(p.participantId));
+        
+        // If the user owns BOTH sides (e.g. messaging their own business), 
+        // fall back to the participant that didn't initiate the conversation
+        if (!other && c.participants.length > 1) {
+          other = c.participants.find((p) => p.role !== 'OWNER') || c.participants[1];
+        }
+
         if (other?.participant) {
           if (other.participant.user) {
             title = other.participant.user.username;
