@@ -49,6 +49,7 @@ export class PrismaFeedRepository {
         distanceMeters: number;
         score: number;
         createdAt: Date;
+        is_followed_business: number;
       }[]
     >`
             WITH RECURSIVE user_loc AS (
@@ -115,6 +116,7 @@ export class PrismaFeedRepository {
           "referenceId",
           "businessProfileId",
           "createdAt",
+          is_followed_business,
           dist_meters,
           
           -- Proximity Score
@@ -162,6 +164,7 @@ export class PrismaFeedRepository {
           "referenceId",
           "businessProfileId",
           "createdAt",
+          is_followed_business,
           dist_meters AS "distanceMeters",
           
           -- Final Score Composition
@@ -261,7 +264,7 @@ export class PrismaFeedRepository {
         score: Number(r.score),
         distanceMeters: Number(r.distanceMeters),
         createdAt: r.createdAt,
-        business: business,
+        business: business ? { ...business, isFollowed: Number(r.is_followed_business) === 1 } : undefined,
         listing: listing,
         tour: tour,
       };
