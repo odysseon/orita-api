@@ -18,9 +18,10 @@ import { PrismaTagRepository } from './infrastructure/prisma-tag.repository.js';
 
 import { MailModule } from '../../mail/mail.module.js';
 import { RedisModule } from '../../shared/redis/redis.module.js';
+import { MediaModule } from '../media/media.module.js';
 
 @Module({
-  imports: [MailModule, RedisModule],
+  imports: [MailModule, RedisModule, MediaModule],
   controllers: [PublicBusinessProfileController, BusinessProfileController],
   providers: [
     { provide: IBusinessProfileRepository, useClass: PrismaBusinessProfileRepository },

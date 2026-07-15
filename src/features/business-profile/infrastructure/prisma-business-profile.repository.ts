@@ -14,6 +14,8 @@ import {
 } from '../domain/types/business-profile.types.js';
 import { SetOperatingHoursInput, DayOfWeek } from '../domain/types/operating-hours.types.js';
 
+import { MediaUrlService } from '../../media/application/services/media-url.service.js';
+
 // Post-migration type guard
 type PrismaBusinessProfileExtended = {
   id: string;
@@ -52,11 +54,16 @@ type PrismaBusinessProfileExtended = {
   } | null;
   media?: {
     role: 'LOGO' | 'BANNER' | 'COVER' | 'GALLERY';
-    url: string;
+    provider: any;
+    fileId: string;
+    mimeType: string;
+    version: string | null;
+    format: string | null;
   }[];
 };
 
-type HydratedProfile = PrismaBusinessProfileExtended & {
+type HydratedProfile = Omit<PrismaBusinessProfileExtended, 'media'> & {
+  media?: { role: string; url: string }[];
   latitude: number | null;
   longitude: number | null;
   locationName: string | null;
@@ -114,6 +121,7 @@ export class PrismaBusinessProfileRepository extends IBusinessProfileRepository 
   constructor(
     private readonly prisma: PrismaService,
     private readonly redisService: RedisService,
+    private readonly mediaUrlService: MediaUrlService,
   ) {
     super();
   }
@@ -163,12 +171,24 @@ export class PrismaBusinessProfileRepository extends IBusinessProfileRepository 
 
     return profiles.map((p) => {
       const coords = p.locationId ? locationMap.get(p.locationId) : undefined;
-      return {
+      
+      const result: any = {
         ...p,
         latitude: coords?.lat ?? null,
         longitude: coords?.lng ?? null,
         locationName: p.geoEntity?.name ?? null,
       };
+
+      if (p.media) {
+        result.media = p.media.map((m: any) => ({
+          role: m.role,
+          url: this.mediaUrlService.getMediaUrl(m.provider, m.fileId, m.mimeType, m.version, m.format)
+        }));
+      } else {
+        delete result.media; // Ensure undefined isn't passed along from ...p
+      }
+
+      return result as HydratedProfile;
     });
   }
 
@@ -249,7 +269,7 @@ export class PrismaBusinessProfileRepository extends IBusinessProfileRepository 
         tags: { include: { tag: true } },
         geoEntity: true,
         categories: { select: { categoryId: true, isPrimary: true } },
-        media: { select: { role: true, url: true } },
+        media: { select: { role: true, provider: true, fileId: true, mimeType: true, version: true, format: true } },
       },
     });
     if (!raw) return null;
@@ -276,7 +296,7 @@ export class PrismaBusinessProfileRepository extends IBusinessProfileRepository 
         tags: { include: { tag: true } },
         geoEntity: true,
         categories: { select: { categoryId: true, isPrimary: true } },
-        media: { select: { role: true, url: true } },
+        media: { select: { role: true, provider: true, fileId: true, mimeType: true, version: true, format: true } },
       },
     });
     if (!raw) return null;
