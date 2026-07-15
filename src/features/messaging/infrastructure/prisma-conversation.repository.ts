@@ -186,10 +186,11 @@ export class PrismaConversationRepository implements IConversationRepository {
         title: true,
         updatedAt: true,
         participants: {
-          include: { 
+          select: {
+            participantId: true,
             participant: {
-              include: { user: true, business: true }
-            } 
+              select: { user: true, business: true }
+            }
           }
         },
         messages: {
