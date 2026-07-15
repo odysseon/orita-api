@@ -188,6 +188,7 @@ export class PrismaConversationRepository implements IConversationRepository {
         participants: {
           select: {
             participantId: true,
+            role: true,
             participant: {
               select: { user: true, business: true }
             }
