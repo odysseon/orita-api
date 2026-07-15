@@ -10,7 +10,7 @@ import {
   MarkMessagesReadDto,
   OpenConversationDto,
 } from '../dto/request.dto.js';
-import { ConversationResponseDto, MessageResponseDto } from '../dto/response.dto.js';
+import { ConversationResponseDto, MessageResponseDto, ConversationPreviewResponseDto } from '../dto/response.dto.js';
 
 import { CreateConversationUseCase } from '../../application/use-cases/create-conversation.use-case.js';
 import { GetConversationsUseCase } from '../../application/use-cases/get-conversations.use-case.js';
@@ -83,13 +83,13 @@ export class ConversationsController {
   @ApiOperation({
     summary: 'List all conversations for the current user (including their businesses)',
   })
-  @ApiResponse({ status: 200, type: [ConversationResponseDto] })
-  async listAll(@CurrentIdentity() identity: RequestIdentity): Promise<ConversationResponseDto[]> {
+  @ApiResponse({ status: 200, type: [ConversationPreviewResponseDto] })
+  async listAll(@CurrentIdentity() identity: RequestIdentity): Promise<ConversationPreviewResponseDto[]> {
     const user = await this.prisma.user.findUniqueOrThrow({
       where: { accountId: identity.accountId },
     });
     const conversations = await this.getConversations.execute(user.id);
-    return conversations.map((c) => ConversationResponseDto.from(c));
+    return conversations.map((c) => ConversationPreviewResponseDto.from(c));
   }
 
   @Get(':id')

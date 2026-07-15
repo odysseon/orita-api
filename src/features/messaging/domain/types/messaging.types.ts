@@ -38,6 +38,28 @@ export interface ConversationView {
   updatedAt: Date;
 }
 
+export type MessagePreviewType = 'TEXT' | 'MEDIA' | 'EMBED' | 'SYSTEM';
+
+export interface MessagePreviewView {
+  id: string;
+  content: string | null;
+  participantId: string;
+  senderDisplayName: string;
+  createdAt: Date;
+  previewType: MessagePreviewType;
+  snippet: string;
+}
+
+export interface ConversationPreviewView {
+  id: string;
+  type: ConversationType;
+  title: string;
+  avatarUrl: string | null;
+  latestMessage?: MessagePreviewView;
+  unreadCount: number;
+  lastActivityAt: Date;
+}
+
 export interface EmbedSnapshot {
   title: string;
   subtitle?: string | null;
