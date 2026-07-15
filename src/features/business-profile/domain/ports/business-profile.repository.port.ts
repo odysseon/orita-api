@@ -16,6 +16,7 @@ export abstract class IBusinessProfileRepository {
   abstract update(id: string, input: UpdateBusinessProfileInput): Promise<BusinessProfileView>;
   abstract delete(id: string): Promise<void>;
   abstract discover(input: DiscoverBusinessesInput): Promise<PaginatedBusinessSummaries>;
+  abstract setVisibility(id: string, isPublic: boolean): Promise<void>;
 
   // Operating Hours & Tags
   abstract setOperatingHours(businessId: string, hours: SetOperatingHoursInput[]): Promise<void>;

@@ -19,6 +19,8 @@ import { TransitionListingStatusUseCase } from '../../application/use-cases/tran
 import { DeleteListingUseCase } from '../../application/use-cases/delete-listing.use-case.js';
 import { GetBusinessListingsUseCase } from '../../application/use-cases/get-business-listings.use-case.js';
 import { GetPrivateListingUseCase } from '../../application/use-cases/get-private-listing.use-case.js';
+import { CheckListingPublicationReadinessUseCase } from '../../application/use-cases/check-listing-publication-readiness.use-case.js';
+import { PublicationReadinessResult } from '../../../../shared/domain/publication.types.js';
 import {
   CreateListingDto,
   UpdateListingDto,
@@ -38,6 +40,7 @@ export class ListingController {
     private readonly deleteListing: DeleteListingUseCase,
     private readonly getBusinessListings: GetBusinessListingsUseCase,
     private readonly getPrivateListing: GetPrivateListingUseCase,
+    private readonly checkListingPublicationReadiness: CheckListingPublicationReadinessUseCase,
   ) {}
 
   @Post('businesses/:businessProfileId/listings')
@@ -129,6 +132,15 @@ export class ListingController {
     const userId = await this.resolveUserId(identity.accountId);
     const listing = await this.getPrivateListing.execute(id, userId);
     return ListingResponseDto.from(listing);
+  }
+
+  @Get('listings/:id/publication-readiness')
+  async checkReadiness(
+    @CurrentIdentity() identity: RequestIdentity,
+    @Param('id') id: string,
+  ): Promise<PublicationReadinessResult> {
+    const userId = await this.resolveUserId(identity.accountId);
+    return this.checkListingPublicationReadiness.execute(id, userId);
   }
 
   private async resolveUserId(accountId: string): Promise<string> {

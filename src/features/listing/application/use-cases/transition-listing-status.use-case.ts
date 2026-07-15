@@ -9,6 +9,7 @@ import { IBusinessProfileRepository } from '../../../business-profile/domain/por
 import { ListingStatus } from '../../domain/types/listing-status.enum.js';
 import { Listing } from '../../domain/types/listing.entity.js';
 import { ListingPublicationValidator } from '../services/listing-publication-validator.service.js';
+import { ListingPublicationPolicy } from '../../domain/policies/listing-publication.policy.js';
 
 /**
  * Valid lifecycle transitions.
@@ -51,6 +52,17 @@ export class TransitionListingStatusUseCase {
     }
 
     if (targetStatus === ListingStatus.PUBLISHED) {
+      const parentBusiness = await this.businessRepo.findById(listing.businessProfileId);
+      if (!parentBusiness) throw new NotFoundException('Parent business profile not found.');
+
+      const validationResult = ListingPublicationPolicy.validate(listing, parentBusiness);
+      if (!validationResult.isValid()) {
+        throw new BadRequestException({
+          message: 'Listing is not ready for publication.',
+          issues: validationResult.errors,
+        });
+      }
+
       await this.publicationValidator.validate(listing);
     }
 

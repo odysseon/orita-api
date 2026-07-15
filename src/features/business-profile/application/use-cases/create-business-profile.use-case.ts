@@ -26,7 +26,7 @@ export class CreateBusinessProfileUseCase {
     const profile = await this.repo.create(
       {
         ...input,
-        isPublic: input.isPublic ?? true,
+        isPublic: false,
       },
       slug,
     );

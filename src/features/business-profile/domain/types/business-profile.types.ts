@@ -30,7 +30,6 @@ export interface UpdateBusinessProfileInput {
   readonly location?: string;
   readonly latitude?: number;
   readonly longitude?: number;
-  readonly isPublic?: boolean;
   readonly primaryCategoryId?: string;
   readonly secondaryCategoryIds?: string[];
 }

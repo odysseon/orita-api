@@ -1,5 +1,4 @@
 import {
-  IsBoolean,
   IsEmail,
   IsEnum,
   IsOptional,
@@ -56,10 +55,6 @@ export class CreateBusinessProfileDto {
   @IsOptional()
   longitude?: number;
 
-  @IsOptional()
-  @IsBoolean()
-  isPublic?: boolean;
-
   @IsString()
   primaryCategoryId!: string;
 
@@ -115,10 +110,6 @@ export class UpdateBusinessProfileDto {
 
   @IsOptional()
   longitude?: number;
-
-  @IsOptional()
-  @IsBoolean()
-  isPublic?: boolean;
 
   @IsOptional()
   @IsString()

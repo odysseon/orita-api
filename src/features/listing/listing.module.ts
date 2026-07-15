@@ -12,6 +12,7 @@ import { DeleteListingUseCase } from './application/use-cases/delete-listing.use
 import { GetPublicListingUseCase } from './application/use-cases/get-public-listing.use-case.js';
 import { GetBusinessListingsUseCase } from './application/use-cases/get-business-listings.use-case.js';
 import { GetPrivateListingUseCase } from './application/use-cases/get-private-listing.use-case.js';
+import { CheckListingPublicationReadinessUseCase } from './application/use-cases/check-listing-publication-readiness.use-case.js';
 import { DiscoverListingsUseCase } from './application/use-cases/discover-listings.use-case.js';
 import { ValidateListingAttributesService } from './application/services/validate-listing-attributes.service.js';
 import { ListingPublicationValidator } from './application/services/listing-publication-validator.service.js';
@@ -35,6 +36,7 @@ import { ListingController } from './api/controllers/listing.controller.js';
     GetBusinessListingsUseCase,
     DiscoverListingsUseCase,
     GetPrivateListingUseCase,
+    CheckListingPublicationReadinessUseCase,
   ],
 })
 export class ListingModule {}
