@@ -1,0 +1,3777 @@
+{
+  "openapi": "3.0.0",
+  "paths": {
+    "/api/health": {
+      "get": {
+        "operationId": "HealthController_check",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Health"
+        ]
+      }
+    },
+    "/api/accounts/register": {
+      "post": {
+        "operationId": "AccountsController_register",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RegisterDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RegisterResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Email already registered"
+          }
+        },
+        "summary": "Register a new account",
+        "tags": [
+          "Accounts"
+        ]
+      }
+    },
+    "/api/auth/login": {
+      "post": {
+        "operationId": "PasswordAuthController_loginPassword",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LoginPasswordDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReceiptTokenResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Invalid credentials"
+          }
+        },
+        "summary": "Login with email + password",
+        "tags": [
+          "Password Authentication"
+        ]
+      }
+    },
+    "/api/auth/password/reset/request": {
+      "post": {
+        "operationId": "PasswordAuthController_requestPasswordReset",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RequestPasswordResetDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Password reset email sent if account exists"
+          }
+        },
+        "summary": "Request a password reset email",
+        "tags": [
+          "Password Authentication"
+        ]
+      }
+    },
+    "/api/auth/password/reset": {
+      "post": {
+        "operationId": "PasswordAuthController_resetPassword",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ResetPasswordDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Password reset successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReceiptTokenResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Invalid or expired token"
+          }
+        },
+        "summary": "Reset password using a token",
+        "tags": [
+          "Password Authentication"
+        ]
+      }
+    },
+    "/api/auth/password/change": {
+      "post": {
+        "operationId": "PasswordAuthController_changePassword",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ChangePasswordDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Password changed successfully"
+          },
+          "401": {
+            "description": "Invalid current password"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Change current password",
+        "tags": [
+          "Password Authentication"
+        ]
+      }
+    },
+    "/api/auth/password/add": {
+      "post": {
+        "operationId": "PasswordAuthController_addPassword",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AddPasswordDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Password added successfully"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Add/set a password for an account (OAuth users)",
+        "tags": [
+          "Password Authentication"
+        ]
+      }
+    },
+    "/api/auth/magic-link/request": {
+      "post": {
+        "operationId": "MagicLinkController_requestMagicLink",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RequestMagicLinkDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RequestMagicLinkResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Request a magic link for login",
+        "tags": [
+          "Magic Link Authentication"
+        ]
+      }
+    },
+    "/api/auth/magic-link/authenticate": {
+      "post": {
+        "operationId": "MagicLinkController_authenticate",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AuthenticateMagicLinkDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReceiptTokenResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Invalid or expired magic link"
+          }
+        },
+        "summary": "Authenticate with a magic link token",
+        "tags": [
+          "Magic Link Authentication"
+        ]
+      }
+    },
+    "/api/identity/me": {
+      "get": {
+        "operationId": "IdentityController_getMe",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProfileResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid receipt token"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Get authenticated account profile",
+        "tags": [
+          "identity"
+        ]
+      }
+    },
+    "/api/auth/google/client-id": {
+      "get": {
+        "operationId": "GoogleAuthController_getClientId",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Returns the Google Client ID"
+          }
+        },
+        "summary": "Get Google Client ID",
+        "tags": [
+          "Google Authentication"
+        ]
+      }
+    },
+    "/api/auth/google": {
+      "post": {
+        "operationId": "GoogleAuthController_authenticate",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AuthenticateGoogleDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReceiptTokenResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Invalid Google ID token"
+          }
+        },
+        "summary": "Authenticate using a Google ID token",
+        "tags": [
+          "Google Authentication"
+        ]
+      }
+    },
+    "/api/auth/google/link": {
+      "post": {
+        "operationId": "GoogleAuthController_link",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LinkGoogleDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Google account linked successfully"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Link Google account to current user",
+        "tags": [
+          "Google Authentication"
+        ]
+      }
+    },
+    "/api/auth/google/unlink": {
+      "delete": {
+        "operationId": "GoogleAuthController_unlink",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Google account unlinked successfully"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Unlink Google account from current user",
+        "tags": [
+          "Google Authentication"
+        ]
+      }
+    },
+    "/api/users/me": {
+      "get": {
+        "operationId": "UsersController_getProfile",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "summary": "Get the currently authenticated user profile",
+        "tags": [
+          "Users"
+        ]
+      },
+      "patch": {
+        "operationId": "UsersController_updateProfile",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateUserProfileDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "summary": "Update the currently authenticated user profile",
+        "tags": [
+          "Users"
+        ]
+      }
+    },
+    "/api/users/me/exploration-context": {
+      "patch": {
+        "operationId": "UsersController_updateExplorationContext",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateExplorationContextDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "summary": "Update the active exploration context for the user",
+        "tags": [
+          "Users"
+        ]
+      }
+    },
+    "/api/users/me/avatar": {
+      "post": {
+        "operationId": "UsersController_uploadAvatar",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "summary": "Upload or replace the current user avatar",
+        "tags": [
+          "Users"
+        ]
+      }
+    },
+    "/api/categories": {
+      "get": {
+        "operationId": "PublicCategoryController_getTree",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "PublicCategory"
+        ]
+      }
+    },
+    "/api/categories/{slug}": {
+      "get": {
+        "operationId": "PublicCategoryController_getBySlug",
+        "parameters": [
+          {
+            "name": "slug",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "PublicCategory"
+        ]
+      }
+    },
+    "/api/categories/{slug}/attributes": {
+      "get": {
+        "operationId": "PublicCategoryController_getAttributes",
+        "parameters": [
+          {
+            "name": "slug",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "PublicCategory"
+        ]
+      }
+    },
+    "/api/admin/categories": {
+      "get": {
+        "operationId": "CategoryController_getTree",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Category"
+        ]
+      },
+      "post": {
+        "operationId": "CategoryController_create",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateCategoryDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Category"
+        ]
+      }
+    },
+    "/api/admin/categories/{id}": {
+      "get": {
+        "operationId": "CategoryController_getById",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Category"
+        ]
+      },
+      "patch": {
+        "operationId": "CategoryController_update",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateCategoryDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Category"
+        ]
+      },
+      "delete": {
+        "operationId": "CategoryController_delete",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Category"
+        ]
+      }
+    },
+    "/api/admin/categories/{id}/deactivate": {
+      "post": {
+        "operationId": "CategoryController_deactivate",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Category"
+        ]
+      }
+    },
+    "/api/admin/categories/{id}/activate": {
+      "post": {
+        "operationId": "CategoryController_activate",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Category"
+        ]
+      }
+    },
+    "/api/admin/categories/{id}/attributes": {
+      "post": {
+        "operationId": "CategoryController_addAttribute",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateCategoryAttributeDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Category"
+        ]
+      }
+    },
+    "/api/admin/categories/{id}/attributes/{attrId}": {
+      "patch": {
+        "operationId": "CategoryController_editAttribute",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "attrId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateCategoryAttributeDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Category"
+        ]
+      },
+      "delete": {
+        "operationId": "CategoryController_removeAttribute",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "attrId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Category"
+        ]
+      }
+    },
+    "/api/tags": {
+      "get": {
+        "operationId": "TagController_listTags",
+        "parameters": [
+          {
+            "name": "page",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "search",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaginatedTagsResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "List or search tags",
+        "tags": [
+          "Tags"
+        ]
+      },
+      "post": {
+        "operationId": "TagController_createTag",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateTagRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TagResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Create a new tag (Moderator/Admin)",
+        "tags": [
+          "Tags"
+        ]
+      }
+    },
+    "/api/tags/{idOrSlug}": {
+      "get": {
+        "operationId": "TagController_getTag",
+        "parameters": [
+          {
+            "name": "idOrSlug",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TagResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Get a tag by ID or slug",
+        "tags": [
+          "Tags"
+        ]
+      }
+    },
+    "/api/tags/{id}": {
+      "put": {
+        "operationId": "TagController_updateTag",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateTagRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TagResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "summary": "Update an existing tag (Moderator/Admin)",
+        "tags": [
+          "Tags"
+        ]
+      },
+      "delete": {
+        "operationId": "TagController_deleteTag",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "summary": "Delete a tag (Moderator/Admin)",
+        "tags": [
+          "Tags"
+        ]
+      }
+    },
+    "/api/businesses": {
+      "get": {
+        "operationId": "PublicBusinessProfileController_discover",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "businesses public access"
+        ]
+      }
+    },
+    "/api/businesses/tags/all": {
+      "get": {
+        "operationId": "PublicBusinessProfileController_getAllTags",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "businesses public access"
+        ]
+      }
+    },
+    "/api/businesses/{slug}": {
+      "get": {
+        "operationId": "PublicBusinessProfileController_getBySlug",
+        "parameters": [
+          {
+            "name": "slug",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "businesses public access"
+        ]
+      }
+    },
+    "/api/business": {
+      "post": {
+        "operationId": "BusinessProfileController_createProfile",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateBusinessProfileDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "business management"
+        ]
+      }
+    },
+    "/api/business/{id}": {
+      "patch": {
+        "operationId": "BusinessProfileController_update",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateBusinessProfileDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "business management"
+        ]
+      },
+      "delete": {
+        "operationId": "BusinessProfileController_delete",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "business management"
+        ]
+      }
+    },
+    "/api/users/me/business": {
+      "get": {
+        "operationId": "BusinessProfileController_getMyProfile",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "business management"
+        ]
+      }
+    },
+    "/api/business/{id}/dashboard-stats": {
+      "get": {
+        "operationId": "BusinessProfileController_getStats",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "business management"
+        ]
+      }
+    },
+    "/api/business/{id}/hours": {
+      "put": {
+        "operationId": "BusinessProfileController_updateHours",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SetOperatingHoursDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "business management"
+        ]
+      }
+    },
+    "/api/business/{id}/tags": {
+      "put": {
+        "operationId": "BusinessProfileController_updateTags",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SetTagsDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "business management"
+        ]
+      }
+    },
+    "/api/listings": {
+      "get": {
+        "operationId": "PublicListingController_discover",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Listing Public Surface"
+        ]
+      }
+    },
+    "/api/businesses/{businessSlug}/listings": {
+      "get": {
+        "operationId": "PublicListingController_discoverByBusiness",
+        "parameters": [
+          {
+            "name": "businessSlug",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Listing Public Surface"
+        ]
+      }
+    },
+    "/api/listings/{slug}": {
+      "get": {
+        "operationId": "PublicListingController_getBySlug",
+        "parameters": [
+          {
+            "name": "slug",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Listing Public Surface"
+        ]
+      }
+    },
+    "/api/businesses/{businessProfileId}/listings": {
+      "post": {
+        "operationId": "ListingController_create",
+        "parameters": [
+          {
+            "name": "businessProfileId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateListingDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Listing"
+        ]
+      }
+    },
+    "/api/listings/{id}": {
+      "patch": {
+        "operationId": "ListingController_update",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateListingDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Listing"
+        ]
+      },
+      "delete": {
+        "operationId": "ListingController_delete",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Listing"
+        ]
+      }
+    },
+    "/api/listings/{id}/status": {
+      "patch": {
+        "operationId": "ListingController_transition",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TransitionListingStatusDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Listing"
+        ]
+      }
+    },
+    "/api/businesses/{businessProfileId}/listings/mine": {
+      "get": {
+        "operationId": "ListingController_getMyListings",
+        "parameters": [
+          {
+            "name": "businessProfileId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Listing"
+        ]
+      }
+    },
+    "/api/listings/mine/{id}": {
+      "get": {
+        "operationId": "ListingController_getMyListingById",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Listing"
+        ]
+      }
+    },
+    "/api/listings/{resourceId}/media/upload-intent": {
+      "post": {
+        "operationId": "MediaController_generateListingIntent",
+        "parameters": [
+          {
+            "name": "resourceId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UploadIntentRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Media"
+        ]
+      }
+    },
+    "/api/business-profiles/{resourceId}/media/upload-intent": {
+      "post": {
+        "operationId": "MediaController_generateBusinessProfileIntent",
+        "parameters": [
+          {
+            "name": "resourceId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UploadIntentRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Media"
+        ]
+      }
+    },
+    "/api/reviews/{resourceId}/media/upload-intent": {
+      "post": {
+        "operationId": "MediaController_generateReviewIntent",
+        "parameters": [
+          {
+            "name": "resourceId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UploadIntentRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Media"
+        ]
+      }
+    },
+    "/api/business-tours/{resourceId}/media/upload-intent": {
+      "post": {
+        "operationId": "MediaController_generateBusinessTourIntent",
+        "parameters": [
+          {
+            "name": "resourceId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UploadIntentRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Media"
+        ]
+      }
+    },
+    "/api/listings/{resourceId}/media": {
+      "post": {
+        "operationId": "MediaController_consumeListingIntent",
+        "parameters": [
+          {
+            "name": "resourceId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConsumeIntentRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Media"
+        ]
+      },
+      "get": {
+        "operationId": "MediaController_getListingMedia",
+        "parameters": [
+          {
+            "name": "resourceId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Media"
+        ]
+      }
+    },
+    "/api/business-profiles/{resourceId}/media": {
+      "post": {
+        "operationId": "MediaController_consumeBusinessProfileIntent",
+        "parameters": [
+          {
+            "name": "resourceId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConsumeIntentRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Media"
+        ]
+      },
+      "get": {
+        "operationId": "MediaController_getBusinessProfileMedia",
+        "parameters": [
+          {
+            "name": "resourceId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Media"
+        ]
+      }
+    },
+    "/api/reviews/{resourceId}/media": {
+      "post": {
+        "operationId": "MediaController_consumeReviewIntent",
+        "parameters": [
+          {
+            "name": "resourceId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConsumeIntentRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Media"
+        ]
+      },
+      "get": {
+        "operationId": "MediaController_getReviewMedia",
+        "parameters": [
+          {
+            "name": "resourceId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Media"
+        ]
+      }
+    },
+    "/api/business-tours/{resourceId}/media": {
+      "post": {
+        "operationId": "MediaController_consumeBusinessTourIntent",
+        "parameters": [
+          {
+            "name": "resourceId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConsumeIntentRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Media"
+        ]
+      },
+      "get": {
+        "operationId": "MediaController_getBusinessTourMedia",
+        "parameters": [
+          {
+            "name": "resourceId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Media"
+        ]
+      }
+    },
+    "/api/media/{id}": {
+      "delete": {
+        "operationId": "MediaController_delete",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Media"
+        ]
+      }
+    },
+    "/api/listings/{resourceId}/media/reorder": {
+      "patch": {
+        "operationId": "MediaController_reorderListingMedia",
+        "parameters": [
+          {
+            "name": "resourceId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReorderMediaDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Media"
+        ]
+      }
+    },
+    "/api/business-profiles/{resourceId}/media/reorder": {
+      "patch": {
+        "operationId": "MediaController_reorderBusinessProfileMedia",
+        "parameters": [
+          {
+            "name": "resourceId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReorderMediaDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Media"
+        ]
+      }
+    },
+    "/api/reviews/{resourceId}/media/reorder": {
+      "patch": {
+        "operationId": "MediaController_reorderReviewMedia",
+        "parameters": [
+          {
+            "name": "resourceId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReorderMediaDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Media"
+        ]
+      }
+    },
+    "/api/business-tours/{resourceId}/media/reorder": {
+      "patch": {
+        "operationId": "MediaController_reorderBusinessTourMedia",
+        "parameters": [
+          {
+            "name": "resourceId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReorderMediaDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Media"
+        ]
+      }
+    },
+    "/api/listings/{listingId}/reviews": {
+      "post": {
+        "operationId": "ReviewController_create",
+        "parameters": [
+          {
+            "name": "listingId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateReviewDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Reviews"
+        ]
+      },
+      "get": {
+        "operationId": "ReviewController_listByListing",
+        "parameters": [
+          {
+            "name": "listingId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "cursor",
+            "required": false,
+            "in": "query",
+            "description": "Pagination cursor (last received review ID)",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "description": "Max items per page (1–50, default 20)",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Reviews"
+        ]
+      }
+    },
+    "/api/reviews/{id}": {
+      "patch": {
+        "operationId": "ReviewController_update",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateReviewDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Reviews"
+        ]
+      },
+      "delete": {
+        "operationId": "ReviewController_delete",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Reviews"
+        ]
+      }
+    },
+    "/api/business-profiles/{businessProfileId}/business-tours": {
+      "post": {
+        "operationId": "BusinessTourController_create",
+        "parameters": [
+          {
+            "name": "businessProfileId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateBusinessTourDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Store Tours"
+        ]
+      },
+      "get": {
+        "operationId": "BusinessTourController_listByBusiness",
+        "parameters": [
+          {
+            "name": "businessProfileId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "page",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "status",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Store Tours"
+        ]
+      }
+    },
+    "/api/business-tours": {
+      "get": {
+        "operationId": "BusinessTourController_discoverGlobal",
+        "parameters": [
+          {
+            "name": "page",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "status",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "search",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "lat",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "lng",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "radius",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Store Tours"
+        ]
+      }
+    },
+    "/api/business-tours/{id}": {
+      "get": {
+        "operationId": "BusinessTourController_get",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Store Tours"
+        ]
+      },
+      "patch": {
+        "operationId": "BusinessTourController_update",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateBusinessTourDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Store Tours"
+        ]
+      },
+      "delete": {
+        "operationId": "BusinessTourController_delete",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Store Tours"
+        ]
+      }
+    },
+    "/api/conversations": {
+      "post": {
+        "operationId": "ConversationsController_create",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateConversationDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConversationResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Create a new conversation",
+        "tags": [
+          "Conversations"
+        ]
+      },
+      "get": {
+        "operationId": "ConversationsController_listAll",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ConversationResponseDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "List all conversations for the current user (including their businesses)",
+        "tags": [
+          "Conversations"
+        ]
+      }
+    },
+    "/api/conversations/{id}": {
+      "get": {
+        "operationId": "ConversationsController_getDetails",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConversationResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Get conversation details and messages",
+        "tags": [
+          "Conversations"
+        ]
+      }
+    },
+    "/api/conversations/{id}/messages": {
+      "post": {
+        "operationId": "ConversationsController_send",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SendMessageDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MessageResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Send a message",
+        "tags": [
+          "Conversations"
+        ]
+      }
+    },
+    "/api/conversations/{id}/status": {
+      "patch": {
+        "operationId": "ConversationsController_setStatus",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateConversationStatusDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConversationResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Update conversation status",
+        "tags": [
+          "Conversations"
+        ]
+      }
+    },
+    "/api/conversations/{id}/read-receipts": {
+      "post": {
+        "operationId": "ConversationsController_markRead",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MarkMessagesReadDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Mark messages as read",
+        "tags": [
+          "Conversations"
+        ]
+      }
+    },
+    "/api/listings/{id}/save": {
+      "post": {
+        "operationId": "SavesController_saveListingAction",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Saves"
+        ]
+      },
+      "delete": {
+        "operationId": "SavesController_unsaveListingAction",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Saves"
+        ]
+      }
+    },
+    "/api/users/me/saved-listings": {
+      "get": {
+        "operationId": "SavesController_listSavedListings",
+        "parameters": [
+          {
+            "name": "page",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Saves"
+        ]
+      }
+    },
+    "/api/api/analytics/events": {
+      "post": {
+        "operationId": "AnalyticsController_trackEvent",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TrackEventRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "summary": "Track an analytics event",
+        "tags": [
+          "Analytics"
+        ]
+      }
+    },
+    "/api/api/businesses/{id}/analytics": {
+      "get": {
+        "operationId": "AnalyticsController_getDashboardAnalytics",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "summary": "Get business analytics dashboard data",
+        "tags": [
+          "Analytics"
+        ]
+      }
+    },
+    "/api/api/admin/metrics": {
+      "get": {
+        "operationId": "AdminMetricsController_getPlatformMetrics",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "summary": "Get platform-wide metrics (admin only)",
+        "tags": [
+          "Admin"
+        ]
+      }
+    },
+    "/api/feed": {
+      "get": {
+        "operationId": "FeedController_getFeed",
+        "parameters": [
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "cursorScore",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "cursorId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "lat",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "lng",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "summary": "Get a personalized neighborhood feed",
+        "tags": [
+          "Feed"
+        ]
+      }
+    },
+    "/api/v1/locations/search": {
+      "get": {
+        "operationId": "LocationsController_search",
+        "parameters": [
+          {
+            "name": "q",
+            "required": true,
+            "in": "query",
+            "description": "Search query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "summary": "Search for locations",
+        "tags": [
+          "Locations"
+        ]
+      }
+    },
+    "/api/v1/locations/reverse": {
+      "get": {
+        "operationId": "LocationsController_reverse",
+        "parameters": [
+          {
+            "name": "lat",
+            "required": true,
+            "in": "query",
+            "description": "Latitude",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "lon",
+            "required": true,
+            "in": "query",
+            "description": "Longitude",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "summary": "Reverse geocode coordinates",
+        "tags": [
+          "Locations"
+        ]
+      }
+    },
+    "/api/v1/locations/ensure": {
+      "post": {
+        "operationId": "LocationsController_ensure",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EnsureLocationDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "summary": "Ensure a location is persisted from geocoder results",
+        "tags": [
+          "Locations"
+        ]
+      }
+    },
+    "/api/v1/locations/{id}": {
+      "get": {
+        "operationId": "LocationsController_getById",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "summary": "Get a location by ID",
+        "tags": [
+          "Locations"
+        ]
+      }
+    },
+    "/api/v1/follows": {
+      "get": {
+        "operationId": "FollowsController_getFollows",
+        "parameters": [
+          {
+            "name": "type",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "enum": [
+                "business",
+                "location"
+              ],
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Get current user follows",
+        "tags": [
+          "Follows"
+        ]
+      }
+    },
+    "/api/v1/follows/{type}/{id}": {
+      "post": {
+        "operationId": "FollowsController_follow",
+        "parameters": [
+          {
+            "name": "type",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Follow a business or location",
+        "tags": [
+          "Follows"
+        ]
+      },
+      "delete": {
+        "operationId": "FollowsController_unfollow",
+        "parameters": [
+          {
+            "name": "type",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Unfollow a business or location",
+        "tags": [
+          "Follows"
+        ]
+      },
+      "patch": {
+        "operationId": "FollowsController_updateNotifications",
+        "parameters": [
+          {
+            "name": "type",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateNotificationsDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Update follow notifications",
+        "tags": [
+          "Follows"
+        ]
+      }
+    },
+    "/api/v1/follows/{type}/{id}/status": {
+      "get": {
+        "operationId": "FollowsController_getStatus",
+        "parameters": [
+          {
+            "name": "type",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Check follow status",
+        "tags": [
+          "Follows"
+        ]
+      }
+    },
+    "/api/search/listings": {
+      "get": {
+        "operationId": "SearchController_searchListings",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Paginated list of matching listings"
+          }
+        },
+        "summary": "Search for listings using text, location, category, and dynamic attribute filters",
+        "tags": [
+          "Search"
+        ]
+      }
+    },
+    "/api/search/businesses": {
+      "get": {
+        "operationId": "SearchController_searchBusinesses",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Paginated list of matching businesses"
+          }
+        },
+        "summary": "Search for businesses using text, location, and category filters",
+        "tags": [
+          "Search"
+        ]
+      }
+    },
+    "/api/sitemap": {
+      "get": {
+        "operationId": "SeoController_getSitemap",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Seo"
+        ]
+      }
+    }
+  },
+  "info": {
+    "title": "Orita API",
+    "description": "Local discovery platform connecting people with businesses, services, and opportunities around them",
+    "version": "1.0",
+    "contact": {}
+  },
+  "tags": [
+    {
+      "name": "storefronts",
+      "description": "Storefront and Listing management endpoints"
+    }
+  ],
+  "servers": [],
+  "components": {
+    "securitySchemes": {
+      "bearer": {
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "type": "http"
+      }
+    },
+    "schemas": {
+      "RegisterDto": {
+        "type": "object",
+        "properties": {}
+      },
+      "RegisterResponse": {
+        "type": "object",
+        "properties": {}
+      },
+      "LoginPasswordDto": {
+        "type": "object",
+        "properties": {}
+      },
+      "ReceiptTokenResponse": {
+        "type": "object",
+        "properties": {}
+      },
+      "RequestPasswordResetDto": {
+        "type": "object",
+        "properties": {}
+      },
+      "ResetPasswordDto": {
+        "type": "object",
+        "properties": {}
+      },
+      "ChangePasswordDto": {
+        "type": "object",
+        "properties": {}
+      },
+      "AddPasswordDto": {
+        "type": "object",
+        "properties": {}
+      },
+      "RequestMagicLinkDto": {
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string",
+            "example": "user@example.com",
+            "description": "The email address to send the magic link to"
+          }
+        },
+        "required": [
+          "email"
+        ]
+      },
+      "RequestMagicLinkResponseDto": {
+        "type": "object",
+        "properties": {
+          "isNewAccount": {
+            "type": "boolean",
+            "description": "Whether the email belongs to a new account"
+          },
+          "message": {
+            "type": "string",
+            "description": "Message indicating the email was sent"
+          }
+        },
+        "required": [
+          "isNewAccount",
+          "message"
+        ]
+      },
+      "AuthenticateMagicLinkDto": {
+        "type": "object",
+        "properties": {
+          "token": {
+            "type": "string",
+            "example": "...",
+            "description": "The magic link token received in the email"
+          }
+        },
+        "required": [
+          "token"
+        ]
+      },
+      "ProfileResponse": {
+        "type": "object",
+        "properties": {}
+      },
+      "AuthenticateGoogleDto": {
+        "type": "object",
+        "properties": {
+          "idToken": {
+            "type": "string",
+            "description": "The Google ID Token received from the client"
+          }
+        },
+        "required": [
+          "idToken"
+        ]
+      },
+      "LinkGoogleDto": {
+        "type": "object",
+        "properties": {}
+      },
+      "UpdateUserProfileDto": {
+        "type": "object",
+        "properties": {}
+      },
+      "UpdateExplorationContextDto": {
+        "type": "object",
+        "properties": {}
+      },
+      "CreateCategoryDto": {
+        "type": "object",
+        "properties": {}
+      },
+      "UpdateCategoryDto": {
+        "type": "object",
+        "properties": {}
+      },
+      "CreateCategoryAttributeDto": {
+        "type": "object",
+        "properties": {}
+      },
+      "UpdateCategoryAttributeDto": {
+        "type": "object",
+        "properties": {}
+      },
+      "TagResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "slug": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "slug"
+        ]
+      },
+      "PaginatedTagsResponseDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TagResponseDto"
+            }
+          },
+          "total": {
+            "type": "number"
+          },
+          "page": {
+            "type": "number"
+          },
+          "limit": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "items",
+          "total",
+          "page",
+          "limit"
+        ]
+      },
+      "CreateTagRequestDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "slug": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "name"
+        ]
+      },
+      "UpdateTagRequestDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "name"
+        ]
+      },
+      "CreateBusinessProfileDto": {
+        "type": "object",
+        "properties": {}
+      },
+      "UpdateBusinessProfileDto": {
+        "type": "object",
+        "properties": {}
+      },
+      "SetOperatingHoursItemDto": {
+        "type": "object",
+        "properties": {
+          "day": {
+            "type": "string",
+            "enum": [
+              "MON",
+              "TUE",
+              "WED",
+              "THU",
+              "FRI",
+              "SAT",
+              "SUN"
+            ]
+          },
+          "openTime": {
+            "type": "string",
+            "example": "09:00"
+          },
+          "closeTime": {
+            "type": "string",
+            "example": "17:00"
+          },
+          "isClosed": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "day",
+          "openTime",
+          "closeTime",
+          "isClosed"
+        ]
+      },
+      "SetOperatingHoursDto": {
+        "type": "object",
+        "properties": {
+          "hours": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SetOperatingHoursItemDto"
+            }
+          }
+        },
+        "required": [
+          "hours"
+        ]
+      },
+      "SetTagsDto": {
+        "type": "object",
+        "properties": {
+          "tagIds": {
+            "description": "Array of Tag IDs to assign to the business",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "tagIds"
+        ]
+      },
+      "CreateListingDto": {
+        "type": "object",
+        "properties": {}
+      },
+      "UpdateListingDto": {
+        "type": "object",
+        "properties": {}
+      },
+      "TransitionListingStatusDto": {
+        "type": "object",
+        "properties": {}
+      },
+      "UploadIntentRequestDto": {
+        "type": "object",
+        "properties": {
+          "role": {
+            "type": "string",
+            "enum": [
+              "LOGO",
+              "BANNER",
+              "COVER",
+              "GALLERY"
+            ],
+            "description": "Semantic role of the media item."
+          }
+        },
+        "required": [
+          "role"
+        ]
+      },
+      "ConsumeIntentRequestDto": {
+        "type": "object",
+        "properties": {}
+      },
+      "ReorderMediaDto": {
+        "type": "object",
+        "properties": {}
+      },
+      "CreateReviewDto": {
+        "type": "object",
+        "properties": {
+          "rating": {
+            "type": "number",
+            "description": "Rating from 1 (worst) to 5 (best)",
+            "minimum": 1,
+            "maximum": 5
+          },
+          "comment": {
+            "type": "string",
+            "description": "Optional written review (max 2000 chars)"
+          }
+        },
+        "required": [
+          "rating"
+        ]
+      },
+      "UpdateReviewDto": {
+        "type": "object",
+        "properties": {
+          "rating": {
+            "type": "number",
+            "description": "Updated rating (1–5)",
+            "minimum": 1,
+            "maximum": 5
+          },
+          "comment": {
+            "type": "object",
+            "description": "Updated comment. Pass null to clear it."
+          }
+        }
+      },
+      "CreateBusinessTourDto": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string"
+          },
+          "summary": {
+            "type": "string"
+          },
+          "visitDate": {
+            "type": "string"
+          },
+          "highlights": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "title",
+          "visitDate"
+        ]
+      },
+      "UpdateBusinessTourDto": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string"
+          },
+          "summary": {
+            "type": "object"
+          },
+          "visitDate": {
+            "type": "string"
+          },
+          "highlights": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "DRAFT",
+              "PUBLISHED"
+            ]
+          }
+        }
+      },
+      "AnchorDto": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string"
+          },
+          "targetId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "type",
+          "targetId"
+        ]
+      },
+      "CreateConversationDto": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": [
+              "DIRECT",
+              "GROUP"
+            ]
+          },
+          "invitedParticipantIds": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "anchor": {
+            "$ref": "#/components/schemas/AnchorDto"
+          },
+          "initialMessage": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "type",
+          "invitedParticipantIds"
+        ]
+      },
+      "ConversationAnchorResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "subtitle": {
+            "type": "object"
+          },
+          "imageUrl": {
+            "type": "object"
+          },
+          "businessId": {
+            "type": "object"
+          },
+          "listingId": {
+            "type": "object"
+          },
+          "tourId": {
+            "type": "object"
+          },
+          "locationId": {
+            "type": "object"
+          }
+        },
+        "required": [
+          "id",
+          "title"
+        ]
+      },
+      "MessageEmbedResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "embedType": {
+            "type": "string"
+          },
+          "targetId": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "subtitle": {
+            "type": "object"
+          },
+          "imageUrl": {
+            "type": "object"
+          },
+          "ctaLabel": {
+            "type": "object"
+          },
+          "ctaPath": {
+            "type": "object"
+          }
+        },
+        "required": [
+          "id",
+          "embedType",
+          "targetId",
+          "title"
+        ]
+      },
+      "MessageReadReceiptResponseDto": {
+        "type": "object",
+        "properties": {
+          "messageId": {
+            "type": "string"
+          },
+          "participantId": {
+            "type": "string"
+          },
+          "readAt": {
+            "format": "date-time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "messageId",
+          "participantId",
+          "readAt"
+        ]
+      },
+      "MessageResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "conversationId": {
+            "type": "string"
+          },
+          "participantId": {
+            "type": "string"
+          },
+          "senderDisplayName": {
+            "type": "string"
+          },
+          "senderAvatarUrl": {
+            "type": "object"
+          },
+          "content": {
+            "type": "object"
+          },
+          "mediaUrl": {
+            "type": "object"
+          },
+          "mediaType": {
+            "type": "object"
+          },
+          "embeds": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MessageEmbedResponseDto"
+            }
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "readReceipts": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MessageReadReceiptResponseDto"
+            }
+          }
+        },
+        "required": [
+          "id",
+          "conversationId",
+          "participantId",
+          "senderDisplayName",
+          "embeds",
+          "createdAt",
+          "readReceipts"
+        ]
+      },
+      "ConversationResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          },
+          "title": {
+            "type": "object"
+          },
+          "anchorId": {
+            "type": "object"
+          },
+          "anchor": {
+            "$ref": "#/components/schemas/ConversationAnchorResponseDto"
+          },
+          "participantIds": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "updatedAt": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "messages": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MessageResponseDto"
+            }
+          }
+        },
+        "required": [
+          "id",
+          "type",
+          "status",
+          "participantIds",
+          "createdAt",
+          "updatedAt"
+        ]
+      },
+      "MessageEmbedDto": {
+        "type": "object",
+        "properties": {
+          "embedType": {
+            "type": "string"
+          },
+          "targetId": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "embedType",
+          "targetId"
+        ]
+      },
+      "SendMessageDto": {
+        "type": "object",
+        "properties": {
+          "content": {
+            "type": "string"
+          },
+          "mediaUrl": {
+            "type": "string"
+          },
+          "mediaType": {
+            "type": "string",
+            "enum": [
+              "IMAGE",
+              "VIDEO"
+            ]
+          },
+          "embeds": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MessageEmbedDto"
+            }
+          }
+        }
+      },
+      "UpdateConversationStatusDto": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "ACTIVE",
+              "CLOSED"
+            ]
+          }
+        },
+        "required": [
+          "status"
+        ]
+      },
+      "MarkMessagesReadDto": {
+        "type": "object",
+        "properties": {
+          "messageIds": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "messageIds"
+        ]
+      },
+      "TrackEventRequestDto": {
+        "type": "object",
+        "properties": {}
+      },
+      "EnsureLocationDto": {
+        "type": "object",
+        "properties": {}
+      },
+      "UpdateNotificationsDto": {
+        "type": "object",
+        "properties": {}
+      }
+    }
+  }
+}

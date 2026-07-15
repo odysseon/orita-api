@@ -46,11 +46,7 @@ export class UsersService {
     return this.userRepository.updateExplorationContext(accountId, payload);
   }
 
-  async addInterest(accountId: string, categoryId: string) {
-    return this.userRepository.addInterest(accountId, categoryId);
-  }
-
-  async removeInterest(accountId: string, categoryId: string) {
-    return this.userRepository.removeInterest(accountId, categoryId);
+  async updateInterests(accountId: string, categoryIds: string[]) {
+    return this.userRepository.updateInterests(accountId, categoryIds);
   }
 }

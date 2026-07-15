@@ -19,10 +19,7 @@ import { CreateBusinessProfileUseCase } from '../../application/use-cases/create
 import { SetOperatingHoursUseCase } from '../../application/use-cases/set-operating-hours.use-case.js';
 import { SetBusinessTagsUseCase } from '../../application/use-cases/set-business-tags.use-case.js';
 import { GetDashboardStatsUseCase } from '../../application/use-cases/get-dashboard-stats.use-case.js';
-import {
-  CreateBusinessProfileDto,
-  UpdateBusinessProfileDto,
-} from '../dto/request.dto.js';
+import { CreateBusinessProfileDto, UpdateBusinessProfileDto } from '../dto/request.dto.js';
 import { BusinessProfileResponseDto, DashboardStatsResponseDto } from '../dto/response.dto.js';
 import { SetOperatingHoursDto } from '../dto/operating-hours.dto.js';
 import { SetTagsDto } from '../dto/tag.dto.js';
@@ -55,8 +52,6 @@ export class BusinessProfileController {
     });
     return BusinessProfileResponseDto.from(profile);
   }
-
-
 
   @Patch('business/:id')
   async update(

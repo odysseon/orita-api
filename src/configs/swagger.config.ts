@@ -1,7 +1,7 @@
 import { INestApplication } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
-import basicAuth from 'express-basic-auth';
+
 import { AppConfig } from './validation.js';
 
 /**
@@ -16,15 +16,10 @@ export class SwaggerSetup {
     const enabled = config.get<boolean>('SWAGGER_ENABLED');
     if (!enabled) return;
 
-    const username = config.get('SWAGGER_USER') as string;
-    const password = config.get('SWAGGER_PASS') as string;
     const docsPath = config.get('SWAGGER_PATH_DOCS') as string;
     const jsonPath = config.get('SWAGGER_PATH_JSON') as string;
 
-    app.use(
-      [`/${docsPath}`, `/${jsonPath}`],
-      basicAuth({ challenge: true, users: { [username]: password } }),
-    );
+    // Authentication removed for internal/CLI access
 
     const builder = new DocumentBuilder()
       .setTitle(config.get('SWAGGER_TITLE') as string)

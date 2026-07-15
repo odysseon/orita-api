@@ -5,8 +5,7 @@ import {
   Get,
   Patch,
   Post,
-  Delete,
-  Param,
+  Put,
   UploadedFile,
   UseInterceptors,
 } from '@nestjs/common';
@@ -17,7 +16,7 @@ import { UsersService } from '../../use-cases/users.service.js';
 import { UploadUserAvatarUseCase } from '../../use-cases/upload-user-avatar.use-case.js';
 import { UpdateUserProfileDto } from './dto/update-user-profile.dto.js';
 import { UpdateExplorationContextDto } from './dto/update-exploration-context.dto.js';
-import { UpdateUserInterestDto } from './dto/update-user-interest.dto.js';
+import { UpdateUserInterestsDto } from './dto/update-user-interest.dto.js';
 import { avatarUploadOptions } from './avatar-upload.options.js';
 import 'multer';
 
@@ -65,23 +64,13 @@ export class UsersController {
     return this.uploadAvatarUseCase.execute(identity.accountId, file);
   }
 
-  @ApiOperation({ summary: 'Add a category to user explicit interests' })
-  @Post('me/interests')
-  async addInterest(
+  @ApiOperation({ summary: 'Batch update user explicit interests' })
+  @Put('me/interests')
+  async updateInterests(
     @CurrentIdentity() identity: RequestIdentity,
-    @Body() payload: UpdateUserInterestDto,
+    @Body() payload: UpdateUserInterestsDto,
   ) {
-    await this.usersService.addInterest(identity.accountId, payload.categoryId);
-    return { success: true };
-  }
-
-  @ApiOperation({ summary: 'Remove a category from user explicit interests' })
-  @Delete('me/interests/:categoryId')
-  async removeInterest(
-    @CurrentIdentity() identity: RequestIdentity,
-    @Param('categoryId') categoryId: string,
-  ) {
-    await this.usersService.removeInterest(identity.accountId, categoryId);
+    await this.usersService.updateInterests(identity.accountId, payload.categoryIds);
     return { success: true };
   }
 }

@@ -87,12 +87,7 @@ export class LocationsController {
   @ApiOperation({ summary: 'Ensure a location is persisted from geocoder results' })
   @ApiBody({ type: EnsureLocationDto })
   async ensure(@Body() dto: EnsureLocationDto) {
-    if (
-      !dto.provider ||
-      !dto.name ||
-      dto.lat === undefined ||
-      dto.lng === undefined
-    ) {
+    if (!dto.provider || !dto.name || dto.lat === undefined || dto.lng === undefined) {
       throw new BadRequestException('Missing required fields for location ensure');
     }
     return this.locationsService.ensure(dto);

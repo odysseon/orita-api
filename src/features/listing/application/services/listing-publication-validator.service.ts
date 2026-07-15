@@ -36,8 +36,9 @@ export class ListingPublicationValidator {
     if (listing.categoryId) {
       try {
         await this.attributeValidator.validate(listing.categoryId, listing.attributes);
-      } catch (err: any) {
-        errors.push(`Attribute validation failed: ${err.message}`);
+      } catch (err: unknown) {
+        const msg = err instanceof Error ? err.message : String(err);
+        errors.push(`Attribute validation failed: ${msg}`);
       }
     }
 
@@ -49,7 +50,9 @@ export class ListingPublicationValidator {
     }
 
     if (errors.length > 0) {
-      throw new BadRequestException(`Cannot publish listing. Missing requirements: ${errors.join(' ')}`);
+      throw new BadRequestException(
+        `Cannot publish listing. Missing requirements: ${errors.join(' ')}`,
+      );
     }
   }
 }

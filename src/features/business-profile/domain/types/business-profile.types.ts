@@ -1,4 +1,3 @@
-
 import { OperatingHours } from './operating-hours.types.js';
 import { Tag } from './tag.types.js';
 import { BusinessType } from '../../../../../generated/prisma/client.js';

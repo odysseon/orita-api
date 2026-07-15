@@ -1,6 +1,17 @@
-# Register accounts safely (idempotent — 201 on first run, 409 on reruns)
+# Register accounts (idempotent — 201 on first run, 409 on reruns)
 
-# --- Register owner ---
+# --- 1. Test validation error (weak password, missing username) ---
+POST {{api_url}}/api/accounts/register
+Content-Type: application/json
+{
+  "email": "invalid_email",
+  "password": "weak"
+}
+HTTP 400
+[Asserts]
+jsonpath "$.message" isCollection
+
+# --- 2. Register owner ---
 POST {{api_url}}/api/accounts/register
 Content-Type: application/json
 {
@@ -12,7 +23,7 @@ HTTP *
 [Asserts]
 status toString matches "^(201|409)$"
 
-# --- Register reviewer (third user who will submit reviews) ---
+# --- 3. Register reviewer ---
 POST {{api_url}}/api/accounts/register
 Content-Type: application/json
 {
@@ -24,7 +35,7 @@ HTTP *
 [Asserts]
 status toString matches "^(201|409)$"
 
-# --- Register intruder ---
+# --- 4. Register intruder ---
 POST {{api_url}}/api/accounts/register
 Content-Type: application/json
 {

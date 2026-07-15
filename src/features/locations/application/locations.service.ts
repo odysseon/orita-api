@@ -45,15 +45,15 @@ export class LocationsService {
       string,
       LocationRecord & { persisted: boolean; isFollowed: boolean }
     >();
-    const key = (provider: string, externalId?: string | null) => 
+    const key = (provider: string, externalId?: string | null) =>
       externalId ? `${provider}:${String(externalId)}` : `custom:${Math.random()}`;
 
     // 1. Insert DB results
     for (const db of dbResults) {
       if (!db.provider) continue;
-      
+
       const dedupeKey = db.externalId ? key(db.provider, db.externalId) : db.id;
-      
+
       resultsMap.set(dedupeKey, {
         ...db,
         persisted: true,
