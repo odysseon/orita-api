@@ -821,15 +821,23 @@ model Message {
 }
 
 // ============================================
+enum MessageEmbedType {
+  BUSINESS
+  LISTING
+  TOUR
+  LOCATION
+}
+
 // MessageEmbed — rich object attachments
-// ============================================
+// Kept simple for MVP, stores a snapshot of the referenced entity.
 model MessageEmbed {
-  id String @id @default(cuid())
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
 
   messageId String
   message   Message @relation(fields: [messageId], references: [id], onDelete: Cascade)
 
-  embedType String // 'BUSINESS' | 'LISTING' | 'TOUR' | 'LOCATION'
+  embedType MessageEmbedType
   targetId  String
 
   // Snapshot
