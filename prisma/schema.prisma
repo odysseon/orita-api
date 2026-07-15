@@ -116,7 +116,10 @@ model User {
   businessToursCreated    BusinessTour[]
   participant             Participant?
   savedListings           SavedListing[]          @relation("SavedListings")
-  follows                 Follow[]                @relation("UserFollows")
+  businessFollows         BusinessFollow[]        @relation("BusinessFollows")
+  locationFollows         LocationFollow[]        @relation("LocationFollows")
+  followers               UserFollow[]            @relation("UserFollowers")
+  following               UserFollow[]            @relation("UserFollowing")
   interestedCategories    UserInterestedCategory[]
   notificationPreferences NotificationPreference?
   inAppNotifications      InAppNotification[]
@@ -231,7 +234,7 @@ model BusinessProfile {
   media               Media[]
   participant         Participant?
   conversationAnchors ConversationAnchor[]
-  followers           Follow[]
+  followers           BusinessFollow[]
   analyticsEvents     AnalyticsEvent[]
   discoveryItems      DiscoveryItem[]
 
@@ -256,7 +259,7 @@ model Location {
   updatedAt DateTime @updatedAt
 
   businessProfiles    BusinessProfile[]
-  followers           Follow[]
+  followers           LocationFollow[]
   conversationAnchors ConversationAnchor[]
 
   @@unique([provider, externalId])
@@ -875,28 +878,61 @@ model SavedListing {
   @@map("saved_listings")
 }
 
-model Follow {
+model BusinessFollow {
   id String @id @default(cuid())
 
-  followerId String
-  follower   User   @relation("UserFollows", fields: [followerId], references: [id], onDelete: Cascade)
+  userId String
+  user   User   @relation("BusinessFollows", fields: [userId], references: [id], onDelete: Cascade)
 
-  businessId String?
-  business   BusinessProfile? @relation(fields: [businessId], references: [id], onDelete: Cascade)
-
-  locationId String?
-  location   Location? @relation(fields: [locationId], references: [id], onDelete: Cascade)
+  businessId String
+  business   BusinessProfile @relation(fields: [businessId], references: [id], onDelete: Cascade)
 
   notificationsEnabled Boolean @default(true)
 
   createdAt DateTime @default(now())
 
-  @@unique([followerId, businessId])
-  @@unique([followerId, locationId])
-  @@index([followerId])
+  @@unique([userId, businessId])
+  @@index([userId])
   @@index([businessId])
+  @@map("business_follows")
+}
+
+model LocationFollow {
+  id String @id @default(cuid())
+
+  userId String
+  user   User   @relation("LocationFollows", fields: [userId], references: [id], onDelete: Cascade)
+
+  locationId String
+  location   Location @relation(fields: [locationId], references: [id], onDelete: Cascade)
+
+  notificationsEnabled Boolean @default(true)
+
+  createdAt DateTime @default(now())
+
+  @@unique([userId, locationId])
+  @@index([userId])
   @@index([locationId])
-  @@map("follows")
+  @@map("location_follows")
+}
+
+model UserFollow {
+  id String @id @default(cuid())
+
+  followerId String
+  follower   User   @relation("UserFollowing", fields: [followerId], references: [id], onDelete: Cascade)
+
+  followingId String
+  following   User   @relation("UserFollowers", fields: [followingId], references: [id], onDelete: Cascade)
+
+  notificationsEnabled Boolean @default(true)
+
+  createdAt DateTime @default(now())
+
+  @@unique([followerId, followingId])
+  @@index([followerId])
+  @@index([followingId])
+  @@map("user_follows")
 }
 
 // ============================================

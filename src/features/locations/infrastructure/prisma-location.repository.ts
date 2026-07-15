@@ -118,9 +118,9 @@ export class PrismaLocationRepository {
 
   async getFollowedLocationIds(userId: string, locationIds: string[]): Promise<string[]> {
     if (!locationIds.length) return [];
-    const follows = await this.prisma.follow.findMany({
+    const follows = await this.prisma.locationFollow.findMany({
       where: {
-        followerId: userId,
+        userId: userId,
         locationId: { in: locationIds },
       },
       select: { locationId: true },

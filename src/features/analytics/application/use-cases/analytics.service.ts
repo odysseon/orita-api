@@ -47,7 +47,7 @@ export class AnalyticsService {
     });
 
     // Get total saves
-    const savedBusinesses = await this.prisma.follow.count({
+    const savedBusinesses = await this.prisma.businessFollow.count({
       where: { businessId },
     });
 
