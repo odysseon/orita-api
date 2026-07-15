@@ -9,6 +9,9 @@ import { SetOperatingHoursUseCase } from './application/use-cases/set-operating-
 import { SetBusinessTagsUseCase } from './application/use-cases/set-business-tags.use-case.js';
 import { GetTagsUseCase } from './application/use-cases/get-tags.use-case.js';
 import { GetDashboardStatsUseCase } from './application/use-cases/get-dashboard-stats.use-case.js';
+import { PublishBusinessProfileUseCase } from './application/use-cases/publish-business-profile.use-case.js';
+import { UnpublishBusinessProfileUseCase } from './application/use-cases/unpublish-business-profile.use-case.js';
+import { CheckBusinessPublicationReadinessUseCase } from './application/use-cases/check-business-publication-readiness.use-case.js';
 import { BusinessProfileController } from './api/controllers/business-profile.controller.js';
 import { PublicBusinessProfileController } from './api/controllers/public-business-profile.controller.js';
 import { IBusinessProfileRepository } from './domain/ports/business-profile.repository.port.js';
@@ -37,6 +40,9 @@ import { MediaModule } from '../media/media.module.js';
     SetBusinessTagsUseCase,
     GetTagsUseCase,
     GetDashboardStatsUseCase,
+    PublishBusinessProfileUseCase,
+    UnpublishBusinessProfileUseCase,
+    CheckBusinessPublicationReadinessUseCase,
   ],
 })
 export class BusinessProfileModule {}

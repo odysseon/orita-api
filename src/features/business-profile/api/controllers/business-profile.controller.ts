@@ -19,6 +19,10 @@ import { CreateBusinessProfileUseCase } from '../../application/use-cases/create
 import { SetOperatingHoursUseCase } from '../../application/use-cases/set-operating-hours.use-case.js';
 import { SetBusinessTagsUseCase } from '../../application/use-cases/set-business-tags.use-case.js';
 import { GetDashboardStatsUseCase } from '../../application/use-cases/get-dashboard-stats.use-case.js';
+import { PublishBusinessProfileUseCase } from '../../application/use-cases/publish-business-profile.use-case.js';
+import { UnpublishBusinessProfileUseCase } from '../../application/use-cases/unpublish-business-profile.use-case.js';
+import { CheckBusinessPublicationReadinessUseCase } from '../../application/use-cases/check-business-publication-readiness.use-case.js';
+import { PublicationReadinessResult } from '../../../../shared/domain/publication.types.js';
 import { CreateBusinessProfileDto, UpdateBusinessProfileDto } from '../dto/request.dto.js';
 import { BusinessProfileResponseDto, DashboardStatsResponseDto } from '../dto/response.dto.js';
 import { SetOperatingHoursDto } from '../dto/operating-hours.dto.js';
@@ -38,6 +42,9 @@ export class BusinessProfileController {
     private readonly setOperatingHours: SetOperatingHoursUseCase,
     private readonly setBusinessTags: SetBusinessTagsUseCase,
     private readonly getDashboardStats: GetDashboardStatsUseCase,
+    private readonly publishBusinessProfile: PublishBusinessProfileUseCase,
+    private readonly unpublishBusinessProfile: UnpublishBusinessProfileUseCase,
+    private readonly checkBusinessPublicationReadiness: CheckBusinessPublicationReadinessUseCase,
   ) {}
 
   @Post('business')
@@ -98,6 +105,37 @@ export class BusinessProfileController {
     const user = await this.identityService.resolveUserOrThrow(identity.accountId);
     const stats = await this.getDashboardStats.execute(id, user.id);
     return stats;
+  }
+
+  @Post('business/:id/publish')
+  @HttpCode(HttpStatus.OK)
+  async publish(
+    @CurrentIdentity() identity: RequestIdentity,
+    @Param('id') id: string,
+  ): Promise<{ message: string }> {
+    const user = await this.identityService.resolveUserOrThrow(identity.accountId);
+    await this.publishBusinessProfile.execute(id, user.id);
+    return { message: 'Business profile published successfully' };
+  }
+
+  @Post('business/:id/unpublish')
+  @HttpCode(HttpStatus.OK)
+  async unpublish(
+    @CurrentIdentity() identity: RequestIdentity,
+    @Param('id') id: string,
+  ): Promise<{ message: string }> {
+    const user = await this.identityService.resolveUserOrThrow(identity.accountId);
+    await this.unpublishBusinessProfile.execute(id, user.id);
+    return { message: 'Business profile unpublished successfully' };
+  }
+
+  @Get('business/:id/publication-readiness')
+  async checkReadiness(
+    @CurrentIdentity() identity: RequestIdentity,
+    @Param('id') id: string,
+  ): Promise<PublicationReadinessResult> {
+    const user = await this.identityService.resolveUserOrThrow(identity.accountId);
+    return this.checkBusinessPublicationReadiness.execute(id, user.id);
   }
 
   @Put('business/:id/hours')

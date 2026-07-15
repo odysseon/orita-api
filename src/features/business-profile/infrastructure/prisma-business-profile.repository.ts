@@ -378,7 +378,6 @@ export class PrismaBusinessProfileRepository extends IBusinessProfileRepository 
         ...(input.whatsapp !== undefined && { whatsapp: input.whatsapp }),
         ...(input.contactEmail !== undefined && { contactEmail: input.contactEmail }),
         ...(locationId !== undefined && { locationId }),
-        ...(input.isPublic !== undefined && { isPublic: input.isPublic }),
         ...(input.primaryCategoryId !== undefined && {
           categories: {
             deleteMany: {},
@@ -417,6 +416,18 @@ export class PrismaBusinessProfileRepository extends IBusinessProfileRepository 
     });
     if (user) {
       this.redisService.del(`user:accountId:${user.accountId}`).catch(() => {});
+    }
+  }
+
+  async setVisibility(id: string, isPublic: boolean): Promise<void> {
+    await this.prisma.businessProfile.update({
+      where: { id },
+      data: { isPublic }
+    });
+    
+    const existing = await this.findById(id);
+    if (existing) {
+      this.updateCacheAsync(existing);
     }
   }
 
