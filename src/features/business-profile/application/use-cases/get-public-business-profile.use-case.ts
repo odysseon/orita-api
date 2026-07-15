@@ -22,8 +22,8 @@ export class GetPublicBusinessProfileUseCase {
 
     let isFollowed = false;
     if (currentUserId) {
-      const followCount = await this.prisma.follow.count({
-        where: { followerId: currentUserId, businessId: profile.id },
+      const followCount = await this.prisma.businessFollow.count({
+        where: { userId: currentUserId, businessId: profile.id },
       });
       isFollowed = followCount > 0;
     }

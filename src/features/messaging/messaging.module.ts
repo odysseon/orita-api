@@ -11,6 +11,7 @@ import { GetConversationsUseCase } from './application/use-cases/get-conversatio
 import { GetConversationDetailsUseCase } from './application/use-cases/get-conversation-details.use-case.js';
 import { UpdateConversationStatusUseCase } from './application/use-cases/update-conversation-status.use-case.js';
 import { MarkMessagesReadUseCase } from './application/use-cases/mark-messages-read.use-case.js';
+import { OpenConversationUseCase } from './application/use-cases/open-conversation.use-case.js';
 import { ParticipantService } from './application/services/participant.service.js';
 import { AnchorService } from './application/services/anchor.service.js';
 import { ResourcePreviewService } from './application/services/resource-preview.service.js';
@@ -46,6 +47,7 @@ import { ConversationsController } from './api/controllers/conversations.control
     GetConversationDetailsUseCase,
     UpdateConversationStatusUseCase,
     MarkMessagesReadUseCase,
+    OpenConversationUseCase,
   ],
   exports: [IConversationRepository, ParticipantService],
 })

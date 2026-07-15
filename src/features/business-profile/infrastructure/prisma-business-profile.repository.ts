@@ -611,9 +611,9 @@ export class PrismaBusinessProfileRepository extends IBusinessProfileRepository 
     }
 
     const businessIds = items.map((i) => i.id);
-    const follows = await this.prisma.follow.findMany({
+    const follows = await this.prisma.businessFollow.findMany({
       where: {
-        followerId: currentUserId,
+        userId: currentUserId,
         businessId: { in: businessIds },
       },
       select: { businessId: true },

@@ -92,3 +92,14 @@ export class MarkMessagesReadDto {
   @IsString({ each: true })
   messageIds!: string[];
 }
+
+export class OpenConversationDto {
+  @ApiProperty({ enum: ['USER', 'BUSINESS'] })
+  @IsEnum(['USER', 'BUSINESS'])
+  targetType!: 'USER' | 'BUSINESS';
+
+  @ApiProperty()
+  @IsString()
+  @IsNotEmpty()
+  targetId!: string;
+}

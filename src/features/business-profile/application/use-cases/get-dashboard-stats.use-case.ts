@@ -30,7 +30,7 @@ export class GetDashboardStatsUseCase {
       where: { businessProfileId: businessId, eventType: 'PROFILE_VIEW' },
     });
 
-    const totalSaves = await this.prisma.follow.count({
+    const totalSaves = await this.prisma.businessFollow.count({
       where: { businessId },
     });
 

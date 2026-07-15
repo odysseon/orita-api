@@ -127,3 +127,23 @@ export class SearchBusinessesDto {
   @Max(10000)
   offset?: number = 0;
 }
+
+export class SearchUsersDto {
+  @IsOptional()
+  @IsString()
+  q?: string;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  @Min(1)
+  @Max(100)
+  limit?: number = 20;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  @Min(0)
+  @Max(10000)
+  offset?: number = 0;
+}

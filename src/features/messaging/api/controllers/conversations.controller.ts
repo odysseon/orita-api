@@ -8,6 +8,7 @@ import {
   SendMessageDto,
   UpdateConversationStatusDto,
   MarkMessagesReadDto,
+  OpenConversationDto,
 } from '../dto/request.dto.js';
 import { ConversationResponseDto, MessageResponseDto } from '../dto/response.dto.js';
 
@@ -17,6 +18,7 @@ import { GetConversationDetailsUseCase } from '../../application/use-cases/get-c
 import { SendMessageUseCase } from '../../application/use-cases/send-message.use-case.js';
 import { UpdateConversationStatusUseCase } from '../../application/use-cases/update-conversation-status.use-case.js';
 import { MarkMessagesReadUseCase } from '../../application/use-cases/mark-messages-read.use-case.js';
+import { OpenConversationUseCase } from '../../application/use-cases/open-conversation.use-case.js';
 import { ParticipantService } from '../../application/services/participant.service.js';
 
 @ApiTags('Conversations')
@@ -31,6 +33,7 @@ export class ConversationsController {
     private readonly sendMessage: SendMessageUseCase,
     private readonly updateStatus: UpdateConversationStatusUseCase,
     private readonly markMessagesRead: MarkMessagesReadUseCase,
+    private readonly openConversationUseCase: OpenConversationUseCase,
     private readonly participantService: ParticipantService,
   ) {}
 
@@ -53,6 +56,26 @@ export class ConversationsController {
       ...(dto.anchor ? { anchor: dto.anchor } : {}),
       ...(dto.initialMessage ? { initialMessage: dto.initialMessage } : {}),
     });
+    return ConversationResponseDto.from(conversation);
+  }
+
+  @Post('open')
+  @ApiOperation({ summary: 'Open or create a direct conversation with a target' })
+  @ApiResponse({ status: 200, type: ConversationResponseDto })
+  async openConversation(
+    @CurrentIdentity() identity: RequestIdentity,
+    @Body() dto: OpenConversationDto,
+  ): Promise<ConversationResponseDto> {
+    const user = await this.prisma.user.findUniqueOrThrow({
+      where: { accountId: identity.accountId },
+    });
+    
+    const conversation = await this.openConversationUseCase.execute({
+      userId: user.id,
+      targetType: dto.targetType,
+      targetId: dto.targetId,
+    });
+    
     return ConversationResponseDto.from(conversation);
   }
 

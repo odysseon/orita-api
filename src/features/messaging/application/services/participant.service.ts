@@ -10,13 +10,10 @@ export class ParticipantService {
    * Lazily creates or returns the personal participant for a user.
    */
   async ensurePersonalParticipant(userId: string): Promise<Participant> {
-    const existing = await this.prisma.participant.findUnique({
+    return this.prisma.participant.upsert({
       where: { userId },
-    });
-    if (existing) return existing;
-
-    return this.prisma.participant.create({
-      data: { userId },
+      create: { userId },
+      update: {},
     });
   }
 
@@ -24,13 +21,10 @@ export class ParticipantService {
    * Lazily creates or returns the business participant.
    */
   async ensureBusinessParticipant(businessProfileId: string): Promise<Participant> {
-    const existing = await this.prisma.participant.findUnique({
+    return this.prisma.participant.upsert({
       where: { businessProfileId },
-    });
-    if (existing) return existing;
-
-    return this.prisma.participant.create({
-      data: { businessProfileId },
+      create: { businessProfileId },
+      update: {},
     });
   }
 

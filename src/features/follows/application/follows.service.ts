@@ -1,9 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../../prisma/prisma.service.js';
 import { EventEmitter2 } from '@nestjs/event-emitter';
-import { Prisma } from '../../../../generated/prisma/client.js';
 
-export type FollowTargetType = 'business' | 'location';
+export type FollowTargetType = 'business' | 'location' | 'user';
 
 @Injectable()
 export class FollowsService {
@@ -13,19 +12,30 @@ export class FollowsService {
   ) {}
 
   async follow(followerId: string, type: FollowTargetType, targetId: string) {
-    const data =
-      type === 'business'
-        ? { followerId, businessId: targetId }
-        : { followerId, locationId: targetId };
-
-    const follow = await this.prisma.follow.upsert({
-      where:
-        type === 'business'
-          ? { followerId_businessId: { followerId, businessId: targetId } }
-          : { followerId_locationId: { followerId, locationId: targetId } },
-      create: data,
-      update: {}, // Do nothing if it exists
-    });
+    let follow;
+    switch (type) {
+      case 'business':
+        follow = await this.prisma.businessFollow.upsert({
+          where: { userId_businessId: { userId: followerId, businessId: targetId } },
+          create: { userId: followerId, businessId: targetId },
+          update: {},
+        });
+        break;
+      case 'location':
+        follow = await this.prisma.locationFollow.upsert({
+          where: { userId_locationId: { userId: followerId, locationId: targetId } },
+          create: { userId: followerId, locationId: targetId },
+          update: {},
+        });
+        break;
+      case 'user':
+        follow = await this.prisma.userFollow.upsert({
+          where: { followerId_followingId: { followerId, followingId: targetId } },
+          create: { followerId, followingId: targetId },
+          update: {},
+        });
+        break;
+    }
 
     this.eventEmitter.emit(`follow.${type}.created`, { followerId, [type + 'Id']: targetId });
     return follow;
@@ -33,12 +43,23 @@ export class FollowsService {
 
   async unfollow(followerId: string, type: FollowTargetType, targetId: string): Promise<void> {
     try {
-      await this.prisma.follow.delete({
-        where:
-          type === 'business'
-            ? { followerId_businessId: { followerId, businessId: targetId } }
-            : { followerId_locationId: { followerId, locationId: targetId } },
-      });
+      switch (type) {
+        case 'business':
+          await this.prisma.businessFollow.delete({
+            where: { userId_businessId: { userId: followerId, businessId: targetId } },
+          });
+          break;
+        case 'location':
+          await this.prisma.locationFollow.delete({
+            where: { userId_locationId: { userId: followerId, locationId: targetId } },
+          });
+          break;
+        case 'user':
+          await this.prisma.userFollow.delete({
+            where: { followerId_followingId: { followerId, followingId: targetId } },
+          });
+          break;
+      }
       this.eventEmitter.emit(`follow.${type}.removed`, { followerId, [type + 'Id']: targetId });
     } catch {
       // Ignored if it doesn't exist
@@ -50,49 +71,97 @@ export class FollowsService {
     type: FollowTargetType,
     targetId: string,
   ): Promise<{ following: boolean }> {
-    const follow = await this.prisma.follow.findUnique({
-      where:
-        type === 'business'
-          ? { followerId_businessId: { followerId, businessId: targetId } }
-          : { followerId_locationId: { followerId, locationId: targetId } },
-      select: { id: true },
-    });
+    let follow;
+    switch (type) {
+      case 'business':
+        follow = await this.prisma.businessFollow.findUnique({
+          where: { userId_businessId: { userId: followerId, businessId: targetId } },
+          select: { id: true },
+        });
+        break;
+      case 'location':
+        follow = await this.prisma.locationFollow.findUnique({
+          where: { userId_locationId: { userId: followerId, locationId: targetId } },
+          select: { id: true },
+        });
+        break;
+      case 'user':
+        follow = await this.prisma.userFollow.findUnique({
+          where: { followerId_followingId: { followerId, followingId: targetId } },
+          select: { id: true },
+        });
+        break;
+    }
 
     return { following: !!follow };
   }
 
   async getFollows(followerId: string, type?: FollowTargetType) {
-    const where: Prisma.FollowWhereInput = { followerId };
-
     if (type === 'business') {
-      where.businessId = { not: null };
+      return this.prisma.businessFollow.findMany({
+        where: { userId: followerId },
+        include: {
+          business: {
+            select: {
+              id: true,
+              name: true,
+              slug: true,
+              media: { where: { role: 'LOGO' }, take: 1 },
+            },
+          },
+        },
+        orderBy: { createdAt: 'desc' },
+      });
     } else if (type === 'location') {
-      where.locationId = { not: null };
+      return this.prisma.locationFollow.findMany({
+        where: { userId: followerId },
+        include: {
+          location: {
+            select: { id: true, name: true, formattedAddress: true },
+          },
+        },
+        orderBy: { createdAt: 'desc' },
+      });
+    } else if (type === 'user') {
+      return this.prisma.userFollow.findMany({
+        where: { followerId },
+        include: {
+          following: {
+            select: { id: true, username: true, avatarUrl: true },
+          },
+        },
+        orderBy: { createdAt: 'desc' },
+      });
     }
 
-    return this.prisma.follow.findMany({
-      where,
+    const businesses = await this.prisma.businessFollow.findMany({
+      where: { userId: followerId },
       include: {
-        business:
-          type === 'business' || !type
-            ? {
-                select: {
-                  id: true,
-                  name: true,
-                  slug: true,
-                  media: { where: { role: 'LOGO' }, take: 1 },
-                },
-              }
-            : false,
-        location:
-          type === 'location' || !type
-            ? {
-                select: { id: true, name: true, formattedAddress: true },
-              }
-            : false,
+        business: {
+          select: { id: true, name: true, slug: true, media: { where: { role: 'LOGO' }, take: 1 } },
+        },
       },
-      orderBy: { createdAt: 'desc' },
     });
+
+    const locations = await this.prisma.locationFollow.findMany({
+      where: { userId: followerId },
+      include: {
+        location: { select: { id: true, name: true, formattedAddress: true } },
+      },
+    });
+
+    const users = await this.prisma.userFollow.findMany({
+      where: { followerId },
+      include: {
+        following: { select: { id: true, username: true, avatarUrl: true } },
+      },
+    });
+
+    // Merge and sort
+    const all = [...businesses, ...locations, ...users].sort(
+      (a, b) => b.createdAt.getTime() - a.createdAt.getTime(),
+    );
+    return all;
   }
 
   async setNotifications(
@@ -101,12 +170,22 @@ export class FollowsService {
     targetId: string,
     enabled: boolean,
   ) {
-    return this.prisma.follow.update({
-      where:
-        type === 'business'
-          ? { followerId_businessId: { followerId, businessId: targetId } }
-          : { followerId_locationId: { followerId, locationId: targetId } },
-      data: { notificationsEnabled: enabled },
-    });
+    switch (type) {
+      case 'business':
+        return this.prisma.businessFollow.update({
+          where: { userId_businessId: { userId: followerId, businessId: targetId } },
+          data: { notificationsEnabled: enabled },
+        });
+      case 'location':
+        return this.prisma.locationFollow.update({
+          where: { userId_locationId: { userId: followerId, locationId: targetId } },
+          data: { notificationsEnabled: enabled },
+        });
+      case 'user':
+        return this.prisma.userFollow.update({
+          where: { followerId_followingId: { followerId, followingId: targetId } },
+          data: { notificationsEnabled: enabled },
+        });
+    }
   }
 }
