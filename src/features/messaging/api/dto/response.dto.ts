@@ -132,3 +132,49 @@ export class ConversationResponseDto {
     return dto;
   }
 }
+
+export class MessagePreviewResponseDto {
+  @ApiProperty() id!: string;
+  @ApiPropertyOptional() content!: string | null;
+  @ApiProperty() participantId!: string;
+  @ApiProperty() senderDisplayName!: string;
+  @ApiProperty() createdAt!: Date;
+  @ApiProperty() previewType!: string;
+  @ApiProperty() snippet!: string;
+
+  static from(m: import('../../domain/types/messaging.types.js').MessagePreviewView): MessagePreviewResponseDto {
+    const dto = new MessagePreviewResponseDto();
+    dto.id = m.id;
+    dto.content = m.content;
+    dto.participantId = m.participantId;
+    dto.senderDisplayName = m.senderDisplayName;
+    dto.createdAt = m.createdAt;
+    dto.previewType = m.previewType;
+    dto.snippet = m.snippet;
+    return dto;
+  }
+}
+
+export class ConversationPreviewResponseDto {
+  @ApiProperty() id!: string;
+  @ApiProperty() type!: string;
+  @ApiProperty() title!: string;
+  @ApiPropertyOptional() avatarUrl!: string | null;
+  @ApiPropertyOptional({ type: MessagePreviewResponseDto }) latestMessage?: MessagePreviewResponseDto;
+  @ApiProperty() unreadCount!: number;
+  @ApiProperty() lastActivityAt!: Date;
+
+  static from(c: import('../../domain/types/messaging.types.js').ConversationPreviewView): ConversationPreviewResponseDto {
+    const dto = new ConversationPreviewResponseDto();
+    dto.id = c.id;
+    dto.type = c.type;
+    dto.title = c.title;
+    dto.avatarUrl = c.avatarUrl || null;
+    if (c.latestMessage) {
+      dto.latestMessage = MessagePreviewResponseDto.from(c.latestMessage);
+    }
+    dto.unreadCount = c.unreadCount;
+    dto.lastActivityAt = c.lastActivityAt;
+    return dto;
+  }
+}

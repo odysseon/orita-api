@@ -23,6 +23,7 @@ import { LocationEmbedBuilder } from './application/services/embed-builders/loca
 import { WsAuthGuard } from './api/gateways/ws-auth.guard.js';
 import { MessagingGateway } from './api/gateways/messaging.gateway.js';
 import { ConversationsController } from './api/controllers/conversations.controller.js';
+import { MessagePreviewFactory } from './infrastructure/message-preview.factory.js';
 
 @Module({
   imports: [PrismaModule, RedisModule, forwardRef(() => MediaModule)],
@@ -58,6 +59,7 @@ import { ConversationsController } from './api/controllers/conversations.control
     UpdateConversationStatusUseCase,
     MarkMessagesReadUseCase,
     OpenConversationUseCase,
+    MessagePreviewFactory,
   ],
   exports: [IConversationRepository, ParticipantService],
 })

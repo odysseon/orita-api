@@ -21,6 +21,10 @@ import type {
   ConversationParticipant,
 } from '../../../../generated/prisma/client.js';
 
+import { MessagePreviewFactory } from './message-preview.factory.js';
+
+import { Prisma } from '../../../../generated/prisma/client.js';
+
 type HydratedMessage = Message & { embeds?: MessageEmbed[]; readReceipts?: MessageReadReceipt[] };
 type HydratedConversation = Conversation & {
   anchor?: ConversationAnchor | null;
@@ -29,7 +33,10 @@ type HydratedConversation = Conversation & {
 
 @Injectable()
 export class PrismaConversationRepository implements IConversationRepository {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly messagePreviewFactory: MessagePreviewFactory
+  ) {}
 
   private mapMessage(m: HydratedMessage): MessageView {
     return {
@@ -170,6 +177,98 @@ export class PrismaConversationRepository implements IConversationRepository {
     return conversations.map((c) => this.mapConversation(c));
   }
 
+  async findPreviewsByParticipantIds(myParticipantIds: string[]): Promise<import('../domain/types/messaging.types.js').ConversationPreviewView[]> {
+    const conversations = await this.prisma.conversation.findMany({
+      where: { participants: { some: { participantId: { in: myParticipantIds } } } },
+      select: {
+        id: true,
+        type: true,
+        title: true,
+        updatedAt: true,
+        participants: {
+          include: { 
+            participant: {
+              include: { user: true, business: true }
+            } 
+          }
+        },
+        messages: {
+          orderBy: { createdAt: 'desc' },
+          take: 1,
+          select: {
+            id: true,
+            content: true,
+            participantId: true,
+            senderDisplayName: true,
+            createdAt: true,
+            mediaUrl: true,
+            mediaType: true,
+            embeds: { take: 1, select: { embedType: true } }
+          }
+        }
+      },
+      orderBy: { updatedAt: 'desc' },
+    });
+
+    if (conversations.length === 0) return [];
+
+    // Optimize unread counts with a single query to avoid N+1
+    const unreadCountsRaw = await this.prisma.$queryRaw<{ conversationId: string; unreadCount: bigint }[]>`
+      SELECT m."conversationId", COUNT(*) as "unreadCount"
+      FROM "messages" m
+      INNER JOIN "conversation_participants" cp ON m."conversationId" = cp."conversationId"
+      WHERE cp."participantId" IN (${Prisma.join(myParticipantIds)})
+        AND m."createdAt" > cp."lastReadAt"
+      GROUP BY m."conversationId"
+    `;
+
+    const unreadCountMap = new Map<string, number>();
+    for (const row of unreadCountsRaw) {
+      unreadCountMap.set(row.conversationId, Number(row.unreadCount));
+    }
+
+    return conversations.map((c) => {
+      let title = c.title || 'Conversation';
+      let avatarUrl: string | null = null;
+
+      // Context-aware title for DIRECT conversations
+      if (c.type === 'DIRECT') {
+        const other = c.participants.find((p) => !myParticipantIds.includes(p.participantId));
+        if (other?.participant) {
+          if (other.participant.user) {
+            title = other.participant.user.username;
+            avatarUrl = other.participant.user.avatarUrl;
+          } else if (other.participant.business) {
+            title = other.participant.business.name;
+            avatarUrl = null; // No logo in schema yet
+          }
+        }
+      }
+
+      let latestMessagePreview: import('../domain/types/messaging.types.js').MessagePreviewView | undefined;
+      let unreadCount = unreadCountMap.get(c.id) || 0;
+
+      if (c.messages.length > 0) {
+        latestMessagePreview = this.messagePreviewFactory.create(c.messages[0]);
+      }
+
+      const preview: import('../domain/types/messaging.types.js').ConversationPreviewView = {
+        id: c.id,
+        type: c.type,
+        title,
+        avatarUrl,
+        unreadCount,
+        lastActivityAt: c.updatedAt,
+      };
+
+      if (latestMessagePreview) {
+        preview.latestMessage = latestMessagePreview;
+      }
+
+      return preview;
+    });
+  }
+
   async getMessages(conversationId: string): Promise<MessageView[]> {
     const messages = await this.prisma.message.findMany({
       where: { conversationId },
@@ -190,15 +289,42 @@ export class PrismaConversationRepository implements IConversationRepository {
   }
 
   async markRead(input: MarkMessagesReadInput): Promise<void> {
-    await this.prisma.$transaction(
-      input.messageIds.map((messageId) =>
-        this.prisma.messageReadReceipt.upsert({
-          where: { messageId_participantId: { messageId, participantId: input.participantId } },
-          create: { messageId, participantId: input.participantId },
-          update: {},
-        }),
-      ),
-    );
+    await this.prisma.$transaction(async (tx) => {
+      // Create explicit read receipts for the specified messages
+      await Promise.all(
+        input.messageIds.map((messageId) =>
+          tx.messageReadReceipt.upsert({
+            where: { messageId_participantId: { messageId, participantId: input.participantId } },
+            create: { messageId, participantId: input.participantId },
+            update: {},
+          }),
+        )
+      );
+
+      // Fetch the max createdAt of the read messages
+      const messages = await tx.message.findMany({
+        where: { id: { in: input.messageIds } },
+        select: { createdAt: true },
+        orderBy: { createdAt: 'desc' },
+        take: 1
+      });
+
+      if (messages.length > 0) {
+        const latestReadAt = messages[0]!.createdAt;
+        
+        // Update lastReadAt on the conversation participant if it is newer
+        const currentParticipant = await tx.conversationParticipant.findUnique({
+          where: { conversationId_participantId: { conversationId: input.conversationId, participantId: input.participantId } }
+        });
+
+        if (currentParticipant && latestReadAt > currentParticipant.lastReadAt) {
+          await tx.conversationParticipant.update({
+            where: { conversationId_participantId: { conversationId: input.conversationId, participantId: input.participantId } },
+            data: { lastReadAt: latestReadAt }
+          });
+        }
+      }
+    });
   }
 
   async isParticipant(conversationId: string, participantId: string): Promise<boolean> {
