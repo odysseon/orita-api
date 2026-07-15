@@ -5,6 +5,7 @@ import { SendMessageInput, MessageView } from '../../domain/types/messaging.type
 import { EventBusService } from '../../../../shared/events/event-bus.service.js';
 import { PrismaService } from '../../../../prisma/prisma.service.js';
 import { ResourcePreviewService } from '../services/resource-preview.service.js';
+import { EmbedResolverService } from '../services/embed-resolver.service.js';
 
 @Injectable()
 export class SendMessageUseCase {
@@ -14,6 +15,7 @@ export class SendMessageUseCase {
     private readonly prisma: PrismaService,
     private readonly mediaUrlService: MediaUrlService,
     private readonly resourcePreviewService: ResourcePreviewService,
+    private readonly embedResolver: EmbedResolverService,
   ) {}
 
   async execute(input: SendMessageInput): Promise<MessageView> {
@@ -41,9 +43,6 @@ export class SendMessageUseCase {
 
     if (participant.business) {
       senderDisplayName = participant.business.name;
-      // We would usually fetch media, but for simplicity here if it exists:
-      // (This requires a fetch or we can assume it's updated elsewhere)
-      // Actually we can do a quick fetch
       const media = await this.prisma.media.findFirst({
         where: { businessProfileId: participant.business.id, role: 'LOGO' },
         orderBy: { createdAt: 'desc' },
@@ -64,9 +63,20 @@ export class SendMessageUseCase {
 
     // Extract resource previews
     const autoEmbeds = await this.resourcePreviewService.extractPreviews(input.content);
-    if (autoEmbeds.length > 0) {
-      input.embeds = [...(input.embeds || []), ...autoEmbeds];
+    let resolvedEmbeds: any[] = [];
+    
+    // Resolve frontend-provided embeds and auto-embeds into full snapshots
+    const rawEmbeds = [...(input.embeds || []), ...autoEmbeds];
+    for (const ref of rawEmbeds) {
+      const snapshot = await this.embedResolver.resolve(ref.embedType, ref.targetId);
+      resolvedEmbeds.push({
+        embedType: ref.embedType,
+        targetId: ref.targetId,
+        ...snapshot,
+      });
     }
+
+    input.embeds = resolvedEmbeds as any;
 
     const message = await this.repo.addMessage(input, senderDisplayName, senderAvatarUrl);
 

@@ -10,6 +10,8 @@ import {
 import { Type } from 'class-transformer';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
+import { MessageEmbedType } from '../../../../../generated/prisma/client.js';
+
 export class AnchorDto {
   @ApiProperty()
   @IsString()
@@ -23,10 +25,9 @@ export class AnchorDto {
 }
 
 export class MessageEmbedDto {
-  @ApiProperty()
-  @IsString()
-  @IsNotEmpty()
-  embedType!: string;
+  @ApiProperty({ enum: ['BUSINESS', 'LISTING', 'TOUR', 'LOCATION'] })
+  @IsEnum(MessageEmbedType)
+  embedType!: MessageEmbedType;
 
   @ApiProperty()
   @IsString()

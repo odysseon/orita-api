@@ -1,3 +1,5 @@
+import { MessageEmbedType } from '../../../../../generated/prisma/client.js';
+
 export type ConversationType = 'DIRECT' | 'GROUP';
 export type ConversationStatus = 'ACTIVE' | 'CLOSED';
 export type ConversationParticipantRole = 'OWNER' | 'MEMBER';
@@ -36,9 +38,17 @@ export interface ConversationView {
   updatedAt: Date;
 }
 
+export interface EmbedSnapshot {
+  title: string;
+  subtitle?: string | null;
+  imageUrl?: string | null;
+  ctaLabel?: string | null;
+  ctaPath?: string | null;
+}
+
 export interface MessageEmbedView {
   id: string;
-  embedType: string;
+  embedType: MessageEmbedType;
   targetId: string;
   title: string;
   subtitle: string | null;
@@ -85,7 +95,7 @@ export interface SendMessageInput {
   mediaUrl?: string;
   mediaType?: MessageMediaType;
   embeds?: {
-    embedType: string;
+    embedType: MessageEmbedType;
     targetId: string;
   }[];
 }

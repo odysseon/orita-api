@@ -1,8 +1,10 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../../../prisma/prisma.service.js';
 
+import { MessageEmbedType } from '../../../../../generated/prisma/client.js';
+
 export interface ResourcePreviewEmbed {
-  embedType: string;
+  embedType: MessageEmbedType;
   targetId: string;
   title: string;
   subtitle?: string;
