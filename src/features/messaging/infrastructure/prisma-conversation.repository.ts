@@ -118,12 +118,14 @@ export class PrismaConversationRepository implements IConversationRepository {
     senderAvatarUrl: string | null,
   ): Promise<MessageView> {
     const embedsData =
-      input.embeds?.map((e) => ({
+      input.embeds?.map((e: any) => ({
         embedType: e.embedType,
         targetId: e.targetId,
-        title: 'Embed Snapshot', // In a full implementation, AnchorService logic would resolve these per-embed
-        subtitle: null,
-        imageUrl: null,
+        title: e.title || 'Embed Snapshot',
+        subtitle: e.subtitle || null,
+        imageUrl: e.imageUrl || null,
+        ctaLabel: e.ctaLabel || null,
+        ctaPath: e.ctaPath || null,
       })) || [];
 
     const message = await this.prisma.message.create({
