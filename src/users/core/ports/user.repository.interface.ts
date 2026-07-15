@@ -33,12 +33,7 @@ export interface IUserRepository {
   ): Promise<UserEntity>;
 
   /**
-   * Add a specific category to user's explicit interests.
+   * Replace the user's explicit interests with a new set.
    */
-  addInterest(accountId: string, categoryId: string): Promise<void>;
-
-  /**
-   * Remove a specific category from user's explicit interests.
-   */
-  removeInterest(accountId: string, categoryId: string): Promise<void>;
+  updateInterests(accountId: string, categoryIds: string[]): Promise<void>;
 }

@@ -1,4 +1,3 @@
-
 import { BusinessType } from '../../../../../generated/prisma/client.js';
 
 /**

@@ -40,8 +40,10 @@ type PrismaListingExtended = PrismaListing & {
 };
 
 function toDomain(raw: PrismaListingExtended, mediaUrlService?: MediaUrlService): Listing {
-  const coverMedia = raw.media?.find(m => m.role === 'COVER');
-  const galleryMedia = raw.media?.filter(m => m.role === 'GALLERY').sort((a, b) => (a.order || 0) - (b.order || 0));
+  const coverMedia = raw.media?.find((m) => m.role === 'COVER');
+  const galleryMedia = raw.media
+    ?.filter((m) => m.role === 'GALLERY')
+    .sort((a, b) => (a.order || 0) - (b.order || 0));
   return {
     id: raw.id,
     businessProfileId: raw.businessProfileId,
@@ -68,24 +70,23 @@ function toDomain(raw: PrismaListingExtended, mediaUrlService?: MediaUrlService)
         createdAt: r.createdAt,
       })),
     }),
-    ...(mediaUrlService && coverMedia && {
-      coverUrl: mediaUrlService.getMediaUrl(
-        coverMedia.provider,
-        coverMedia.fileId,
-        coverMedia.mimeType,
-        coverMedia.version,
-        coverMedia.format
-      )
-    }),
-    ...(mediaUrlService && galleryMedia && galleryMedia.length > 0 && {
-      galleryUrls: galleryMedia.map(m => mediaUrlService.getMediaUrl(
-        m.provider,
-        m.fileId,
-        m.mimeType,
-        m.version,
-        m.format
-      ))
-    }),
+    ...(mediaUrlService &&
+      coverMedia && {
+        coverUrl: mediaUrlService.getMediaUrl(
+          coverMedia.provider,
+          coverMedia.fileId,
+          coverMedia.mimeType,
+          coverMedia.version,
+          coverMedia.format,
+        ),
+      }),
+    ...(mediaUrlService &&
+      galleryMedia &&
+      galleryMedia.length > 0 && {
+        galleryUrls: galleryMedia.map((m) =>
+          mediaUrlService.getMediaUrl(m.provider, m.fileId, m.mimeType, m.version, m.format),
+        ),
+      }),
   };
 }
 

@@ -9,6 +9,7 @@ import helmet from 'helmet';
 
 import { AppModule } from './app.module.js';
 import { SwaggerSetup } from './configs/swagger.config.js';
+import { PostHogSetup } from './configs/posthog.config.js';
 import { AppConfig } from './configs/validation.js';
 import { RedisService } from './shared/redis/redis.service.js';
 
@@ -32,6 +33,7 @@ async function bootstrap(): Promise<void> {
   );
 
   SwaggerSetup.register(app);
+  PostHogSetup.register(app);
 
   const allowedOriginsRaw = configService.get<string>('ALLOWED_ORIGINS');
   const frontendUrl = configService.get<string>('FRONTEND_URL') as string;

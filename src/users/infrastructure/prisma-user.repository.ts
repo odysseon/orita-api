@@ -176,53 +176,29 @@ export class PrismaUserRepository implements IUserRepository {
     }
   }
 
-  async addInterest(accountId: string, categoryId: string): Promise<void> {
+  async updateInterests(accountId: string, categoryIds: string[]): Promise<void> {
     const user = await this.prisma.user.findUnique({
       where: { accountId },
       select: { id: true },
     });
     if (!user) throw new NotFoundException('User not found');
 
-    await this.prisma.userInterestedCategory.upsert({
-      where: {
-        userId_categoryId: {
-          userId: user.id,
-          categoryId,
-        },
-      },
-      update: {},
-      create: {
-        userId: user.id,
-        categoryId,
-      },
+    await this.prisma.$transaction(async (tx) => {
+      await tx.userInterestedCategory.deleteMany({
+        where: { userId: user.id },
+      });
+      
+      if (categoryIds.length > 0) {
+        await tx.userInterestedCategory.createMany({
+          data: categoryIds.map((categoryId) => ({
+            userId: user.id,
+            categoryId,
+          })),
+          skipDuplicates: true,
+        });
+      }
     });
 
     await this.redisService.del(this.getCacheKey(accountId));
-  }
-
-  async removeInterest(accountId: string, categoryId: string): Promise<void> {
-    const user = await this.prisma.user.findUnique({
-      where: { accountId },
-      select: { id: true },
-    });
-    if (!user) throw new NotFoundException('User not found');
-
-    try {
-      await this.prisma.userInterestedCategory.delete({
-        where: {
-          userId_categoryId: {
-            userId: user.id,
-            categoryId,
-          },
-        },
-      });
-      await this.redisService.del(this.getCacheKey(accountId));
-    } catch (e: any) {
-      if (e.code === 'P2025') {
-        // Not found, silently ignore
-        return;
-      }
-      throw e;
-    }
   }
 }

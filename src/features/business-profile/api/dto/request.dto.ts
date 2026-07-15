@@ -157,5 +157,3 @@ export class GetBusinessesQueryDto {
   @IsString()
   radius?: string;
 }
-
-

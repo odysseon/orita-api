@@ -1,21 +1,130 @@
 {
-	"settings": {
-		"title": "My API",
-		"version": "1.0.0",
-		"baseUrl": "/api",
-		"logo": "./assets/images/logo.svg",
-		"favicon": "./assets/images/favicon.svg"
-	},
-	"tables": [
-		{
-			"name": { "singular": "item", "plural": "items" },
-			"description": "A simple item.",
-			"uri": "/items",
-			"uriParameters": [{ "name": "id", "type": "integer", "defaultValue": 1, "isPrimary": true }],
-			"schema": {
-				"id": "integer",
-				"name": "string"
-			}
-		}
-	]
+  "endpoints": [
+    {
+      "path": "/api/accounts/register",
+      "method": "POST",
+      "description": "Register a new account and user profile",
+      "request": {
+        "body": {
+          "email": { "type": "string", "rules": ["IsEmail", "IsNotEmpty"] },
+          "password": { "type": "string", "rules": ["IsStrongPassword", "IsNotEmpty"] },
+          "username": { "type": "string", "rules": ["MinLength(2)", "IsNotEmpty"] }
+        }
+      },
+      "responses": {
+        "201": {
+          "description": "Account created successfully",
+          "body": {
+            "accountId": "string",
+            "email": "string",
+            "userId": "string",
+            "username": "string",
+            "createdAt": "date-string"
+          }
+        },
+        "400": { "description": "Validation failed (e.g. weak password, invalid email)" },
+        "409": { "description": "Email already registered" }
+      }
+    },
+    {
+      "path": "/api/auth/login",
+      "method": "POST",
+      "description": "Login with email and password",
+      "request": {
+        "body": {
+          "email": { "type": "string", "rules": ["IsEmail", "IsNotEmpty"] },
+          "password": { "type": "string", "rules": ["IsStrongPassword", "IsNotEmpty"] }
+        }
+      },
+      "responses": {
+        "200": {
+          "description": "Login successful",
+          "body": {
+            "token": "string (JWT)",
+            "expiresAt": "date-string"
+          }
+        },
+        "400": { "description": "Validation failed" },
+        "401": { "description": "Invalid credentials" }
+      }
+    },
+    {
+      "path": "/api/identity/me",
+      "method": "GET",
+      "description": "Get authenticated account profile",
+      "request": {
+        "headers": {
+          "Authorization": "Bearer <token>"
+        }
+      },
+      "responses": {
+        "200": {
+          "description": "Profile retrieved",
+          "body": {
+            "accountId": "string",
+            "expiresAt": "date-string"
+          }
+        },
+        "401": { "description": "Missing or invalid receipt token" }
+      }
+    },
+    {
+      "path": "/api/auth/password/reset/request",
+      "method": "POST",
+      "description": "Request a password reset email",
+      "request": {
+        "body": {
+          "email": { "type": "string", "rules": ["IsEmail", "IsNotEmpty"] }
+        }
+      },
+      "responses": {
+        "200": {
+          "description": "Password reset email sent if account exists",
+          "body": { "message": "string" }
+        }
+      }
+    },
+    {
+      "path": "/api/auth/password/reset",
+      "method": "POST",
+      "description": "Reset password using a token",
+      "request": {
+        "body": {
+          "token": { "type": "string", "rules": ["IsNotEmpty"] },
+          "newPassword": { "type": "string", "rules": ["IsStrongPassword", "IsNotEmpty"] }
+        }
+      },
+      "responses": {
+        "200": {
+          "description": "Password reset successfully",
+          "body": {
+            "token": "string (JWT)",
+            "expiresAt": "date-string"
+          }
+        },
+        "401": { "description": "Invalid or expired token" }
+      }
+    },
+    {
+      "path": "/api/auth/password/change",
+      "method": "POST",
+      "description": "Change current password",
+      "request": {
+        "headers": {
+          "Authorization": "Bearer <token>"
+        },
+        "body": {
+          "currentPassword": { "type": "string", "rules": ["IsNotEmpty"] },
+          "newPassword": { "type": "string", "rules": ["IsStrongPassword", "IsNotEmpty"] }
+        }
+      },
+      "responses": {
+        "200": {
+          "description": "Password changed successfully",
+          "body": { "success": "boolean" }
+        },
+        "401": { "description": "Invalid current password or token" }
+      }
+    }
+  ]
 }

@@ -7,14 +7,14 @@ HTTP 200
 [Captures]
 first_category_id: jsonpath "$[0].id"
 
-# --- 1. Add Interest ---
-POST {{api_url}}/api/users/me/interests
+# --- 1. Update Interests (Batch) ---
+PUT {{api_url}}/api/users/me/interests
 Authorization: Bearer {{owner_token}}
 Content-Type: application/json
 {
-  "categoryId": "{{first_category_id}}"
+  "categoryIds": ["{{first_category_id}}"]
 }
-HTTP 201
+HTTP 200
 
 # --- 2. Verify Interest Added ---
 GET {{api_url}}/api/users/me
@@ -23,9 +23,13 @@ HTTP 200
 [Asserts]
 jsonpath "$.interestedCategories" includes "{{first_category_id}}"
 
-# --- 3. Remove Interest ---
-DELETE {{api_url}}/api/users/me/interests/{{first_category_id}}
+# --- 3. Remove Interests (Batch empty) ---
+PUT {{api_url}}/api/users/me/interests
 Authorization: Bearer {{owner_token}}
+Content-Type: application/json
+{
+  "categoryIds": []
+}
 HTTP 200
 
 # --- 4. Verify Interest Removed ---

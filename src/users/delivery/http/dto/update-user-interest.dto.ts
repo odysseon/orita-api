@@ -1,11 +1,14 @@
-import { IsNotEmpty, IsString } from 'class-validator';
+import { IsArray, IsNotEmpty, IsString } from 'class-validator';
+import { ApiProperty } from '@nestjs/swagger';
 
-export class UpdateUserInterestDto {
+export class UpdateUserInterestsDto {
   /**
-   * The unique identifier of the category to add to interests.
-   * @example "cmrhwnjhl0001m0fxfcpxmwyl"
+   * Array of Category IDs the user is explicitly interested in.
+   * @example ["cmrhwnjhl0001m0fxfcpxmwyl"]
    */
-  @IsNotEmpty()
-  @IsString()
-  categoryId!: string;
+  @ApiProperty({ description: 'Array of Category IDs the user is explicitly interested in' })
+  @IsArray()
+  @IsString({ each: true })
+  @IsNotEmpty({ each: true })
+  categoryIds!: string[];
 }

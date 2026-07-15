@@ -62,7 +62,9 @@ export class BusinessSearchService {
           const value = parts.slice(1).join(':');
 
           if (key === 'VerificationStatus') {
-            andClauses.push({ verification: { status: value as Prisma.EnumVerificationStatusFilter } });
+            andClauses.push({
+              verification: { status: value as Prisma.EnumVerificationStatusFilter },
+            });
           } else if (key === 'BusinessType') {
             andClauses.push({ businessType: value as Prisma.EnumBusinessTypeFilter });
           }

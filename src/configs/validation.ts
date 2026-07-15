@@ -40,6 +40,9 @@ export const configSchema = z
     REDIS_PORT: z.coerce.number().default(6379),
     REDIS_PASSWORD: z.string().optional(),
 
+    // ── PostHog ───────────────────────────────────────────────────────────
+    POSTHOG_API_KEY: z.string().optional(),
+
     // ── Swagger ───────────────────────────────────────────────────────────
     SWAGGER_ENABLED: z.coerce.boolean().default(false),
     SWAGGER_USER: z.string().optional(),
@@ -56,10 +59,7 @@ export const configSchema = z
     SWAGGER_TAG_NAME: z.string().default('events'),
     SWAGGER_TAG_DESC: z.string().default('Event management endpoints'),
   })
-  .refine((d) => !d.SWAGGER_ENABLED || (!!d.SWAGGER_USER && !!d.SWAGGER_PASS), {
-    message: 'SWAGGER_USER and SWAGGER_PASS are required when SWAGGER_ENABLED is true',
-    path: ['SWAGGER_ENABLED'],
-  })
+
   .refine((d) => d.NODE_ENV !== 'production' || !!d.GOOGLE_CLIENT_ID, {
     message: 'GOOGLE_CLIENT_ID is required in production',
     path: ['GOOGLE_CLIENT_ID'],
