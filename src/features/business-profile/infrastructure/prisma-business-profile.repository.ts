@@ -279,6 +279,24 @@ export class PrismaBusinessProfileRepository extends IBusinessProfileRepository 
     return domain;
   }
 
+  private async forceRefreshCache(id: string): Promise<void> {
+    const raw = await this.prisma.businessProfile.findUnique({
+      where: { id },
+      include: {
+        hours: true,
+        tags: { include: { tag: true } },
+        geoEntity: true,
+        categories: { select: { categoryId: true, isPrimary: true } },
+        media: { select: { role: true, provider: true, fileId: true, mimeType: true, version: true, format: true } },
+      },
+    });
+    if (raw) {
+      const hydratedArray = await this.hydrate([raw]);
+      const domain = toDomain(hydratedArray[0]!);
+      this.updateCacheAsync(domain);
+    }
+  }
+
   async findBySlug(slug: string): Promise<BusinessProfileView | null> {
     const cached = await this.redisService.get<BusinessProfileView>(this.getSlugCacheKey(slug));
     if (cached) {
@@ -425,10 +443,7 @@ export class PrismaBusinessProfileRepository extends IBusinessProfileRepository 
       data: { isPublic }
     });
     
-    const existing = await this.findById(id);
-    if (existing) {
-      this.updateCacheAsync(existing);
-    }
+    await this.forceRefreshCache(id);
   }
 
   async setOperatingHours(businessId: string, hours: SetOperatingHoursInput[]): Promise<void> {
@@ -449,8 +464,7 @@ export class PrismaBusinessProfileRepository extends IBusinessProfileRepository 
       }
     });
 
-    const updated = await this.findById(businessId);
-    if (updated) this.updateCacheAsync(updated);
+    await this.forceRefreshCache(businessId);
   }
 
   async setTags(businessId: string, tagIds: string[]): Promise<void> {
@@ -468,8 +482,7 @@ export class PrismaBusinessProfileRepository extends IBusinessProfileRepository 
       }
     });
 
-    const updated = await this.findById(businessId);
-    if (updated) this.updateCacheAsync(updated);
+    await this.forceRefreshCache(businessId);
   }
 
   async discover(input: DiscoverBusinessesInput): Promise<PaginatedBusinessSummaries> {
