@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { IListingRepository } from '../../domain/ports/listing.repository.port.js';
 import { ListingStatus } from '../../domain/types/listing-status.enum.js';
 import { Listing } from '../../domain/types/listing.entity.js';
@@ -12,6 +12,10 @@ export class GetPublicListingUseCase {
   ) {}
 
   async execute(slug: string, currentUserId?: string): Promise<Listing & { isSaved?: boolean }> {
+    // If it looks like a CUID (25 chars, starts with 'c'), reject it as bad request
+    if (slug.startsWith('c') && slug.length >= 24) {
+      throw new BadRequestException('Public calls must use the listing slug, not the ID.');
+    }
     const listing = await this.repo.findBySlug(slug);
 
     if (!listing) {
