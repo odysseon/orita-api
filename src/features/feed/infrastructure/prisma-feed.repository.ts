@@ -222,7 +222,7 @@ export class PrismaFeedRepository {
     const businessMap = new Map(
       businesses.map((b) => {
         const logo = b.media?.find((m) => m.role === 'LOGO');
-        const cover = b.media?.find((m) => m.role === 'COVER');
+        const cover = b.media?.find((m) => m.role === 'BANNER');
         const logoUrl = logo
           ? this.mediaUrlService.getMediaUrl(
               logo.provider,
@@ -248,12 +248,46 @@ export class PrismaFeedRepository {
     const tourMap = new Map(tours.map((t) => [t.id, t]));
 
     return results.map((r) => {
-      const listing = r.itemType === 'LISTING' ? listingMap.get(r.referenceId) : undefined;
-      const tour = r.itemType === 'TOUR' ? tourMap.get(r.referenceId) : undefined;
+      const listingRaw = r.itemType === 'LISTING' ? listingMap.get(r.referenceId) : undefined;
+      const tourRaw = r.itemType === 'TOUR' ? tourMap.get(r.referenceId) : undefined;
       const business = businessMap.get(r.businessProfileId);
 
+      let mappedListing: any = undefined;
+      if (listingRaw) {
+        mappedListing = { ...listingRaw };
+        if (listingRaw.media) {
+          mappedListing.media = listingRaw.media.map((m: any) => ({
+            ...m,
+            url: this.mediaUrlService.getMediaUrl(
+              m.provider,
+              m.fileId,
+              m.mimeType,
+              m.version,
+              m.format
+            )
+          }));
+        }
+      }
+
+      let mappedTour: any = undefined;
+      if (tourRaw) {
+        mappedTour = { ...tourRaw };
+        if (tourRaw.media) {
+          mappedTour.media = tourRaw.media.map((m: any) => ({
+            ...m,
+            url: this.mediaUrlService.getMediaUrl(
+              m.provider,
+              m.fileId,
+              m.mimeType,
+              m.version,
+              m.format
+            )
+          }));
+        }
+      }
+
       let refSlug = r.referenceId;
-      if (r.itemType === 'LISTING' && listing) refSlug = listing.slug;
+      if (r.itemType === 'LISTING' && mappedListing) refSlug = mappedListing.slug;
       if (r.itemType === 'BUSINESS' && business) refSlug = business.slug;
 
       return {
@@ -265,8 +299,8 @@ export class PrismaFeedRepository {
         distanceMeters: Number(r.distanceMeters),
         createdAt: r.createdAt,
         business: business ? { ...business, isFollowed: Number(r.is_followed_business) === 1 } : undefined,
-        listing: listing,
-        tour: tour,
+        listing: mappedListing,
+        tour: mappedTour,
       };
     });
   }
