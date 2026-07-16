@@ -12,6 +12,7 @@ import { PrismaService } from '../prisma/prisma.service.js';
 import { passwordConfig, joseConfig } from './password.config.js';
 import { magicLinkConfig } from './magic-link.config.js';
 import { oauthConfig } from './oauth.config.js';
+import { createPrismaAdapters } from '@odysseon/whoami-adapter-prisma';
 
 export const whoamiConfig: WhoamiModuleAsyncOptions = {
   inject: [ConfigService, PrismaService],
@@ -23,6 +24,7 @@ export const whoamiConfig: WhoamiModuleAsyncOptions = {
       ...joseConfig,
       secret: receiptSecret,
     };
+    const { accountRepo } = createPrismaAdapters(prismaService);
 
     const receiptVerifier = new JoseReceiptVerifier(joseConfigWithSecret);
     const receiptSigner = new JoseReceiptSigner(joseConfigWithSecret);
@@ -33,6 +35,7 @@ export const whoamiConfig: WhoamiModuleAsyncOptions = {
 
     return {
       receiptVerifier,
+      accountQuery: accountRepo,
       modules: [PasswordModule(passConfig), MagicLinkModule(mlConfig), OAuthModule(oAuthConfig)],
     };
   },

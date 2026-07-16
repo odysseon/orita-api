@@ -4,13 +4,19 @@ import { Injectable, Logger } from '@nestjs/common';
 import { NotificationPayload } from '../../application/policies/base.policy.js';
 import { PrismaService } from '../../../../prisma/prisma.service.js';
 import { Prisma } from '../../../../../generated/prisma/client.js';
+import { NotificationsGateway } from '../../api/gateways/notifications.gateway.js';
+import { NotificationPresenter } from '../../application/presenters/notification.presenter.js';
 
 @Injectable()
 @Processor('in_app_delivery_queue')
 export class InAppWorker extends WorkerHost {
   private readonly logger = new Logger(InAppWorker.name);
 
-  constructor(private readonly prisma: PrismaService) {
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly gateway: NotificationsGateway,
+    private readonly presenter: NotificationPresenter,
+  ) {
     super();
   }
 
@@ -18,7 +24,7 @@ export class InAppWorker extends WorkerHost {
     const { userId, payload } = job.data;
 
     // Save structured payload to DB
-    await this.prisma.inAppNotification.create({
+    const notification = await this.prisma.inAppNotification.create({
       data: {
         userId,
         type: payload.type,
@@ -29,6 +35,9 @@ export class InAppWorker extends WorkerHost {
       },
     });
 
-    this.logger.log(`[InAppWorker] Persisted In-App notification for user ${userId}`);
+    const notificationView = this.presenter.present(notification);
+    this.gateway.broadcastNotification(userId, notificationView);
+
+    this.logger.log(`[InAppWorker] Persisted and broadcast In-App notification for user ${userId}`);
   }
 }
