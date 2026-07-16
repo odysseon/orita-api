@@ -48,7 +48,7 @@ export class ListingEmbedBuilder implements IEmbedBuilder {
       subtitle: listing.minPrice ? `₦${listing.minPrice.toLocaleString()}` : 'Contact for price',
       imageUrl,
       ctaLabel: 'View Listing',
-      ctaPath: `/l/${listing.id}`,
+      ctaPath: `/l/${listing.slug}`,
     };
   }
 }

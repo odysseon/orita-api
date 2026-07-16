@@ -49,7 +49,7 @@ export class BusinessEmbedBuilder implements IEmbedBuilder {
       subtitle: 'Business',
       imageUrl,
       ctaLabel: 'View Business',
-      ctaPath: `/b/${business.id}`,
+      ctaPath: `/b/${business.slug}`,
     };
   }
 }
