@@ -656,17 +656,18 @@ model NotificationPreference {
 }
 
 model InAppNotification {
-  id            String    @id @default(cuid())
+  id            String               @id @default(cuid())
   userId        String
+  category      NotificationCategory @default(SYSTEM)
   type          String
   actorId       String?
   referenceType String?
   referenceId   String?
-  payload       Json      @default("{}")
+  payload       Json                 @default("{}")
   readAt        DateTime?
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
-  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt     DateTime             @default(now())
+  updatedAt     DateTime             @updatedAt
+  user          User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId, createdAt(sort: Desc)])
   @@index([userId, readAt])
@@ -801,4 +802,12 @@ enum DiscoveryItemType {
   LISTING
   TOUR
   PROMOTION
+}
+
+enum NotificationCategory {
+  SOCIAL
+  BUSINESS
+  LISTING
+  REVIEW
+  SYSTEM
 }

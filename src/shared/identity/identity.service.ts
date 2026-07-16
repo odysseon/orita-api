@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service.js';
 import type { User } from '../../../generated/prisma/client.js';
 
@@ -16,7 +16,7 @@ export class IdentityService {
     });
 
     if (!user) {
-      throw new NotFoundException('User profile not found.');
+      throw new UnauthorizedException('Your session has expired. Please sign in again.');
     }
 
     return user;
