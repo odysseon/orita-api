@@ -11,7 +11,7 @@ export class GetPublicListingUseCase {
     private readonly prisma: PrismaService,
   ) {}
 
-  async execute(slug: string, currentUserId?: string): Promise<Listing & { isSaved?: boolean }> {
+  async execute(slug: string, currentUserId?: string): Promise<Listing & { isSaved?: boolean; businessProfileSlug?: string }> {
     // If it looks like a CUID (25 chars, starts with 'c'), reject it as bad request
     if (slug.startsWith('c') && slug.length >= 24) {
       throw new BadRequestException('Public calls must use the listing slug, not the ID.');
@@ -22,15 +22,17 @@ export class GetPublicListingUseCase {
       throw new NotFoundException('Listing not found.');
     }
 
+    const bp = await this.prisma.businessProfile.findUnique({
+      where: { id: listing.businessProfileId },
+      select: { ownerId: true, slug: true },
+    });
+
+    if (!bp) {
+      throw new NotFoundException('Business profile not found.');
+    }
+
     if (listing.status !== ListingStatus.PUBLISHED) {
-      if (!currentUserId) {
-        throw new NotFoundException('Listing not found.');
-      }
-      const bp = await this.prisma.businessProfile.findUnique({
-        where: { id: listing.businessProfileId },
-        select: { ownerId: true },
-      });
-      if (bp?.ownerId !== currentUserId) {
+      if (!currentUserId || bp.ownerId !== currentUserId) {
         throw new NotFoundException('Listing not found.');
       }
     }
@@ -43,6 +45,6 @@ export class GetPublicListingUseCase {
       isSaved = saveCount > 0;
     }
 
-    return { ...listing, isSaved };
+    return { ...listing, isSaved, businessProfileSlug: bp.slug };
   }
 }

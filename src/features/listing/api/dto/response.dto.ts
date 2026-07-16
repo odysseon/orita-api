@@ -7,6 +7,7 @@ import { ListingSummary, PaginatedListingSummaries } from '../../domain/types/li
 export class ListingResponseDto {
   id: string;
   businessProfileId: string;
+  @ApiPropertyOptional() businessProfileSlug?: string;
   title: string;
   slug: string;
   description: string | null;
@@ -24,9 +25,12 @@ export class ListingResponseDto {
   @ApiPropertyOptional() reviews?: any[];
   @ApiPropertyOptional() isSaved?: boolean;
 
-  private constructor(listing: Listing & { isSaved?: boolean }) {
+  private constructor(listing: Listing & { isSaved?: boolean; businessProfileSlug?: string }) {
     this.id = listing.id;
     this.businessProfileId = listing.businessProfileId;
+    if (listing.businessProfileSlug) {
+      this.businessProfileSlug = listing.businessProfileSlug;
+    }
     this.title = listing.title;
     this.slug = listing.slug;
     this.description = listing.description;
@@ -56,7 +60,7 @@ export class ListingResponseDto {
     }
   }
 
-  static from(listing: Listing & { isSaved?: boolean }): ListingResponseDto {
+  static from(listing: Listing & { isSaved?: boolean; businessProfileSlug?: string }): ListingResponseDto {
     return new ListingResponseDto(listing);
   }
 }
