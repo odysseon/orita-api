@@ -8,7 +8,7 @@ export class SeoController {
   @Get()
   @Header('Content-Type', 'application/xml')
   async getSitemap() {
-    const baseUrl = process.env['FRONTEND_URL'] || 'https://orita.app';
+    const baseUrl = process.env['FRONTEND_URL'] || 'https://orita.onrender.com';
     return this.seoService.generateSitemap(baseUrl);
   }
 }

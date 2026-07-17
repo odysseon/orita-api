@@ -1,10 +1,14 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../../prisma/prisma.service.js';
 import { SearchUsersDto } from '../dto/search.dto.js';
+import { MediaUrlService } from '../../media/application/services/media-url.service.js';
 
 @Injectable()
 export class UserSearchService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly mediaUrlService: MediaUrlService,
+  ) {}
 
   async search(dto: SearchUsersDto) {
     if (!dto.q || dto.q.trim() === '') {
@@ -25,7 +29,7 @@ export class UserSearchService {
         where: {
           OR: [
             { username: { contains: query, mode: 'insensitive' } },
-            // If display name is added later, add it here
+            { displayName: { contains: query, mode: 'insensitive' } },
           ],
         },
         skip: offset,
@@ -33,9 +37,13 @@ export class UserSearchService {
         select: {
           id: true,
           username: true,
-          avatarUrl: true,
+          displayName: true,
           role: true,
           createdAt: true,
+          media: {
+            where: { role: 'AVATAR' },
+            select: { provider: true, fileId: true, mimeType: true, version: true, format: true },
+          },
         },
         orderBy: {
           createdAt: 'desc',
@@ -45,13 +53,30 @@ export class UserSearchService {
         where: {
           OR: [
             { username: { contains: query, mode: 'insensitive' } },
+            { displayName: { contains: query, mode: 'insensitive' } },
           ],
         },
       }),
     ]);
 
+    const mappedUsers = users.map((user) => {
+      const { media, ...rest } = user;
+      return {
+        ...rest,
+        avatarUrl: media?.[0]
+          ? this.mediaUrlService.getMediaUrl(
+              media[0].provider,
+              media[0].fileId,
+              media[0].mimeType,
+              media[0].version ?? undefined,
+              media[0].format ?? undefined,
+            )
+          : null,
+      };
+    });
+
     return {
-      items: users,
+      items: mappedUsers,
       total,
       offset,
       limit,
