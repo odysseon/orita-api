@@ -20,7 +20,7 @@ export class NotificationsGateway implements OnGatewayConnection, OnGatewayDisco
 
   constructor(private readonly identityService: IdentityService) {}
 
-  async handleConnection(client: Socket): Promise<void> {
+  handleConnection(client: Socket): void {
     this.logger.log(`Client connected to notifications: ${client.id}`);
   }
 

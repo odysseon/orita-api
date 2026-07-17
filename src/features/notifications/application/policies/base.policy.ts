@@ -37,5 +37,5 @@ export abstract class BaseNotificationPolicy<TEvent = unknown> {
   /**
    * Generate the structured payload for the notification.
    */
-  abstract getPayload(event: TEvent): NotificationPayload;
+  abstract getPayload(event: TEvent): Promise<NotificationPayload> | NotificationPayload;
 }

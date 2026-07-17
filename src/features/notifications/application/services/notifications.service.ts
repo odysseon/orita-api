@@ -17,7 +17,7 @@ export class NotificationsService {
     cursor?: string,
   ): Promise<PaginatedNotificationsDto> {
     const take = limit + 1; // fetch one extra to check if there are more
-    
+
     const query: Prisma.InAppNotificationFindManyArgs = {
       where: { userId },
       orderBy: { createdAt: 'desc' },

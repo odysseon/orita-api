@@ -1,10 +1,20 @@
-import { Injectable, NotFoundException, ForbiddenException, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  ForbiddenException,
+  BadRequestException,
+} from '@nestjs/common';
 import { IBusinessProfileRepository } from '../../domain/ports/business-profile.repository.port.js';
 import { BusinessPublicationPolicy } from '../../domain/policies/business-publication.policy.js';
+import { EventBusService } from '../../../../shared/events/event-bus.service.js';
+import { BusinessProfilePublishedEvent } from '../../../../shared/events/business-profile.events.js';
 
 @Injectable()
 export class PublishBusinessProfileUseCase {
-  constructor(private readonly repo: IBusinessProfileRepository) {}
+  constructor(
+    private readonly repo: IBusinessProfileRepository,
+    private readonly eventBus: EventBusService,
+  ) {}
 
   async execute(id: string, requesterId: string): Promise<void> {
     const profile = await this.repo.findById(id);
@@ -31,5 +41,17 @@ export class PublishBusinessProfileUseCase {
     }
 
     await this.repo.setVisibility(id, true);
+
+    await this.eventBus.publish(
+      'business.published',
+      new BusinessProfilePublishedEvent(
+        profile.id,
+        profile.name,
+        profile.slug,
+        profile.locationId!,
+        profile.ownerId,
+      ),
+      requesterId,
+    );
   }
 }

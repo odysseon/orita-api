@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { Prisma } from '../../../../generated/prisma/client.js';
+import { Prisma, StorageProvider } from '../../../../generated/prisma/client.js';
 import { PrismaService } from '../../../prisma/prisma.service.js';
 import { RedisService } from '../../../shared/redis/redis.service.js';
 import { IBusinessProfileRepository } from '../domain/ports/business-profile.repository.port.js';
@@ -53,8 +53,8 @@ type PrismaBusinessProfileExtended = {
     name: string;
   } | null;
   media?: {
-    role: 'LOGO' | 'BANNER' | 'COVER' | 'GALLERY';
-    provider: any;
+    role: 'LOGO' | 'BANNER' | 'COVER' | 'GALLERY' | 'AVATAR';
+    provider: StorageProvider;
     fileId: string;
     mimeType: string;
     version: string | null;
@@ -171,8 +171,8 @@ export class PrismaBusinessProfileRepository extends IBusinessProfileRepository 
 
     return profiles.map((p) => {
       const coords = p.locationId ? locationMap.get(p.locationId) : undefined;
-      
-      const result: any = {
+
+      const result: Record<string, unknown> = {
         ...p,
         latitude: coords?.lat ?? null,
         longitude: coords?.lng ?? null,
@@ -180,15 +180,21 @@ export class PrismaBusinessProfileRepository extends IBusinessProfileRepository 
       };
 
       if (p.media) {
-        result.media = p.media.map((m: any) => ({
+        result['media'] = p.media.map((m) => ({
           role: m.role,
-          url: this.mediaUrlService.getMediaUrl(m.provider, m.fileId, m.mimeType, m.version, m.format)
+          url: this.mediaUrlService.getMediaUrl(
+            m.provider,
+            m.fileId,
+            m.mimeType,
+            m.version ?? undefined,
+            m.format ?? undefined,
+          ),
         }));
       } else {
-        delete result.media; // Ensure undefined isn't passed along from ...p
+        delete result['media'];
       }
 
-      return result as HydratedProfile;
+      return result as unknown as HydratedProfile;
     });
   }
 
@@ -269,7 +275,16 @@ export class PrismaBusinessProfileRepository extends IBusinessProfileRepository 
         tags: { include: { tag: true } },
         geoEntity: true,
         categories: { select: { categoryId: true, isPrimary: true } },
-        media: { select: { role: true, provider: true, fileId: true, mimeType: true, version: true, format: true } },
+        media: {
+          select: {
+            role: true,
+            provider: true,
+            fileId: true,
+            mimeType: true,
+            version: true,
+            format: true,
+          },
+        },
       },
     });
     if (!raw) return null;
@@ -287,7 +302,16 @@ export class PrismaBusinessProfileRepository extends IBusinessProfileRepository 
         tags: { include: { tag: true } },
         geoEntity: true,
         categories: { select: { categoryId: true, isPrimary: true } },
-        media: { select: { role: true, provider: true, fileId: true, mimeType: true, version: true, format: true } },
+        media: {
+          select: {
+            role: true,
+            provider: true,
+            fileId: true,
+            mimeType: true,
+            version: true,
+            format: true,
+          },
+        },
       },
     });
     if (raw) {
@@ -314,7 +338,16 @@ export class PrismaBusinessProfileRepository extends IBusinessProfileRepository 
         tags: { include: { tag: true } },
         geoEntity: true,
         categories: { select: { categoryId: true, isPrimary: true } },
-        media: { select: { role: true, provider: true, fileId: true, mimeType: true, version: true, format: true } },
+        media: {
+          select: {
+            role: true,
+            provider: true,
+            fileId: true,
+            mimeType: true,
+            version: true,
+            format: true,
+          },
+        },
       },
     });
     if (!raw) return null;
@@ -440,9 +473,9 @@ export class PrismaBusinessProfileRepository extends IBusinessProfileRepository 
   async setVisibility(id: string, isPublic: boolean): Promise<void> {
     await this.prisma.businessProfile.update({
       where: { id },
-      data: { isPublic }
+      data: { isPublic },
     });
-    
+
     await this.forceRefreshCache(id);
   }
 

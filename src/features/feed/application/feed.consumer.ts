@@ -22,7 +22,7 @@ export class FeedConsumer {
       payload.data.businessProfileId,
       payload.data.businessProfileId,
     );
-    await this.notificationEngine.evaluateAndDispatch(
+    this.notificationEngine.evaluateAndDispatch(
       DiscoveryItemType.BUSINESS,
       payload.data.businessProfileId,
       payload.data.businessProfileId,
@@ -39,7 +39,7 @@ export class FeedConsumer {
       payload.data.businessProfileId,
       payload.data.listingId,
     );
-    await this.notificationEngine.evaluateAndDispatch(
+    this.notificationEngine.evaluateAndDispatch(
       DiscoveryItemType.LISTING,
       payload.data.businessProfileId,
       payload.data.listingId,
