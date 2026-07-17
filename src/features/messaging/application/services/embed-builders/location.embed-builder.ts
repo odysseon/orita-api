@@ -6,9 +6,7 @@ import { IEmbedBuilder } from './embed-builder.interface.js';
 
 @Injectable()
 export class LocationEmbedBuilder implements IEmbedBuilder {
-  constructor(
-    private readonly prisma: PrismaService,
-  ) {}
+  constructor(private readonly prisma: PrismaService) {}
 
   supports(type: MessageEmbedType): boolean {
     return type === 'LOCATION';

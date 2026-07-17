@@ -142,7 +142,9 @@ export class MessagePreviewResponseDto {
   @ApiProperty() previewType!: string;
   @ApiProperty() snippet!: string;
 
-  static from(m: import('../../domain/types/messaging.types.js').MessagePreviewView): MessagePreviewResponseDto {
+  static from(
+    m: import('../../domain/types/messaging.types.js').MessagePreviewView,
+  ): MessagePreviewResponseDto {
     const dto = new MessagePreviewResponseDto();
     dto.id = m.id;
     dto.content = m.content;
@@ -160,11 +162,14 @@ export class ConversationPreviewResponseDto {
   @ApiProperty() type!: string;
   @ApiProperty() title!: string;
   @ApiPropertyOptional() avatarUrl!: string | null;
-  @ApiPropertyOptional({ type: MessagePreviewResponseDto }) latestMessage?: MessagePreviewResponseDto;
+  @ApiPropertyOptional({ type: MessagePreviewResponseDto })
+  latestMessage?: MessagePreviewResponseDto;
   @ApiProperty() unreadCount!: number;
   @ApiProperty() lastActivityAt!: Date;
 
-  static from(c: import('../../domain/types/messaging.types.js').ConversationPreviewView): ConversationPreviewResponseDto {
+  static from(
+    c: import('../../domain/types/messaging.types.js').ConversationPreviewView,
+  ): ConversationPreviewResponseDto {
     const dto = new ConversationPreviewResponseDto();
     dto.id = c.id;
     dto.type = c.type;

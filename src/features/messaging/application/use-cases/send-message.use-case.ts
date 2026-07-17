@@ -31,7 +31,10 @@ export class SendMessageUseCase {
     // Resolve participant for snapshots
     const participant = await this.prisma.participant.findUnique({
       where: { id: input.participantId },
-      include: { user: true, business: true },
+      include: {
+        user: { include: { media: { where: { role: 'AVATAR' } } } },
+        business: { include: { media: { where: { role: 'LOGO' } } } },
+      },
     });
 
     if (!participant) {
@@ -43,10 +46,7 @@ export class SendMessageUseCase {
 
     if (participant.business) {
       senderDisplayName = participant.business.name;
-      const media = await this.prisma.media.findFirst({
-        where: { businessProfileId: participant.business.id, role: 'LOGO' },
-        orderBy: { createdAt: 'desc' },
-      });
+      const media = participant.business.media?.[0];
       senderAvatarUrl = media
         ? this.mediaUrlService.getMediaUrl(
             media.provider,
@@ -57,14 +57,23 @@ export class SendMessageUseCase {
           )
         : null;
     } else if (participant.user) {
-      senderDisplayName = participant.user.username;
-      senderAvatarUrl = participant.user.avatarUrl;
+      senderDisplayName = participant.user.displayName || participant.user.username;
+      const media = participant.user.media?.[0];
+      senderAvatarUrl = media
+        ? this.mediaUrlService.getMediaUrl(
+            media.provider,
+            media.fileId,
+            media.mimeType,
+            media.version,
+            media.format,
+          )
+        : null;
     }
 
     // Extract resource previews
     const autoEmbeds = await this.resourcePreviewService.extractPreviews(input.content);
-    let resolvedEmbeds: any[] = [];
-    
+    const resolvedEmbeds: any[] = [];
+
     // Resolve frontend-provided embeds and auto-embeds into full snapshots
     const rawEmbeds = [...(input.embeds || []), ...autoEmbeds];
     for (const ref of rawEmbeds) {
@@ -76,7 +85,7 @@ export class SendMessageUseCase {
       });
     }
 
-    input.embeds = resolvedEmbeds as any;
+    input.embeds = resolvedEmbeds as NonNullable<SendMessageInput['embeds']>;
 
     const message = await this.repo.addMessage(input, senderDisplayName, senderAvatarUrl);
 

@@ -22,8 +22,8 @@ import type {
 } from '../../../../generated/prisma/client.js';
 
 import { MessagePreviewFactory } from './message-preview.factory.js';
-
 import { Prisma } from '../../../../generated/prisma/client.js';
+import { MediaUrlService } from '../../media/application/services/media-url.service.js';
 
 type HydratedMessage = Message & { embeds?: MessageEmbed[]; readReceipts?: MessageReadReceipt[] };
 type HydratedConversation = Conversation & {
@@ -35,7 +35,8 @@ type HydratedConversation = Conversation & {
 export class PrismaConversationRepository implements IConversationRepository {
   constructor(
     private readonly prisma: PrismaService,
-    private readonly messagePreviewFactory: MessagePreviewFactory
+    private readonly messagePreviewFactory: MessagePreviewFactory,
+    private readonly mediaUrlService: MediaUrlService,
   ) {}
 
   private mapMessage(m: HydratedMessage): MessageView {
@@ -125,7 +126,17 @@ export class PrismaConversationRepository implements IConversationRepository {
     senderAvatarUrl: string | null,
   ): Promise<MessageView> {
     const embedsData =
-      input.embeds?.map((e: any) => ({
+      (
+        input.embeds as Array<{
+          embedType: import('../../../../generated/prisma/client.js').MessageEmbedType;
+          targetId: string;
+          title?: string;
+          subtitle?: string;
+          imageUrl?: string;
+          ctaLabel?: string;
+          ctaPath?: string;
+        }>
+      )?.map((e) => ({
         embedType: e.embedType,
         targetId: e.targetId,
         title: e.title || 'Embed Snapshot',
@@ -177,7 +188,9 @@ export class PrismaConversationRepository implements IConversationRepository {
     return conversations.map((c) => this.mapConversation(c));
   }
 
-  async findPreviewsByParticipantIds(myParticipantIds: string[]): Promise<import('../domain/types/messaging.types.js').ConversationPreviewView[]> {
+  async findPreviewsByParticipantIds(
+    myParticipantIds: string[],
+  ): Promise<import('../domain/types/messaging.types.js').ConversationPreviewView[]> {
     const conversations = await this.prisma.conversation.findMany({
       where: { participants: { some: { participantId: { in: myParticipantIds } } } },
       select: {
@@ -190,9 +203,12 @@ export class PrismaConversationRepository implements IConversationRepository {
             participantId: true,
             role: true,
             participant: {
-              select: { user: true, business: true }
-            }
-          }
+              select: {
+                user: { include: { media: { where: { role: 'AVATAR' } } } },
+                business: { include: { media: { where: { role: 'LOGO' } } } },
+              },
+            },
+          },
         },
         messages: {
           orderBy: { createdAt: 'desc' },
@@ -205,9 +221,9 @@ export class PrismaConversationRepository implements IConversationRepository {
             createdAt: true,
             mediaUrl: true,
             mediaType: true,
-            embeds: { take: 1, select: { embedType: true } }
-          }
-        }
+            embeds: { take: 1, select: { embedType: true } },
+          },
+        },
       },
       orderBy: { updatedAt: 'desc' },
     });
@@ -215,7 +231,9 @@ export class PrismaConversationRepository implements IConversationRepository {
     if (conversations.length === 0) return [];
 
     // Optimize unread counts with a single query to avoid N+1
-    const unreadCountsRaw = await this.prisma.$queryRaw<{ conversationId: string; unreadCount: bigint }[]>`
+    const unreadCountsRaw = await this.prisma.$queryRaw<
+      { conversationId: string; unreadCount: bigint }[]
+    >`
       SELECT m."conversationId", COUNT(*) as "unreadCount"
       FROM "messages" m
       INNER JOIN "conversation_participants" cp ON m."conversationId" = cp."conversationId"
@@ -237,8 +255,8 @@ export class PrismaConversationRepository implements IConversationRepository {
       if (c.type === 'DIRECT') {
         // Find a participant the user doesn't own
         let other = c.participants.find((p) => !myParticipantIds.includes(p.participantId));
-        
-        // If the user owns BOTH sides (e.g. messaging their own business), 
+
+        // If the user owns BOTH sides (e.g. messaging their own business),
         // fall back to the participant that didn't initiate the conversation
         if (!other && c.participants.length > 1) {
           other = c.participants.find((p) => p.role !== 'OWNER') || c.participants[1];
@@ -246,20 +264,39 @@ export class PrismaConversationRepository implements IConversationRepository {
 
         if (other?.participant) {
           if (other.participant.user) {
-            title = other.participant.user.username;
-            avatarUrl = other.participant.user.avatarUrl;
+            title = other.participant.user.displayName || other.participant.user.username;
+            const media = other.participant.user.media?.[0];
+            avatarUrl = media
+              ? this.mediaUrlService.getMediaUrl(
+                  media.provider,
+                  media.fileId,
+                  media.mimeType,
+                  media.version,
+                  media.format,
+                )
+              : null;
           } else if (other.participant.business) {
             title = other.participant.business.name;
-            avatarUrl = null; // No logo in schema yet
+            const media = other.participant.business.media?.[0];
+            avatarUrl = media
+              ? this.mediaUrlService.getMediaUrl(
+                  media.provider,
+                  media.fileId,
+                  media.mimeType,
+                  media.version,
+                  media.format,
+                )
+              : null;
           }
         }
       }
 
-      let latestMessagePreview: import('../domain/types/messaging.types.js').MessagePreviewView | undefined;
-      let unreadCount = unreadCountMap.get(c.id) || 0;
+      let latestMessagePreview:
+        import('../domain/types/messaging.types.js').MessagePreviewView | undefined;
+      const unreadCount = unreadCountMap.get(c.id) || 0;
 
       if (c.messages.length > 0) {
-        latestMessagePreview = this.messagePreviewFactory.create(c.messages[0]);
+        latestMessagePreview = this.messagePreviewFactory.create(c.messages[0]!);
       }
 
       const preview: import('../domain/types/messaging.types.js').ConversationPreviewView = {
@@ -308,7 +345,7 @@ export class PrismaConversationRepository implements IConversationRepository {
             create: { messageId, participantId: input.participantId },
             update: {},
           }),
-        )
+        ),
       );
 
       // Fetch the max createdAt of the read messages
@@ -316,21 +353,31 @@ export class PrismaConversationRepository implements IConversationRepository {
         where: { id: { in: input.messageIds } },
         select: { createdAt: true },
         orderBy: { createdAt: 'desc' },
-        take: 1
+        take: 1,
       });
 
       if (messages.length > 0) {
         const latestReadAt = messages[0]!.createdAt;
-        
+
         // Update lastReadAt on the conversation participant if it is newer
         const currentParticipant = await tx.conversationParticipant.findUnique({
-          where: { conversationId_participantId: { conversationId: input.conversationId, participantId: input.participantId } }
+          where: {
+            conversationId_participantId: {
+              conversationId: input.conversationId,
+              participantId: input.participantId,
+            },
+          },
         });
 
         if (currentParticipant && latestReadAt > currentParticipant.lastReadAt) {
           await tx.conversationParticipant.update({
-            where: { conversationId_participantId: { conversationId: input.conversationId, participantId: input.participantId } },
-            data: { lastReadAt: latestReadAt }
+            where: {
+              conversationId_participantId: {
+                conversationId: input.conversationId,
+                participantId: input.participantId,
+              },
+            },
+            data: { lastReadAt: latestReadAt },
           });
         }
       }

@@ -40,7 +40,13 @@ export class BusinessEmbedBuilder implements IEmbedBuilder {
     if (business.media.length > 0) {
       const m = business.media[0];
       if (m) {
-        imageUrl = this.mediaUrlService.getMediaUrl(m.provider, m.fileId, m.mimeType, m.version, m.format);
+        imageUrl = this.mediaUrlService.getMediaUrl(
+          m.provider,
+          m.fileId,
+          m.mimeType,
+          m.version,
+          m.format,
+        );
       }
     }
 
