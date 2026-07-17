@@ -39,35 +39,38 @@ export class OpenConversationUseCase {
     }
     const lockId = Math.abs(hash);
 
-    return this.prisma.$transaction(async (tx) => {
-      await tx.$executeRaw`SELECT pg_advisory_xact_lock(${lockId})`;
+    return this.prisma.$transaction(
+      async (tx) => {
+        await tx.$executeRaw`SELECT pg_advisory_xact_lock(${lockId})`;
 
-      // Look for an existing conversation
-      const existing = await tx.conversation.findFirst({
-        where: {
-          type: 'DIRECT',
-          participants: {
-            every: {
-              participantId: { in: [me.id, target.id] },
+        // Look for an existing conversation
+        const existing = await tx.conversation.findFirst({
+          where: {
+            type: 'DIRECT',
+            participants: {
+              every: {
+                participantId: { in: [me.id, target.id] },
+              },
             },
           },
-        },
-        include: { participants: true },
-      });
+          include: { participants: true },
+        });
 
-      const isMatch = existing?.participants.length === 2;
+        const isMatch = existing?.participants.length === 2;
 
-      if (isMatch) {
-        const domainConv = await this.repo.findById(existing.id);
-        if (domainConv) return domainConv;
-      }
+        if (isMatch) {
+          const domainConv = await this.repo.findById(existing.id);
+          if (domainConv) return domainConv;
+        }
 
-      // Create new conversation
-      return await this.repo.create({
-        type: 'DIRECT',
-        participantId: me.id,
-        invitedParticipantIds: [target.id],
-      });
-    }, { timeout: 10000 });
+        // Create new conversation
+        return await this.repo.create({
+          type: 'DIRECT',
+          participantId: me.id,
+          invitedParticipantIds: [target.id],
+        });
+      },
+      { timeout: 10000 },
+    );
   }
 }

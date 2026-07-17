@@ -1,17 +1,28 @@
 import { Injectable } from '@nestjs/common';
 import { MessagePreviewView, MessagePreviewType } from '../domain/types/messaging.types.js';
 
+export interface MessagePreviewInput {
+  id: string;
+  content: string | null;
+  participantId: string;
+  senderDisplayName: string;
+  createdAt: Date;
+  mediaUrl: string | null;
+  mediaType: string | null;
+  embeds?: { embedType: import('../../../../generated/prisma/client.js').MessageEmbedType }[];
+}
+
 @Injectable()
 export class MessagePreviewFactory {
-  create(message: any): MessagePreviewView {
+  create(message: MessagePreviewInput): MessagePreviewView {
     const hasEmbeds = message.embeds && message.embeds.length > 0;
-    
+
     let previewType: MessagePreviewType = 'TEXT';
     let snippet = message.content || '';
 
     if (hasEmbeds) {
       previewType = 'EMBED';
-      const embed = message.embeds[0];
+      const embed = message.embeds![0]!;
       if (embed.embedType === 'BUSINESS') snippet = '📍 Shared a business';
       else if (embed.embedType === 'LISTING') snippet = '🛍️ Shared a listing';
       else if (embed.embedType === 'LOCATION') snippet = '🗺️ Shared a location';

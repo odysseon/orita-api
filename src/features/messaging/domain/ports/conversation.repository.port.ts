@@ -19,7 +19,9 @@ export abstract class IConversationRepository {
     senderAvatarUrl: string | null,
   ): Promise<MessageView>;
   abstract findById(id: string): Promise<ConversationView | null>;
-  abstract findPreviewsByParticipantIds(myParticipantIds: string[]): Promise<import('../types/messaging.types.js').ConversationPreviewView[]>;
+  abstract findPreviewsByParticipantIds(
+    myParticipantIds: string[],
+  ): Promise<import('../types/messaging.types.js').ConversationPreviewView[]>;
   abstract findByParticipantIds(participantIds: string[]): Promise<ConversationView[]>;
   abstract getMessages(conversationId: string): Promise<MessageView[]>;
   abstract updateStatus(id: string, status: ConversationStatus): Promise<ConversationView>;

@@ -36,7 +36,13 @@ export class TourEmbedBuilder implements IEmbedBuilder {
     if (tour.media.length > 0) {
       const m = tour.media[0];
       if (m) {
-        imageUrl = this.mediaUrlService.getMediaUrl(m.provider, m.fileId, m.mimeType, m.version, m.format);
+        imageUrl = this.mediaUrlService.getMediaUrl(
+          m.provider,
+          m.fileId,
+          m.mimeType,
+          m.version,
+          m.format,
+        );
       }
     }
 

@@ -39,7 +39,13 @@ export class ListingEmbedBuilder implements IEmbedBuilder {
     if (listing.media.length > 0) {
       const m = listing.media[0];
       if (m) {
-        imageUrl = this.mediaUrlService.getMediaUrl(m.provider, m.fileId, m.mimeType, m.version, m.format);
+        imageUrl = this.mediaUrlService.getMediaUrl(
+          m.provider,
+          m.fileId,
+          m.mimeType,
+          m.version,
+          m.format,
+        );
       }
     }
 

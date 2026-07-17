@@ -21,8 +21,8 @@ export class EmbedResolverService {
   }
 
   async resolve(type: MessageEmbedType, targetId: string): Promise<EmbedSnapshot> {
-    const builder = this.builders.find(b => b.supports(type));
-    
+    const builder = this.builders.find((b) => b.supports(type));
+
     if (!builder) {
       throw new BadRequestException(`No embed builder found for type: ${type}`);
     }
