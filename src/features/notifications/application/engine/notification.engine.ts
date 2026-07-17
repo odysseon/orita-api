@@ -38,7 +38,7 @@ export class NotificationEngine {
     if (finalAudience.length === 0) return;
 
     // 5. Build Payload
-    const payload = policy.getPayload(event);
+    const payload = await policy.getPayload(event);
 
     // 6. Enqueue Jobs for each channel and user
     // In a real high-scale system, you might chunk this or push a single job that fans out.

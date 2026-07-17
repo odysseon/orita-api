@@ -6,9 +6,10 @@ import { NotificationEngine } from '../engine/notification.engine.js';
 import { PrismaService } from '../../../../prisma/prisma.service.js';
 import { EnrichedDomainEvent } from '../../../../shared/events/event-bus.service.js';
 
-import { ListingCreatedEvent } from '../../../../shared/events/listing.events.js';
+import { ListingStatusChangedEvent } from '../../../../shared/events/listing.events.js';
+import { ListingStatus } from '../../../listing/domain/types/listing-status.enum.js';
 
-type EventType = EnrichedDomainEvent<ListingCreatedEvent>;
+type EventType = EnrichedDomainEvent<ListingStatusChangedEvent>;
 
 @Injectable()
 export class ListingPublishedPolicy extends BaseNotificationPolicy<EventType> {
@@ -20,12 +21,14 @@ export class ListingPublishedPolicy extends BaseNotificationPolicy<EventType> {
     super();
   }
 
-  /**
-   * Explicitly subscribe to the listing.published event.
-   */
-  @OnEvent('listing.published', { async: true })
+  @OnEvent('listing.status.changed', { async: true })
   async handle(event: EventType) {
-    await this.engine.process(this, event);
+    if (
+      event.data.newStatus === ListingStatus.PUBLISHED &&
+      event.data.oldStatus !== ListingStatus.PUBLISHED
+    ) {
+      await this.engine.process(this, event);
+    }
   }
 
   isEligible(): boolean {
@@ -35,7 +38,6 @@ export class ListingPublishedPolicy extends BaseNotificationPolicy<EventType> {
   async resolveAudience(event: EventType): Promise<string[]> {
     const listingId = event.data.listingId;
 
-    // We need the locationId of the business that owns this listing
     const listing = await this.prisma.listing.findUnique({
       where: { id: listingId },
       include: { businessProfile: { select: { locationId: true } } },
@@ -45,7 +47,6 @@ export class ListingPublishedPolicy extends BaseNotificationPolicy<EventType> {
       return [];
     }
 
-    // Resolve audience within 15km
     return this.nearbyResolver.resolve(listing.businessProfile.locationId, 15);
   }
 
@@ -57,15 +58,19 @@ export class ListingPublishedPolicy extends BaseNotificationPolicy<EventType> {
     return 'nearbyDiscoveries';
   }
 
-  getPayload(event: EventType): NotificationPayload {
+  async getPayload(event: EventType): Promise<NotificationPayload> {
+    const listing = await this.prisma.listing.findUnique({
+      where: { id: event.data.listingId },
+      include: { businessProfile: { select: { name: true } } },
+    });
+
     return {
       type: 'NEW_LISTING',
-      ...(event.data.actorId ? { actorId: event.data.actorId } : {}),
       referenceType: 'LISTING',
-      referenceId: event.data.listingSlug,
+      referenceId: listing?.slug || event.data.listingId,
       payload: {
-        businessName: event.data.businessName,
-        listingTitle: event.data.listingTitle,
+        businessName: listing?.businessProfile?.name || 'A business',
+        listingTitle: listing?.title || 'A listing',
       },
     };
   }

@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { MediaUrlService } from '../../media/application/services/media-url.service.js';
 import { PrismaService } from '../../../prisma/prisma.service.js';
-import { DiscoveryItemType } from '../../../../generated/prisma/client.js';
+import { DiscoveryItemType, Media } from '../../../../generated/prisma/client.js';
 import { FeedWeights } from '../feed.weights.js';
 
 export interface FeedQueryParams {
@@ -228,8 +228,8 @@ export class PrismaFeedRepository {
               logo.provider,
               logo.fileId,
               logo.mimeType,
-              logo.version,
-              logo.format,
+              logo.version ?? undefined,
+              logo.format ?? undefined,
             )
           : undefined;
         const coverUrl = cover
@@ -237,8 +237,8 @@ export class PrismaFeedRepository {
               cover.provider,
               cover.fileId,
               cover.mimeType,
-              cover.version,
-              cover.format,
+              cover.version ?? undefined,
+              cover.format ?? undefined,
             )
           : undefined;
         return [b.id, { ...b, logoUrl, coverUrl }];
@@ -252,42 +252,42 @@ export class PrismaFeedRepository {
       const tourRaw = r.itemType === 'TOUR' ? tourMap.get(r.referenceId) : undefined;
       const business = businessMap.get(r.businessProfileId);
 
-      let mappedListing: any = undefined;
+      let mappedListing: Record<string, unknown> | undefined = undefined;
       if (listingRaw) {
         mappedListing = { ...listingRaw };
         if (listingRaw.media) {
-          mappedListing.media = listingRaw.media.map((m: any) => ({
+          mappedListing['media'] = listingRaw.media.map((m: Media) => ({
             ...m,
             url: this.mediaUrlService.getMediaUrl(
               m.provider,
               m.fileId,
               m.mimeType,
-              m.version,
-              m.format
-            )
+              m.version ?? undefined,
+              m.format ?? undefined,
+            ),
           }));
         }
       }
 
-      let mappedTour: any = undefined;
+      let mappedTour: Record<string, unknown> | undefined = undefined;
       if (tourRaw) {
         mappedTour = { ...tourRaw };
         if (tourRaw.media) {
-          mappedTour.media = tourRaw.media.map((m: any) => ({
+          mappedTour['media'] = tourRaw.media.map((m: Media) => ({
             ...m,
             url: this.mediaUrlService.getMediaUrl(
               m.provider,
               m.fileId,
               m.mimeType,
-              m.version,
-              m.format
-            )
+              m.version ?? undefined,
+              m.format ?? undefined,
+            ),
           }));
         }
       }
 
       let refSlug = r.referenceId;
-      if (r.itemType === 'LISTING' && mappedListing) refSlug = mappedListing.slug;
+      if (r.itemType === 'LISTING' && mappedListing) refSlug = mappedListing['slug'] as string;
       if (r.itemType === 'BUSINESS' && business) refSlug = business.slug;
 
       return {
@@ -298,7 +298,9 @@ export class PrismaFeedRepository {
         score: Number(r.score),
         distanceMeters: Number(r.distanceMeters),
         createdAt: r.createdAt,
-        business: business ? { ...business, isFollowed: Number(r.is_followed_business) === 1 } : undefined,
+        business: business
+          ? { ...business, isFollowed: Number(r.is_followed_business) === 1 }
+          : undefined,
         listing: mappedListing,
         tour: mappedTour,
       };
