@@ -17,11 +17,7 @@ export class ParentBusinessRule implements PublicationRule<Listing, BusinessProf
         message: 'Parent business must be public before publishing a listing.',
       });
     }
-    if (
-      !parentBusiness.contactEmail &&
-      !parentBusiness.contactPhone &&
-      !parentBusiness.whatsapp
-    ) {
+    if (!parentBusiness.contactEmail && !parentBusiness.contactPhone && !parentBusiness.whatsapp) {
       issues.push({
         code: PublicationIssueCode.PARENT_BUSINESS_NO_CONTACT,
         severity: 'ERROR',

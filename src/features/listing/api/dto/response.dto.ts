@@ -60,7 +60,9 @@ export class ListingResponseDto {
     }
   }
 
-  static from(listing: Listing & { isSaved?: boolean; businessProfileSlug?: string }): ListingResponseDto {
+  static from(
+    listing: Listing & { isSaved?: boolean; businessProfileSlug?: string },
+  ): ListingResponseDto {
     return new ListingResponseDto(listing);
   }
 }

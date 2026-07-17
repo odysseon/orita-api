@@ -4,9 +4,7 @@ import { Listing } from '../../domain/types/listing.entity.js';
 
 @Injectable()
 export class ListingPublicationValidator {
-  constructor(
-    private readonly attributeValidator: ValidateListingAttributesService,
-  ) {}
+  constructor(private readonly attributeValidator: ValidateListingAttributesService) {}
 
   /**
    * Enforces all invariant rules required for a listing to be published.
