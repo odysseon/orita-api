@@ -2,10 +2,14 @@ import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../../prisma/prisma.service.js';
 import { SearchBusinessesDto, BusinessSortOption } from '../dto/search.dto.js';
 import { Prisma } from '../../../../generated/prisma/client.js';
+import { MediaUrlService } from '../../media/application/services/media-url.service.js';
 
 @Injectable()
 export class BusinessSearchService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly mediaUrlService: MediaUrlService,
+  ) {}
 
   async search(dto: SearchBusinessesDto) {
     let businessProfileIds: string[] | undefined = undefined;
@@ -107,11 +111,31 @@ export class BusinessSearchService {
         include: {
           categories: { include: { category: { select: { id: true, name: true, slug: true } } } },
           tags: { select: { tag: true } },
+          media: {
+            where: { role: 'LOGO' },
+            select: { provider: true, fileId: true, mimeType: true, version: true, format: true },
+          },
         },
       }),
       this.prisma.businessProfile.count({ where }),
     ]);
 
-    return { items, total };
+    const mappedItems = items.map((item) => {
+      const { media, ...rest } = item;
+      return {
+        ...rest,
+        logoUrl: media?.[0]
+          ? this.mediaUrlService.getMediaUrl(
+              media[0].provider,
+              media[0].fileId,
+              media[0].mimeType,
+              media[0].version ?? undefined,
+              media[0].format ?? undefined,
+            )
+          : null,
+      };
+    });
+
+    return { items: mappedItems, total };
   }
 }

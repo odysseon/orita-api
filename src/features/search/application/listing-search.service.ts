@@ -2,10 +2,14 @@ import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../../prisma/prisma.service.js';
 import { SearchListingsDto, ListingSortOption } from '../dto/search.dto.js';
 import { Prisma } from '../../../../generated/prisma/client.js';
+import { MediaUrlService } from '../../media/application/services/media-url.service.js';
 
 @Injectable()
 export class ListingSearchService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly mediaUrlService: MediaUrlService,
+  ) {}
 
   async search(dto: SearchListingsDto) {
     let businessProfileIds: string[] | undefined = undefined;
@@ -127,11 +131,31 @@ export class ListingSearchService {
           category: {
             select: { id: true, name: true, slug: true },
           },
+          media: {
+            where: { role: 'COVER' },
+            select: { provider: true, fileId: true, mimeType: true, version: true, format: true },
+          },
         },
       }),
       this.prisma.listing.count({ where }),
     ]);
 
-    return { items, total };
+    const mappedItems = items.map((item) => {
+      const { media, ...rest } = item;
+      return {
+        ...rest,
+        coverUrl: media?.[0]
+          ? this.mediaUrlService.getMediaUrl(
+              media[0].provider,
+              media[0].fileId,
+              media[0].mimeType,
+              media[0].version ?? undefined,
+              media[0].format ?? undefined,
+            )
+          : null,
+      };
+    });
+
+    return { items: mappedItems, total };
   }
 }
