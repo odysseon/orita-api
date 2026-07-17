@@ -125,6 +125,6 @@ export class PrismaLocationRepository {
       },
       select: { locationId: true },
     });
-    return follows.map((f) => f.locationId as string);
+    return follows.map((f) => f.locationId);
   }
 }

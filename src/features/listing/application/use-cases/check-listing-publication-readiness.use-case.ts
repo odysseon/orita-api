@@ -1,9 +1,18 @@
-import { Injectable, NotFoundException, ForbiddenException, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  ForbiddenException,
+  BadRequestException,
+} from '@nestjs/common';
 import { IListingRepository } from '../../domain/ports/listing.repository.port.js';
 import { IBusinessProfileRepository } from '../../../business-profile/domain/ports/business-profile.repository.port.js';
 import { ListingPublicationPolicy } from '../../domain/policies/listing-publication.policy.js';
 import { ListingPublicationValidator } from '../services/listing-publication-validator.service.js';
-import { PublicationIssue, PublicationIssueCode, PublicationReadinessResult } from '../../../../shared/domain/publication.types.js';
+import {
+  PublicationIssue,
+  PublicationIssueCode,
+  PublicationReadinessResult,
+} from '../../../../shared/domain/publication.types.js';
 
 @Injectable()
 export class CheckListingPublicationReadinessUseCase {
@@ -39,9 +48,10 @@ export class CheckListingPublicationReadinessUseCase {
       if (err instanceof BadRequestException) {
         // the validator throws BadRequestException with a message joining all errors
         // for better UX, we'll just add a generic error with the message
-        const response: any = err.getResponse();
-        const msg = typeof response === 'string' ? response : (response.message || 'Validation failed');
-        
+        const response = err.getResponse() as string | { message?: string | string[] };
+        const msg =
+          typeof response === 'string' ? response : response.message || 'Validation failed';
+
         issues.push({
           code: PublicationIssueCode.LISTING_ATTRIBUTE_VALIDATION_FAILED,
           severity: 'ERROR',
@@ -56,7 +66,7 @@ export class CheckListingPublicationReadinessUseCase {
       }
     }
 
-    const hasErrors = issues.some(i => i.severity === 'ERROR');
+    const hasErrors = issues.some((i) => i.severity === 'ERROR');
 
     return {
       ready: !hasErrors,

@@ -11,7 +11,10 @@ export class GetPublicListingUseCase {
     private readonly prisma: PrismaService,
   ) {}
 
-  async execute(slug: string, currentUserId?: string): Promise<Listing & { isSaved?: boolean; businessProfileSlug?: string }> {
+  async execute(
+    slug: string,
+    currentUserId?: string,
+  ): Promise<Listing & { isSaved?: boolean; businessProfileSlug?: string }> {
     // If it looks like a CUID (25 chars, starts with 'c'), reject it as bad request
     if (slug.startsWith('c') && slug.length >= 24) {
       throw new BadRequestException('Public calls must use the listing slug, not the ID.');
