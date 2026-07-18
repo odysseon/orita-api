@@ -16,6 +16,7 @@ interface NominatimResult {
     village?: string;
     state?: string;
     country?: string;
+    country_code?: string;
   };
 }
 
@@ -76,6 +77,7 @@ export class NominatimGeocoder implements Geocoder {
       provider: 'osm',
       name: shortName,
       formattedAddress: r.display_name,
+      ...(a.country_code ? { countryCode: a.country_code.toUpperCase() } : {}),
       lat: parseFloat(r.lat),
       lng: parseFloat(r.lon),
     };

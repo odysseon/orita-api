@@ -41,6 +41,10 @@ class EnsureLocationDto {
 
   @IsNumber()
   lng!: number;
+
+  @IsString()
+  @IsOptional()
+  countryCode?: string;
 }
 
 @ApiTags('Locations')

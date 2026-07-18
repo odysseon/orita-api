@@ -83,6 +83,7 @@ export class LocationsService {
           externalId: p.externalId ?? null,
           name: p.name,
           formattedAddress: p.formattedAddress,
+          countryCode: p.countryCode ?? null,
           latitude: p.lat,
           longitude: p.lng,
           persisted: false,

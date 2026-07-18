@@ -3,6 +3,7 @@ export interface GeocoderCandidate {
   provider: string;
   name: string;
   formattedAddress: string;
+  countryCode?: string;
   lat: number;
   lng: number;
 }
