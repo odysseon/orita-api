@@ -77,8 +77,8 @@ model User {
   id                      String                   @id @default(cuid())
   accountId               String                   @unique
   username                String                   @unique
-  avatarUrl               String?
-  avatarId                String?
+  displayName             String?
+  bio                     String?
   role                    PlatformRole             @default(USER)
   createdAt               DateTime                 @default(now())
   updatedAt               DateTime                 @updatedAt
@@ -96,6 +96,7 @@ model User {
   reviewsGiven            Review[]                 @relation("ReviewsGiven")
   savedListings           SavedListing[]           @relation("SavedListings")
   uploadIntents           UploadIntent[]
+  media                   Media[]
   following               UserFollow[]             @relation("UserFollowing")
   followers               UserFollow[]             @relation("UserFollowers")
   interestedCategories    UserInterestedCategory[]
@@ -240,6 +241,7 @@ model Media {
   listingId         String?
   reviewId          String?
   businessTourId    String?
+  userId            String?
   bytes             Int?
   duration          Float?
   format            String?
@@ -252,6 +254,7 @@ model Media {
   businessTour      BusinessTour?    @relation(fields: [businessTourId], references: [id], onDelete: Cascade)
   listing           Listing?         @relation(fields: [listingId], references: [id], onDelete: Cascade)
   review            Review?          @relation(fields: [reviewId], references: [id], onDelete: Cascade)
+  user              User?            @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([businessProfileId])
   @@index([listingId])
@@ -727,6 +730,7 @@ enum UploadOwnerType {
   LISTING
   BUSINESS_TOUR
   REVIEW
+  USER
 }
 
 enum MediaType {
@@ -743,6 +747,8 @@ enum MediaRole {
   COVER
   /// Both resource types — reorderable multi-items
   GALLERY
+  /// User profile avatar
+  AVATAR
 }
 
 enum AttributeType {

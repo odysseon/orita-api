@@ -15,6 +15,7 @@ export const MediaRole = {
   BANNER: 'BANNER',
   COVER: 'COVER',
   GALLERY: 'GALLERY',
+  AVATAR: 'AVATAR',
 } as const;
 
 export type MediaRole = (typeof MediaRole)[keyof typeof MediaRole];
@@ -24,6 +25,7 @@ export const SINGLETON_ROLES: ReadonlySet<MediaRole> = new Set([
   MediaRole.LOGO,
   MediaRole.BANNER,
   MediaRole.COVER,
+  MediaRole.AVATAR,
 ]);
 
 /** Valid roles per resource foreign key. */
@@ -33,4 +35,5 @@ export const ROLES_BY_FK_NAME: Record<string, ReadonlySet<MediaRole>> = {
   businessTourId: new Set([MediaRole.GALLERY]),
   // Reviews only support raw gallery photos — no logo, banner, or cover slots.
   reviewId: new Set([MediaRole.GALLERY]),
+  userId: new Set([MediaRole.AVATAR]),
 };

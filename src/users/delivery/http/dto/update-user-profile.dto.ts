@@ -1,4 +1,4 @@
-import { IsString, IsOptional, IsUrl } from 'class-validator';
+import { IsString, IsOptional } from 'class-validator';
 
 /**
  * Payload for updating a user's profile information.
@@ -10,21 +10,15 @@ export class UpdateUserProfileDto {
    * @example "hammed_anu"
    */
   @IsOptional()
+  @IsOptional()
   @IsString()
   username?: string;
 
-  /**
-   * The delivery URL of the newly uploaded avatar.
-   */
-  @IsOptional()
-  @IsUrl()
-  avatarUrl?: string;
-
-  /**
-   * The management ID of the newly uploaded avatar.
-   * Crucial for subsequent replacements or deletions.
-   */
   @IsOptional()
   @IsString()
-  avatarId?: string;
+  displayName?: string;
+
+  @IsOptional()
+  @IsString()
+  bio?: string;
 }
