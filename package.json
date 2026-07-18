@@ -62,6 +62,7 @@
     "handlebars": "^4.7.9",
     "helmet": "^8.3.0",
     "ioredis": "^5.11.1",
+    "libphonenumber-js": "^1.13.9",
     "multer": "^2.2.0",
     "nodemailer": "^9.0.3",
     "posthog-node": "^5.44.0",
