@@ -109,6 +109,24 @@ export class FeedConsumer {
     await this.incrementCounter(itemType, payload.data.referenceId, 'messagesCount', 1);
   }
 
+  @OnEvent('unique-content.shared')
+  async handleUniqueContentShared(
+    payload: EnrichedDomainEvent<{
+      senderId: string;
+      recipientId: string;
+      embedType: string;
+      targetId: string;
+    }>,
+  ) {
+    if (!['BUSINESS', 'LISTING', 'TOUR'].includes(payload.data.embedType)) return;
+    this.logger.log(
+      `Handling unique-content.shared for ${payload.data.embedType} ${payload.data.targetId}`,
+    );
+
+    const itemType = payload.data.embedType as DiscoveryItemType;
+    await this.incrementCounter(itemType, payload.data.targetId, 'sharesCount', 1);
+  }
+
   @OnEvent('analytics.event.created')
   async handleAnalyticsEvent(
     payload: EnrichedDomainEvent<{
