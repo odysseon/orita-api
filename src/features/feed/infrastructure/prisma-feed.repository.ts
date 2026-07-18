@@ -108,6 +108,7 @@ export class PrismaFeedRepository {
         LEFT JOIN "business_follows" fb ON fb."businessId" = bp.id AND fb."userId" = ${params.userId ?? ''}
         LEFT JOIN "location_follows" fl ON fl."locationId" = loc.id AND fl."userId" = ${params.userId ?? ''}
         WHERE ST_DWithin(loc.coordinates::geography, user_loc.pt, 50000)
+          AND bp."isPublic" = true
       ),
       scored_candidates AS (
         SELECT 
