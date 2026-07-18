@@ -102,6 +102,7 @@ model User {
   interestedCategories    UserInterestedCategory[]
   sharesSent              ItemShare[]              @relation("SentShares")
   sharesReceived          ItemShare[]              @relation("ReceivedShares")
+  opportunityPosts        OpportunityPost[]
   account                 Account                  @relation(fields: [accountId], references: [id], onDelete: Cascade)
 
   @@index([accountId])
@@ -172,6 +173,7 @@ model BusinessProfile {
   media               Media[]
   hours               OperatingHours[]
   participant         Participant?
+  opportunityPosts    OpportunityPost[]
 
   @@index([slug])
   @@index([isPublic])
@@ -195,6 +197,7 @@ model Location {
   businessProfiles    BusinessProfile[]
   conversationAnchors ConversationAnchor[]
   followers           LocationFollow[]
+  opportunityPosts    OpportunityPost[]
 
   @@unique([provider, externalId])
   @@map("locations")
@@ -750,6 +753,7 @@ enum UploadOwnerType {
   BUSINESS_TOUR
   REVIEW
   USER
+  OPPORTUNITY_POST
 }
 
 enum MediaType {
@@ -812,6 +816,7 @@ enum MessageEmbedType {
   LISTING
   TOUR
   LOCATION
+  OPPORTUNITY
 }
 
 enum AnalyticsEventType {
@@ -835,4 +840,63 @@ enum NotificationCategory {
   LISTING
   REVIEW
   SYSTEM
+}
+
+model OpportunityPost {
+  id                String              @id @default(cuid())
+  authorId          String
+  businessProfileId String?
+  title             String
+  body              String?
+  type              OpportunityType
+  locationId        String
+  expiresAt         DateTime?
+  status            OpportunityStatus   @default(ACTIVE)
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @updatedAt
+
+  author            User                @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  businessProfile   BusinessProfile?    @relation(fields: [businessProfileId], references: [id])
+  location          Location            @relation(fields: [locationId], references: [id])
+  media             OpportunityMedia[]
+
+  @@index([status, expiresAt])
+  @@index([authorId])
+  @@index([locationId])
+  @@map("opportunity_posts")
+}
+
+model OpportunityMedia {
+  id        String           @id @default(cuid())
+  postId    String
+  fileId    String           @unique
+  provider  StorageProvider
+  mimeType  String
+  format    String?
+  version   String?
+  width     Int?
+  height    Int?
+  bytes     Int?
+  createdAt DateTime         @default(now())
+
+  post      OpportunityPost  @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@index([postId])
+  @@map("opportunity_media")
+}
+
+enum OpportunityType {
+  FOR_SALE
+  FREE
+  WANTED
+  BORROW_LEND
+  TEMP_SERVICE
+  LOST_FOUND
+}
+
+enum OpportunityStatus {
+  ACTIVE
+  COMPLETED
+  EXPIRED
+  DELETED
 }
