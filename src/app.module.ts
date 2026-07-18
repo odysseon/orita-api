@@ -33,6 +33,7 @@ import { SearchModule } from './features/search/search.module.js';
 import { NotificationsModule } from './features/notifications/notifications.module.js';
 import { SeoModule } from './features/seo/seo.module.js';
 import { ScheduleModule } from '@nestjs/schedule';
+import { SharingModule } from './features/sharing/sharing.module.js';
 
 @Module({
   imports: [
@@ -95,6 +96,7 @@ import { ScheduleModule } from '@nestjs/schedule';
     SearchModule,
     NotificationsModule,
     SeoModule,
+    SharingModule,
   ],
   controllers: [HealthController],
   providers: [
