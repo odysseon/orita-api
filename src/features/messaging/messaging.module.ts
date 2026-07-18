@@ -61,6 +61,11 @@ import { MessagePreviewFactory } from './infrastructure/message-preview.factory.
     OpenConversationUseCase,
     MessagePreviewFactory,
   ],
-  exports: [IConversationRepository, ParticipantService],
+  exports: [
+    IConversationRepository,
+    ParticipantService,
+    OpenConversationUseCase,
+    SendMessageUseCase,
+  ],
 })
 export class MessagingModule {}
