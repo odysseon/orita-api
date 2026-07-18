@@ -7,6 +7,7 @@ import { validateConfig } from './configs/validation.js';
 import { PrismaModule } from './prisma/prisma.module.js';
 import { AuthModule } from './auth/auth.module.js';
 import { HealthController } from './health/health.controller.js';
+import { AppController } from './app.controller.js';
 import { IdentityModule } from './shared/identity/identity.module.js';
 import { StorageModule } from './storage/storage.module.js';
 import { UsersModule } from './users/users.module.js';
@@ -34,6 +35,7 @@ import { NotificationsModule } from './features/notifications/notifications.modu
 import { SeoModule } from './features/seo/seo.module.js';
 import { ScheduleModule } from '@nestjs/schedule';
 import { SharingModule } from './features/sharing/sharing.module.js';
+import { DiscoveryModule } from './features/discovery/discovery.module.js';
 
 @Module({
   imports: [
@@ -97,8 +99,9 @@ import { SharingModule } from './features/sharing/sharing.module.js';
     NotificationsModule,
     SeoModule,
     SharingModule,
+    DiscoveryModule,
   ],
-  controllers: [HealthController],
+  controllers: [HealthController, AppController],
   providers: [
     {
       provide: APP_GUARD,
