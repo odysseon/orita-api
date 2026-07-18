@@ -5,7 +5,7 @@ import { NotificationViewDto } from '../../api/dto/response.dto.js';
 @Injectable()
 export class NotificationPresenter {
   present(entity: InAppNotification): NotificationViewDto {
-    const payload = (entity.payload as Record<string, any>) || {};
+    const payload = (entity.payload as Record<string, unknown>) || {};
 
     let title: string;
     let subtitle: string | undefined = undefined;
@@ -14,8 +14,8 @@ export class NotificationPresenter {
 
     switch (entity.type) {
       case 'NEW_LISTING':
-        title = `New listing from ${String(payload['businessName'] || 'a business near you')}`;
-        subtitle = String(payload['listingTitle'] || '');
+        title = `New listing from ${typeof payload['businessName'] === 'string' ? payload['businessName'] : 'a business near you'}`;
+        subtitle = typeof payload['listingTitle'] === 'string' ? payload['listingTitle'] : '';
         icon = 'lucideTag';
         if (entity.referenceId) {
           actionUrl = `/l/${entity.referenceId}`;

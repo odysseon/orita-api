@@ -28,7 +28,7 @@ export class PrismaNearbyRepository {
 
     const typesFilterSql =
       params.types && params.types.length > 0
-        ? Prisma.sql`op.type::text = ANY(ARRAY[${Prisma.join(params.types)}]::text[])`
+        ? Prisma.sql`op.type::text IN (${Prisma.join(params.types)})`
         : Prisma.sql`1=1`;
 
     const results = await this.prisma.$queryRaw<
@@ -187,19 +187,24 @@ export class PrismaNearbyRepository {
       let postedAs: { id: string; name: string; logoUrl?: string } | undefined = undefined;
       if (r.business_profile_id) {
         const logo = businessLogos.find((l) => l.businessProfileId === r.business_profile_id);
+        const logoUrl = logo
+          ? this.mediaUrlService.getMediaUrl(
+              logo.provider,
+              logo.fileId,
+              logo.mimeType,
+              logo.version ?? undefined,
+              logo.format ?? undefined,
+            )
+          : undefined;
+
         postedAs = {
           id: r.business_profile_id,
-          name: r.business_name,
-          logoUrl: logo
-            ? this.mediaUrlService.getMediaUrl(
-                logo.provider,
-                logo.fileId,
-                logo.mimeType,
-                logo.version ?? undefined,
-                logo.format ?? undefined,
-              )
-            : undefined,
+          name: r.business_name ?? 'Unknown Business',
         };
+
+        if (logoUrl) {
+          postedAs.logoUrl = logoUrl;
+        }
       }
 
       return {

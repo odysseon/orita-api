@@ -55,7 +55,7 @@ export class SuggestedRecipientsService {
     const suggestions = new Map<string, SuggestedShareRecipientDto>();
 
     // Helper to format avatar
-    const getAvatar = (mediaArray: any[]) => {
+    const getAvatar = (mediaArray: unknown[]) => {
       const m = mediaArray?.[0] as {
         provider: StorageProvider;
         fileId: string;

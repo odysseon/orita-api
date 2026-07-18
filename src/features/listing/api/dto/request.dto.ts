@@ -27,7 +27,7 @@ export class ListingPriceDto {
   maxPrice?: number;
 
   /**
-   * Currency is required when any price is set.
+   * Currency is required when a price is set.
    */
   @ValidateIf((o: ListingPriceDto) => o.minPrice !== undefined || o.maxPrice !== undefined)
   @IsString()

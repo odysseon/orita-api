@@ -38,7 +38,7 @@ export abstract class ICategoryRepository {
 
   abstract activate(id: string): Promise<Category>;
 
-  /** Returns true if any BusinessProfile or Listing references this category id. */
+  /** Returns true if a BusinessProfile or Listing references this category id. */
   abstract hasAssignments(id: string): Promise<boolean>;
 
   abstract delete(id: string): Promise<void>;

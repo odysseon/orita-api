@@ -7,7 +7,7 @@ export interface DomainEventMetadata {
   occurredAt: string;
 }
 
-export interface EnrichedDomainEvent<TData = any, TContext = Record<string, unknown>> {
+export interface EnrichedDomainEvent<TData = unknown, TContext = Record<string, unknown>> {
   metadata: DomainEventMetadata;
   data: TData;
   context?: TContext;

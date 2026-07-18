@@ -94,7 +94,7 @@ export class ShareController {
     }
 
     const results: RecentShareableDto[] = [];
-    const getMediaUrl = (mediaObj: any) => {
+    const getMediaUrl = (mediaObj: unknown) => {
       const m = mediaObj as {
         provider: StorageProvider;
         fileId: string;

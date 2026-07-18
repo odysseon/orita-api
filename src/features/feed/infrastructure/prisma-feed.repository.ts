@@ -21,9 +21,9 @@ export interface FeedItemView {
   score: number;
   distanceMeters: number;
   createdAt: Date;
-  business?: any;
-  listing?: any;
-  tour?: any;
+  business?: unknown;
+  listing?: unknown;
+  tour?: unknown;
 }
 
 @Injectable()

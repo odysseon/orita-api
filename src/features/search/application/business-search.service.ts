@@ -56,7 +56,7 @@ export class BusinessSearchService {
     }
 
     // Parse filters: ?filter=VerificationStatus:VERIFIED
-    // Or anything else that applies to business profiles
+    // Or other factors that apply to business profiles
     if (dto.filter && dto.filter.length > 0) {
       const andClauses: Prisma.BusinessProfileWhereInput[] = [];
       for (const f of dto.filter) {

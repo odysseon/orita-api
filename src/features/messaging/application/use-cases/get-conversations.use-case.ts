@@ -11,7 +11,7 @@ export class GetConversationsUseCase {
   ) {}
 
   async execute(userId: string): Promise<ConversationPreviewView[]> {
-    // A user can see conversations for any participant they control
+    // A user can see conversations for all participants they control
     const participants = await this.participantService.getMyParticipants(userId);
     const participantIds = participants.map((p) => p.id);
 

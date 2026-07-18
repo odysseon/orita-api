@@ -108,7 +108,7 @@ export class ShareableSearchService {
     return results;
   }
 
-  private getMediaUrl(media?: any): string | undefined {
+  private getMediaUrl(media?: unknown): string | undefined {
     if (!media) return undefined;
     const m = media as {
       provider: StorageProvider;
