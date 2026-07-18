@@ -315,6 +315,9 @@ importers:
       ioredis:
         specifier: ^5.11.1
         version: 5.11.1
+      libphonenumber-js:
+        specifier: ^1.13.9
+        version: 1.13.9
       multer:
         specifier: ^2.2.0
         version: 2.2.0
@@ -2503,6 +2506,9 @@ packages:
 
   libphonenumber-js@1.13.7:
     resolution: {integrity: sha512-rvr3HIMdOgzhz1RFGjftji+wjoAFlzhqCNqJOU/MKTZQ8d9NZxAR/tI+0weDicyoucqVR0U1GCniqHJ0f8aM2A==}
+
+  libphonenumber-js@1.13.9:
+    resolution: {integrity: sha512-VNS5vWMM7r0P66BYv+TQJATxExEgLxN+34hfHDVhDkUsGAE4cRg0shCNSLTXNKm7nIUscC7AfB51TjxEeF7msQ==}
 
   lines-and-columns@1.2.4:
     resolution: {integrity: sha512-7ylylesZQ/PV29jhEDl3Ufjo6ZX7gCqJr5F7PKrqc93v7fzSymt1BpwEU8nAUXs8qzzvqhbjhK5QZg6Mt/HkBg==}
@@ -5670,6 +5676,8 @@ snapshots:
       type-check: 0.4.0
 
   libphonenumber-js@1.13.7: {}
+
+  libphonenumber-js@1.13.9: {}
 
   lines-and-columns@1.2.4: {}
 

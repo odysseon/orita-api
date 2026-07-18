@@ -9,6 +9,7 @@ import {
   ArrayMaxSize,
 } from 'class-validator';
 import { BusinessType } from '../../../../../generated/prisma/client.js';
+import { IsE164Phone } from './is-e164-phone.validator.js';
 
 export class CreateBusinessProfileDto {
   @IsString()
@@ -23,11 +24,13 @@ export class CreateBusinessProfileDto {
 
   @IsOptional()
   @IsString()
+  @IsE164Phone()
   @MaxLength(30)
   contactPhone?: string;
 
   @IsOptional()
   @IsString()
+  @IsE164Phone()
   @MaxLength(30)
   whatsapp?: string;
 
@@ -88,11 +91,13 @@ export class UpdateBusinessProfileDto {
 
   @IsOptional()
   @IsString()
+  @IsE164Phone()
   @MaxLength(30)
   contactPhone?: string;
 
   @IsOptional()
   @IsString()
+  @IsE164Phone()
   @MaxLength(30)
   whatsapp?: string;
 
