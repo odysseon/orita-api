@@ -4,6 +4,7 @@ import { RedisService } from '../../shared/redis/redis.service.js';
 import { IUserRepository } from '../core/ports/user.repository.interface.js';
 import { UpdateUserProfileDto } from '../delivery/http/dto/update-user-profile.dto.js';
 import { UpdateExplorationContextDto } from '../delivery/http/dto/update-exploration-context.dto.js';
+import { MediaUrlService } from '../../features/media/application/services/media-url.service.js';
 
 import { UserEntity } from '../core/domain/user.types.js';
 
@@ -12,6 +13,7 @@ export class PrismaUserRepository implements IUserRepository {
   constructor(
     private readonly prisma: PrismaService,
     private readonly redisService: RedisService,
+    private readonly mediaUrlService: MediaUrlService,
   ) {}
 
   private getCacheKey(accountId: string): string {
@@ -26,18 +28,21 @@ export class PrismaUserRepository implements IUserRepository {
       .catch(() => {});
   }
 
-  async create(accountId: string, username: string, avatarUrl?: string): Promise<UserEntity> {
+  async create(accountId: string, username: string): Promise<UserEntity> {
     const user = await this.prisma.user.create({
       data: {
         accountId,
         username,
-        avatarUrl: avatarUrl ?? null,
       },
       include: {
         account: {
           select: {
             email: true,
           },
+        },
+        media: {
+          where: { role: 'AVATAR' },
+          select: { provider: true, fileId: true, mimeType: true, version: true, format: true },
         },
       },
     });
@@ -48,6 +53,15 @@ export class PrismaUserRepository implements IUserRepository {
       role: user.role,
       businessId: null,
       email: account.email,
+      avatarUrl: user.media?.[0]
+        ? this.mediaUrlService.getMediaUrl(
+            user.media[0].provider,
+            user.media[0].fileId,
+            user.media[0].mimeType,
+            user.media[0].version,
+            user.media[0].format,
+          )
+        : null,
     };
     this.updateCacheAsync(domain);
     return domain;
@@ -70,6 +84,10 @@ export class PrismaUserRepository implements IUserRepository {
         interestedCategories: {
           select: { categoryId: true },
         },
+        media: {
+          where: { role: 'AVATAR' },
+          select: { provider: true, fileId: true, mimeType: true, version: true, format: true },
+        },
       },
     });
 
@@ -81,6 +99,15 @@ export class PrismaUserRepository implements IUserRepository {
       role: user.role,
       email: account.email,
       businessId: businessProfile?.id || null,
+      avatarUrl: user.media?.[0]
+        ? this.mediaUrlService.getMediaUrl(
+            user.media[0].provider,
+            user.media[0].fileId,
+            user.media[0].mimeType,
+            user.media[0].version,
+            user.media[0].format,
+          )
+        : null,
       interestedCategories: user.interestedCategories.map((c) => c.categoryId),
     };
     this.updateCacheAsync(domain);
@@ -93,8 +120,8 @@ export class PrismaUserRepository implements IUserRepository {
         where: { accountId },
         data: {
           ...(payload.username !== undefined && { username: payload.username }),
-          ...(payload.avatarUrl !== undefined && { avatarUrl: payload.avatarUrl }),
-          ...(payload.avatarId !== undefined && { avatarId: payload.avatarId }),
+          ...(payload.displayName !== undefined && { displayName: payload.displayName }),
+          ...(payload.bio !== undefined && { bio: payload.bio }),
         },
         include: {
           account: {
@@ -105,6 +132,10 @@ export class PrismaUserRepository implements IUserRepository {
           businessProfile: {
             select: { id: true },
           },
+          media: {
+            where: { role: 'AVATAR' },
+            select: { provider: true, fileId: true, mimeType: true, version: true, format: true },
+          },
         },
       });
 
@@ -114,6 +145,15 @@ export class PrismaUserRepository implements IUserRepository {
         email: account.email,
         role: updatedUser.role,
         businessId: businessProfile?.id || null,
+        avatarUrl: updatedUser.media?.[0]
+          ? this.mediaUrlService.getMediaUrl(
+              updatedUser.media[0].provider,
+              updatedUser.media[0].fileId,
+              updatedUser.media[0].mimeType,
+              updatedUser.media[0].version,
+              updatedUser.media[0].format,
+            )
+          : null,
       };
       this.updateCacheAsync(domain);
       return domain;
@@ -151,6 +191,10 @@ export class PrismaUserRepository implements IUserRepository {
           businessProfile: {
             select: { id: true },
           },
+          media: {
+            where: { role: 'AVATAR' },
+            select: { provider: true, fileId: true, mimeType: true, version: true, format: true },
+          },
         },
       });
 
@@ -160,6 +204,15 @@ export class PrismaUserRepository implements IUserRepository {
         email: account.email,
         role: updatedUser.role,
         businessId: businessProfile?.id || null,
+        avatarUrl: updatedUser.media?.[0]
+          ? this.mediaUrlService.getMediaUrl(
+              updatedUser.media[0].provider,
+              updatedUser.media[0].fileId,
+              updatedUser.media[0].mimeType,
+              updatedUser.media[0].version,
+              updatedUser.media[0].format,
+            )
+          : null,
       };
       this.updateCacheAsync(domain);
       return domain;
@@ -187,7 +240,7 @@ export class PrismaUserRepository implements IUserRepository {
       await tx.userInterestedCategory.deleteMany({
         where: { userId: user.id },
       });
-      
+
       if (categoryIds.length > 0) {
         await tx.userInterestedCategory.createMany({
           data: categoryIds.map((categoryId) => ({
