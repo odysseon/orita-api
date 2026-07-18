@@ -100,6 +100,8 @@ model User {
   following               UserFollow[]             @relation("UserFollowing")
   followers               UserFollow[]             @relation("UserFollowers")
   interestedCategories    UserInterestedCategory[]
+  sharesSent              ItemShare[]              @relation("SentShares")
+  sharesReceived          ItemShare[]              @relation("ReceivedShares")
   account                 Account                  @relation(fields: [accountId], references: [id], onDelete: Cascade)
 
   @@index([accountId])
@@ -184,6 +186,7 @@ model Location {
   name                String
   formattedAddress    String?
   searchText          String?
+  countryCode         String?
   latitude            Float
   longitude           Float
   coordinates         Unsupported("geometry")
@@ -623,6 +626,22 @@ model AnalyticsEvent {
   @@index([eventType])
   @@index([createdAt])
   @@map("analytics_events")
+}
+
+model ItemShare {
+  id             String           @id @default(cuid())
+  senderId       String
+  sender         User             @relation("SentShares", fields: [senderId], references: [id])
+  recipientId    String
+  recipient      User             @relation("ReceivedShares", fields: [recipientId], references: [id])
+  embedType      MessageEmbedType
+  targetId       String
+  conversationId String?
+  createdAt      DateTime         @default(now())
+
+  @@index([embedType, targetId])
+  @@index([senderId, recipientId, targetId, createdAt])
+  @@map("item_shares")
 }
 
 model DiscoveryItem {

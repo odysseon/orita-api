@@ -10,6 +10,7 @@ export interface LocationRecord {
   externalId: string | null;
   name: string;
   formattedAddress: string | null;
+  countryCode: string | null;
   latitude: number;
   longitude: number;
 }
@@ -35,6 +36,7 @@ export class PrismaLocationRepository {
         externalId: true,
         name: true,
         formattedAddress: true,
+        countryCode: true,
         latitude: true,
         longitude: true,
       },
@@ -44,7 +46,7 @@ export class PrismaLocationRepository {
   async findNearby(lat: number, lng: number, radiusMeters = 500): Promise<LocationRecord | null> {
     // PostGIS spatial query to find nearest location within radius
     const results = await this.prisma.$queryRaw<LocationRecord[]>`
-      SELECT id, provider, "externalId", name, "formattedAddress", latitude, longitude
+      SELECT id, provider, "externalId", name, "formattedAddress", "countryCode", latitude, longitude
       FROM locations
       WHERE ST_DWithin(
         coordinates::geography,
@@ -70,13 +72,14 @@ export class PrismaLocationRepository {
 
     // Create using raw SQL to set geometry column and use RETURNING to fetch the exact row
     const result = await this.prisma.$queryRaw<LocationRecord[]>(Prisma.sql`
-      INSERT INTO locations (id, "externalId", provider, name, "formattedAddress", "searchText", latitude, longitude, coordinates, "createdAt", "updatedAt")
+      INSERT INTO locations (id, "externalId", provider, name, "formattedAddress", "countryCode", "searchText", latitude, longitude, coordinates, "createdAt", "updatedAt")
       VALUES (
         ${newId},
         ${candidate.externalId ?? null},
         ${candidate.provider},
         ${candidate.name},
         ${candidate.formattedAddress ?? null},
+        ${candidate.countryCode ?? null},
         ${searchText},
         ${candidate.lat},
         ${candidate.lng},
@@ -88,11 +91,12 @@ export class PrismaLocationRepository {
         name = EXCLUDED.name,
         "formattedAddress" = EXCLUDED."formattedAddress",
         "searchText" = EXCLUDED."searchText",
+        "countryCode" = EXCLUDED."countryCode",
         latitude = EXCLUDED.latitude,
         longitude = EXCLUDED.longitude,
         coordinates = EXCLUDED.coordinates,
         "updatedAt" = NOW()
-      RETURNING id, provider, "externalId", name, "formattedAddress", latitude, longitude
+      RETURNING id, provider, "externalId", name, "formattedAddress", "countryCode", latitude, longitude
     `);
 
     if (!result[0]) {
@@ -110,6 +114,7 @@ export class PrismaLocationRepository {
         externalId: true,
         name: true,
         formattedAddress: true,
+        countryCode: true,
         latitude: true,
         longitude: true,
       },
