@@ -108,9 +108,9 @@ export class ConversationsController {
     const user = await this.prisma.user.findUniqueOrThrow({
       where: { accountId: identity.accountId },
     });
-    const personalParticipant = await this.participantService.ensurePersonalParticipant(user.id);
-    const details = await this.getConversationDetails.execute(id, personalParticipant.id);
-    return ConversationResponseDto.from(details.conversation, details.messages);
+    const participants = await this.participantService.getMyParticipants(user.id);
+    const details = await this.getConversationDetails.execute(id, participants.map(p => p.id));
+    return ConversationResponseDto.from(details.conversation, details.messages, details.viewerParticipantId);
   }
 
   @Post(':id/messages')

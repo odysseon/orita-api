@@ -112,8 +112,9 @@ export class ConversationResponseDto {
   @ApiProperty() createdAt!: Date;
   @ApiProperty() updatedAt!: Date;
   @ApiPropertyOptional({ type: [MessageResponseDto] }) messages?: MessageResponseDto[];
+  @ApiPropertyOptional() viewer?: { participantId: string };
 
-  static from(c: ConversationView, messages?: MessageView[]): ConversationResponseDto {
+  static from(c: ConversationView, messages?: MessageView[], viewerParticipantId?: string): ConversationResponseDto {
     const dto = new ConversationResponseDto();
     dto.id = c.id;
     dto.type = c.type;
@@ -129,6 +130,7 @@ export class ConversationResponseDto {
     dto.createdAt = c.createdAt;
     dto.updatedAt = c.updatedAt;
     if (messages) dto.messages = messages.map((m) => MessageResponseDto.from(m));
+    if (viewerParticipantId) dto.viewer = { participantId: viewerParticipantId };
     return dto;
   }
 }
