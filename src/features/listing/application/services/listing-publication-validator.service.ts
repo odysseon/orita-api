@@ -8,7 +8,7 @@ export class ListingPublicationValidator {
 
   /**
    * Enforces all invariant rules required for a listing to be published.
-   * Throws BadRequestException if any rule fails.
+   * Throws BadRequestException if a rule fails.
    */
   async validate(listing: Listing): Promise<void> {
     const errors: string[] = [];

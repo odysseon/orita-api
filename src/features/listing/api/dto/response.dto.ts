@@ -22,7 +22,7 @@ export class ListingResponseDto {
   @ApiProperty() updatedAt: string;
   @ApiPropertyOptional() coverUrl?: string;
   @ApiPropertyOptional() galleryUrls?: string[];
-  @ApiPropertyOptional() reviews?: any[];
+  @ApiPropertyOptional() reviews?: unknown[];
   @ApiPropertyOptional() isSaved?: boolean;
 
   private constructor(listing: Listing & { isSaved?: boolean; businessProfileSlug?: string }) {

@@ -14,7 +14,7 @@ export class DomainEventsProcessor extends WorkerHost {
   async process(job: Job<Record<string, unknown>, unknown, string>): Promise<{ success: boolean }> {
     this.logger.debug(`Processing domain event: ${job.name} (Job ${job.id})`);
 
-    // Fan-out locally to any feature module consumers (e.g., FeedConsumer)
+    // Fan-out locally to all feature module consumers (e.g., FeedConsumer)
     await this.eventEmitter.emitAsync(job.name, job.data);
 
     return { success: true };

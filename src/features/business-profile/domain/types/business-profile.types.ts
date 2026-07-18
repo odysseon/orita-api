@@ -80,7 +80,7 @@ export interface DiscoverBusinessesInput {
   readonly search?: string;
   /** Filter by an exact categoryId */
   readonly categoryId?: string;
-  /** Filter by root category slug — returns all businesses in any leaf under that root */
+  /** Filter by root category slug — returns all businesses in a leaf under that root */
   readonly rootSlug?: string;
   readonly lat?: number;
   readonly lng?: number;

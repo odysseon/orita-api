@@ -72,7 +72,7 @@ export class SendMessageUseCase {
 
     // Extract resource previews
     const autoEmbeds = await this.resourcePreviewService.extractPreviews(input.content);
-    const resolvedEmbeds: any[] = [];
+    const resolvedEmbeds: unknown[] = [];
 
     // Resolve frontend-provided embeds and auto-embeds into full snapshots
     const rawEmbeds = [...(input.embeds || []), ...autoEmbeds];

@@ -4,7 +4,7 @@ import { MediaType } from './media-type.enum.js';
 /**
  * A Media item represents a single uploadable asset attached to a resource.
  *
- * Design: polymorphic — one model serves any resource type.
+ * Design: polymorphic — one model serves all resource types.
  * Currently supports: LISTING, BUSINESS_PROFILE
  *
  * role captures the semantic purpose of the media item:
