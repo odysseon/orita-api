@@ -6,6 +6,7 @@ import { SearchListingsDto, SearchBusinessesDto, SearchUsersDto } from '../dto/s
 import { Public } from '@odysseon/whoami-adapter-nestjs';
 import { UserSearchService } from '../application/user-search.service.js';
 import { ShareableSearchService } from '../application/shareable-search.service.js';
+import { TourSearchService } from '../application/tour-search.service.js';
 import { ShareableSearchResultDto } from '../../sharing/api/dto/response.dto.js';
 
 @ApiTags('Search')
@@ -16,6 +17,7 @@ export class SearchController {
     private readonly businessSearchService: BusinessSearchService,
     private readonly userSearchService: UserSearchService,
     private readonly shareableSearchService: ShareableSearchService,
+    private readonly tourSearchService: TourSearchService,
   ) {}
 
   @ApiOperation({
@@ -54,5 +56,14 @@ export class SearchController {
   @HttpCode(HttpStatus.OK)
   async searchShareables(@Query('q') q: string) {
     return this.shareableSearchService.search(q || '');
+  }
+
+  @ApiOperation({ summary: 'Search for tours' })
+  @ApiOkResponse({ description: 'Paginated list of matching tours' })
+  @Public()
+  @Get('tours')
+  @HttpCode(HttpStatus.OK)
+  async searchTours(@Query() dto: any) {
+    return this.tourSearchService.search(dto);
   }
 }
