@@ -16,6 +16,12 @@ export enum BusinessSortOption {
   POPULAR = 'popular',
 }
 
+export enum TourSortOption {
+  RELEVANCE = 'relevance',
+  DISTANCE = 'distance',
+  NEWEST = 'newest',
+}
+
 export class SearchListingsDto {
   @IsOptional()
   @IsString()
@@ -132,6 +138,47 @@ export class SearchUsersDto {
   @IsOptional()
   @IsString()
   q?: string;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  @Min(1)
+  @Max(100)
+  limit?: number = 20;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  @Min(0)
+  @Max(10000)
+  offset?: number = 0;
+}
+
+export class SearchToursDto {
+  @IsOptional()
+  @IsString()
+  q?: string;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  lat?: number;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  lng?: number;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  @Min(100)
+  @Max(50000)
+  radius?: number = 15000;
+
+  @IsOptional()
+  @IsEnum(TourSortOption)
+  sort?: TourSortOption = TourSortOption.RELEVANCE;
 
   @IsOptional()
   @Type(() => Number)
