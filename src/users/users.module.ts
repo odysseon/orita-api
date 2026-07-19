@@ -8,7 +8,7 @@ import { UsersService } from './use-cases/users.service.js';
 import { PublicUsersService } from './use-cases/public-users.service.js';
 import { PrismaUserRepository } from './infrastructure/prisma-user.repository.js';
 import { USER_REPOSITORY_TOKEN } from './core/ports/user.repository.interface.js';
-import { UploadUserAvatarUseCase } from './use-cases/upload-user-avatar.use-case.js';
+
 
 @Module({
   imports: [RedisModule, MediaModule, StorageModule],
@@ -16,7 +16,6 @@ import { UploadUserAvatarUseCase } from './use-cases/upload-user-avatar.use-case
   providers: [
     UsersService,
     PublicUsersService,
-    UploadUserAvatarUseCase,
     {
       provide: USER_REPOSITORY_TOKEN,
       useClass: PrismaUserRepository,

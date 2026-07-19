@@ -1,31 +1,23 @@
 import {
-  BadRequestException,
   Body,
   Controller,
   Get,
   Patch,
   Post,
   Put,
-  UploadedFile,
-  UseInterceptors,
 } from '@nestjs/common';
-import { FileInterceptor } from '@nestjs/platform-express';
-import { ApiConsumes, ApiTags, ApiOperation } from '@nestjs/swagger';
+import { ApiTags, ApiOperation } from '@nestjs/swagger';
 import { CurrentIdentity, type RequestIdentity } from '@odysseon/whoami-adapter-nestjs';
 import { UsersService } from '../../use-cases/users.service.js';
-import { UploadUserAvatarUseCase } from '../../use-cases/upload-user-avatar.use-case.js';
 import { UpdateUserProfileDto } from './dto/update-user-profile.dto.js';
 import { UpdateExplorationContextDto } from './dto/update-exploration-context.dto.js';
 import { UpdateUserInterestsDto } from './dto/update-user-interest.dto.js';
-import { avatarUploadOptions } from './avatar-upload.options.js';
-import 'multer';
 
 @ApiTags('Users')
 @Controller('users')
 export class UsersController {
   constructor(
     private readonly usersService: UsersService,
-    private readonly uploadAvatarUseCase: UploadUserAvatarUseCase,
   ) {}
 
   @ApiOperation({ summary: 'Get the currently authenticated user profile' })
@@ -52,16 +44,21 @@ export class UsersController {
     return this.usersService.updateExplorationContext(identity.accountId, payload);
   }
 
-  @ApiOperation({ summary: 'Upload or replace the current user avatar' })
-  @Post('me/avatar')
-  @UseInterceptors(FileInterceptor('file', avatarUploadOptions))
-  @ApiConsumes('multipart/form-data')
-  async uploadAvatar(
-    @UploadedFile() file: Express.Multer.File | undefined,
+  @ApiOperation({ summary: 'Generate direct-to-cloud upload intent for avatar' })
+  @Post('me/media/upload-intent')
+  async generateAvatarUploadIntent(
     @CurrentIdentity() identity: RequestIdentity,
   ) {
-    if (!file) throw new BadRequestException('No file provided');
-    return this.uploadAvatarUseCase.execute(identity.accountId, file);
+    return this.usersService.generateAvatarUploadIntent(identity.accountId);
+  }
+
+  @ApiOperation({ summary: 'Consume intent and save new avatar media' })
+  @Post('me/media')
+  async consumeAvatarUploadIntent(
+    @CurrentIdentity() identity: RequestIdentity,
+    @Body() payload: { intentId: string; publicId: string; version: string },
+  ) {
+    return this.usersService.consumeAvatarUploadIntent(identity.accountId, payload);
   }
 
   @ApiOperation({ summary: 'Batch update user explicit interests' })
