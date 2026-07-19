@@ -18,6 +18,12 @@ import { MediaModule } from '../media/media.module.js';
     ShareableSearchService,
     TourSearchService,
   ],
-  exports: [BusinessSearchService, ListingSearchService, UserSearchService, ShareableSearchService, TourSearchService],
+  exports: [
+    BusinessSearchService,
+    ListingSearchService,
+    UserSearchService,
+    ShareableSearchService,
+    TourSearchService,
+  ],
 })
 export class SearchModule {}

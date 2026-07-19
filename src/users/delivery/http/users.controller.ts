@@ -1,11 +1,4 @@
-import {
-  Body,
-  Controller,
-  Get,
-  Patch,
-  Post,
-  Put,
-} from '@nestjs/common';
+import { Body, Controller, Get, Patch, Post, Put } from '@nestjs/common';
 import { ApiTags, ApiOperation } from '@nestjs/swagger';
 import { CurrentIdentity, type RequestIdentity } from '@odysseon/whoami-adapter-nestjs';
 import { UsersService } from '../../use-cases/users.service.js';
@@ -16,9 +9,7 @@ import { UpdateUserInterestsDto } from './dto/update-user-interest.dto.js';
 @ApiTags('Users')
 @Controller('users')
 export class UsersController {
-  constructor(
-    private readonly usersService: UsersService,
-  ) {}
+  constructor(private readonly usersService: UsersService) {}
 
   @ApiOperation({ summary: 'Get the currently authenticated user profile' })
   @Get('me')
@@ -46,9 +37,7 @@ export class UsersController {
 
   @ApiOperation({ summary: 'Generate direct-to-cloud upload intent for avatar' })
   @Post('me/media/upload-intent')
-  async generateAvatarUploadIntent(
-    @CurrentIdentity() identity: RequestIdentity,
-  ) {
+  async generateAvatarUploadIntent(@CurrentIdentity() identity: RequestIdentity) {
     return this.usersService.generateAvatarUploadIntent(identity.accountId);
   }
 

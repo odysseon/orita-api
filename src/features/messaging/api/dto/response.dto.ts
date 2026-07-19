@@ -114,7 +114,11 @@ export class ConversationResponseDto {
   @ApiPropertyOptional({ type: [MessageResponseDto] }) messages?: MessageResponseDto[];
   @ApiPropertyOptional() viewer?: { participantId: string };
 
-  static from(c: ConversationView, messages?: MessageView[], viewerParticipantId?: string): ConversationResponseDto {
+  static from(
+    c: ConversationView,
+    messages?: MessageView[],
+    viewerParticipantId?: string,
+  ): ConversationResponseDto {
     const dto = new ConversationResponseDto();
     dto.id = c.id;
     dto.type = c.type;

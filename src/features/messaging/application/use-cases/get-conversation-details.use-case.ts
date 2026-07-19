@@ -18,7 +18,7 @@ export class GetConversationDetailsUseCase {
       throw new NotFoundException(`Conversation ${conversationId} not found.`);
     }
 
-    const myParticipantId = conversation.participantIds.find(id => participantIds.includes(id));
+    const myParticipantId = conversation.participantIds.find((id) => participantIds.includes(id));
     if (!myParticipantId) {
       throw new ForbiddenException('User is not a participant of this conversation.');
     }
