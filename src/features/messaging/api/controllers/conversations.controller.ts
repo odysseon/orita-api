@@ -131,18 +131,19 @@ export class ConversationsController {
     const user = await this.prisma.user.findUniqueOrThrow({
       where: { accountId: identity.accountId },
     });
-    // For simplicity, using personal participant.
-    // Clients should eventually send the desired participantId to speak as a business.
-    const personalParticipant = await this.participantService.ensurePersonalParticipant(user.id);
+    const participants = await this.participantService.getMyParticipants(user.id);
+    const myParticipantIds = participants.map((p) => p.id);
 
-    const message = await this.sendMessage.execute({
-      conversationId,
-      participantId: personalParticipant.id,
-      ...(dto.content ? { content: dto.content } : {}),
-      ...(dto.mediaUrl ? { mediaUrl: dto.mediaUrl } : {}),
-      ...(dto.mediaType ? { mediaType: dto.mediaType } : {}),
-      ...(dto.embeds ? { embeds: dto.embeds } : {}),
-    });
+    const message = await this.sendMessage.execute(
+      {
+        conversationId,
+        ...(dto.content ? { content: dto.content } : {}),
+        ...(dto.mediaUrl ? { mediaUrl: dto.mediaUrl } : {}),
+        ...(dto.mediaType ? { mediaType: dto.mediaType } : {}),
+        ...(dto.embeds ? { embeds: dto.embeds } : {}),
+      },
+      myParticipantIds,
+    );
     return MessageResponseDto.from(message);
   }
 
@@ -157,8 +158,9 @@ export class ConversationsController {
     const user = await this.prisma.user.findUniqueOrThrow({
       where: { accountId: identity.accountId },
     });
-    const personalParticipant = await this.participantService.ensurePersonalParticipant(user.id);
-    const conversation = await this.updateStatus.execute(id, personalParticipant.id, dto.status);
+    const participants = await this.participantService.getMyParticipants(user.id);
+    const myParticipantIds = participants.map((p) => p.id);
+    const conversation = await this.updateStatus.execute(id, myParticipantIds, dto.status);
     return ConversationResponseDto.from(conversation);
   }
 
@@ -173,11 +175,14 @@ export class ConversationsController {
     const user = await this.prisma.user.findUniqueOrThrow({
       where: { accountId: identity.accountId },
     });
-    const personalParticipant = await this.participantService.ensurePersonalParticipant(user.id);
-    await this.markMessagesRead.execute({
-      conversationId,
-      messageIds: dto.messageIds,
-      participantId: personalParticipant.id,
-    });
+    const participants = await this.participantService.getMyParticipants(user.id);
+    const myParticipantIds = participants.map((p) => p.id);
+    await this.markMessagesRead.execute(
+      {
+        conversationId,
+        messageIds: dto.messageIds,
+      },
+      myParticipantIds,
+    );
   }
 }

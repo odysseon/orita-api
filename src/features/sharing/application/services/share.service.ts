@@ -16,9 +16,8 @@ export class ShareService {
 
   async share(input: InternalShareInput): Promise<ShareResult[]> {
     const results: ShareResult[] = [];
-    const senderParticipant = await this.participantService.ensurePersonalParticipant(
-      input.senderId,
-    );
+    const participants = await this.participantService.getMyParticipants(input.senderId);
+    const myParticipantIds = participants.map((p) => p.id);
 
     for (const recipientId of input.recipientIds) {
       // 1. Find or create a direct conversation
@@ -29,17 +28,19 @@ export class ShareService {
       });
 
       // 2. Send the message with the embed
-      const message = await this.sendMessage.execute({
-        conversationId: conversation.id,
-        participantId: senderParticipant.id,
-        ...(input.content ? { content: input.content } : {}),
-        embeds: [
-          {
-            embedType: input.embedType,
-            targetId: input.targetId,
-          },
-        ],
-      });
+      const message = await this.sendMessage.execute(
+        {
+          conversationId: conversation.id,
+          ...(input.content ? { content: input.content } : {}),
+          embeds: [
+            {
+              embedType: input.embedType,
+              targetId: input.targetId,
+            },
+          ],
+        },
+        myParticipantIds,
+      );
 
       // 3. Emit the internal content.shared event
       await this.eventBus.publish('content.shared', {
