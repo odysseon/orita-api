@@ -9,7 +9,6 @@ import { PublicUsersService } from './use-cases/public-users.service.js';
 import { PrismaUserRepository } from './infrastructure/prisma-user.repository.js';
 import { USER_REPOSITORY_TOKEN } from './core/ports/user.repository.interface.js';
 
-
 @Module({
   imports: [RedisModule, MediaModule, StorageModule],
   controllers: [UsersController, PublicUsersController],

@@ -41,13 +41,17 @@ export class UsersService {
 
   async generateAvatarUploadIntent(accountId: string) {
     const user = await this.getMyProfile(accountId);
-    
+
     const folder = `users/${user.id}/avatar`;
     const publicId = `media_${uuidv4()}`;
     const timestamp = Math.round(new Date().getTime() / 1000);
 
-    const signatureResult = await this.mediaStorage.generateUploadSignature(folder, publicId, timestamp);
-    
+    const signatureResult = await this.mediaStorage.generateUploadSignature(
+      folder,
+      publicId,
+      timestamp,
+    );
+
     const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
     const intent = await this.prisma.uploadIntent.create({
       data: {
@@ -59,9 +63,9 @@ export class UsersService {
         publicId,
         createdById: user.id,
         expiresAt,
-      }
+      },
     });
-    
+
     return {
       ...signatureResult,
       intentId: intent.id,
@@ -70,32 +74,40 @@ export class UsersService {
     };
   }
 
-  async consumeAvatarUploadIntent(accountId: string, payload: { intentId: string; publicId: string; version: string }) {
+  async consumeAvatarUploadIntent(
+    accountId: string,
+    payload: { intentId: string; publicId: string; version: string },
+  ) {
     const user = await this.getMyProfile(accountId);
-    
+
     const intent = await this.prisma.uploadIntent.findUnique({
       where: { id: payload.intentId },
     });
-    
-    if (!intent || intent.ownerId !== user.id || intent.role !== MediaRole.AVATAR || intent.consumedAt) {
+
+    if (
+      !intent ||
+      intent.ownerId !== user.id ||
+      intent.role !== MediaRole.AVATAR ||
+      intent.consumedAt
+    ) {
       throw new BadRequestException('Invalid or expired upload intent.');
     }
-    
+
     const metadata = await this.mediaStorage.getMetadata(payload.publicId);
     if (!metadata) {
       throw new BadRequestException('Media not found on storage provider.');
     }
-    
+
     await this.prisma.$transaction(async (tx) => {
       await tx.uploadIntent.update({
         where: { id: intent.id },
         data: { consumedAt: new Date() },
       });
-      
+
       await tx.media.deleteMany({
         where: { userId: user.id, role: MediaRole.AVATAR },
       });
-      
+
       await tx.media.create({
         data: {
           fileId: payload.publicId,
@@ -109,13 +121,13 @@ export class UsersService {
           height: metadata.height ?? null,
           role: MediaRole.AVATAR,
           userId: user.id,
-        }
+        },
       });
     });
-    
-    // We don't actually need to clear Redis manually if we trigger a cache update from userRepository, 
+
+    // We don't actually need to clear Redis manually if we trigger a cache update from userRepository,
     // but the next fetch will retrieve the new avatar.
-    
+
     return { url: metadata.url, role: MediaRole.AVATAR };
   }
 }

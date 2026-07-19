@@ -109,8 +109,15 @@ export class ConversationsController {
       where: { accountId: identity.accountId },
     });
     const participants = await this.participantService.getMyParticipants(user.id);
-    const details = await this.getConversationDetails.execute(id, participants.map(p => p.id));
-    return ConversationResponseDto.from(details.conversation, details.messages, details.viewerParticipantId);
+    const details = await this.getConversationDetails.execute(
+      id,
+      participants.map((p) => p.id),
+    );
+    return ConversationResponseDto.from(
+      details.conversation,
+      details.messages,
+      details.viewerParticipantId,
+    );
   }
 
   @Post(':id/messages')

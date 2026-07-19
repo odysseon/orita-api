@@ -55,7 +55,8 @@ export class TourSearchService {
     }
 
     // Sorting
-    let orderBy: Prisma.BusinessTourOrderByWithRelationInput | Prisma.BusinessTourOrderByWithRelationInput[];
+    let orderBy:
+      Prisma.BusinessTourOrderByWithRelationInput | Prisma.BusinessTourOrderByWithRelationInput[];
     switch (dto.sort) {
       case TourSortOption.NEWEST:
         orderBy = { createdAt: 'desc' };
