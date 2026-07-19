@@ -83,19 +83,19 @@ export class PublicUsersService {
     };
   }
 
-  async followUser(followingId: string, followerAccountId: string) {
+  async followUser(followingUsername: string, followerAccountId: string) {
     const follower = await this.userRepository.findByAccountId(followerAccountId);
     if (!follower) {
       throw new NotFoundException('Your user profile was not found');
     }
 
-    if (follower.id === followingId) {
-      throw new BadRequestException('You cannot follow yourself');
-    }
-
-    const following = await this.prisma.user.findUnique({ where: { id: followingId } });
+    const following = await this.prisma.user.findUnique({ where: { username: followingUsername } });
     if (!following) {
       throw new NotFoundException('User to follow not found');
+    }
+
+    if (follower.id === following.id) {
+      throw new BadRequestException('You cannot follow yourself');
     }
 
     await this.prisma.userFollow.upsert({
@@ -115,10 +115,15 @@ export class PublicUsersService {
     return { success: true };
   }
 
-  async unfollowUser(followingId: string, followerAccountId: string) {
+  async unfollowUser(followingUsername: string, followerAccountId: string) {
     const follower = await this.userRepository.findByAccountId(followerAccountId);
     if (!follower) {
       throw new NotFoundException('Your user profile was not found');
+    }
+
+    const following = await this.prisma.user.findUnique({ where: { username: followingUsername } });
+    if (!following) {
+      throw new NotFoundException('User to unfollow not found');
     }
 
     try {
@@ -126,7 +131,7 @@ export class PublicUsersService {
         where: {
           followerId_followingId: {
             followerId: follower.id,
-            followingId: followingId,
+            followingId: following.id,
           },
         },
       });
