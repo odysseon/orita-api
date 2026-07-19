@@ -1,17 +1,27 @@
-import { Injectable, ForbiddenException } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { IConversationRepository } from '../../domain/ports/conversation.repository.port.js';
 import { MarkMessagesReadInput } from '../../domain/types/messaging.types.js';
+import { ConversationParticipantResolver } from '../services/conversation-participant-resolver.service.js';
+import { NotFoundException } from '@nestjs/common';
 
 @Injectable()
 export class MarkMessagesReadUseCase {
-  constructor(private readonly repo: IConversationRepository) {}
+  constructor(
+    private readonly repo: IConversationRepository,
+    private readonly resolver: ConversationParticipantResolver,
+  ) {}
 
-  async execute(input: MarkMessagesReadInput): Promise<void> {
-    const allowed = await this.repo.isParticipant(input.conversationId, input.participantId);
-    if (!allowed) {
-      throw new ForbiddenException('You are not a participant of this conversation.');
+  async execute(
+    input: Omit<MarkMessagesReadInput, 'participantId'>,
+    requesterParticipantIds: string[],
+  ): Promise<void> {
+    const conversation = await this.repo.findById(input.conversationId);
+    if (!conversation) {
+      throw new NotFoundException(`Conversation ${input.conversationId} not found.`);
     }
 
-    await this.repo.markRead(input);
+    const participantId = this.resolver.resolve(conversation, requesterParticipantIds);
+
+    await this.repo.markRead({ ...input, participantId });
   }
 }

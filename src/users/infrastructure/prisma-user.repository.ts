@@ -252,6 +252,10 @@ export class PrismaUserRepository implements IUserRepository {
       }
     });
 
+    await this.clearCache(accountId);
+  }
+
+  async clearCache(accountId: string): Promise<void> {
     await this.redisService.del(this.getCacheKey(accountId));
   }
 }

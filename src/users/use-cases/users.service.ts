@@ -125,8 +125,8 @@ export class UsersService {
       });
     });
 
-    // We don't actually need to clear Redis manually if we trigger a cache update from userRepository,
-    // but the next fetch will retrieve the new avatar.
+    // Clear the cache so the next fetch will retrieve the new avatar
+    await this.userRepository.clearCache(accountId);
 
     return { url: metadata.url, role: MediaRole.AVATAR };
   }

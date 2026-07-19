@@ -1,4 +1,4 @@
-import { Injectable, ForbiddenException, BadRequestException } from '@nestjs/common';
+import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
 import { MediaUrlService } from '../../../media/application/services/media-url.service.js';
 import { IConversationRepository } from '../../domain/ports/conversation.repository.port.js';
 import { SendMessageInput, MessageView } from '../../domain/types/messaging.types.js';
@@ -6,6 +6,7 @@ import { EventBusService } from '../../../../shared/events/event-bus.service.js'
 import { PrismaService } from '../../../../prisma/prisma.service.js';
 import { ResourcePreviewService } from '../services/resource-preview.service.js';
 import { EmbedResolverService } from '../services/embed-resolver.service.js';
+import { ConversationParticipantResolver } from '../services/conversation-participant-resolver.service.js';
 
 @Injectable()
 export class SendMessageUseCase {
@@ -16,21 +17,27 @@ export class SendMessageUseCase {
     private readonly mediaUrlService: MediaUrlService,
     private readonly resourcePreviewService: ResourcePreviewService,
     private readonly embedResolver: EmbedResolverService,
+    private readonly resolver: ConversationParticipantResolver,
   ) {}
 
-  async execute(input: SendMessageInput): Promise<MessageView> {
+  async execute(
+    input: Omit<SendMessageInput, 'participantId'>,
+    requesterParticipantIds: string[],
+  ): Promise<MessageView> {
     if (!input.content && !input.mediaUrl && (!input.embeds || input.embeds.length === 0)) {
       throw new BadRequestException('Message must contain content, media, or an embed');
     }
 
-    const allowed = await this.repo.isParticipant(input.conversationId, input.participantId);
-    if (!allowed) {
-      throw new ForbiddenException('You are not a participant of this conversation.');
+    const conversation = await this.repo.findById(input.conversationId);
+    if (!conversation) {
+      throw new NotFoundException(`Conversation ${input.conversationId} not found.`);
     }
+
+    const participantId = this.resolver.resolve(conversation, requesterParticipantIds);
 
     // Resolve participant for snapshots
     const participant = await this.prisma.participant.findUnique({
-      where: { id: input.participantId },
+      where: { id: participantId },
       include: {
         user: { include: { media: { where: { role: 'AVATAR' } } } },
         business: { include: { media: { where: { role: 'LOGO' } } } },
@@ -85,9 +92,13 @@ export class SendMessageUseCase {
       });
     }
 
-    input.embeds = resolvedEmbeds as NonNullable<SendMessageInput['embeds']>;
+    const fullInput: SendMessageInput = {
+      ...input,
+      participantId,
+      embeds: resolvedEmbeds as NonNullable<SendMessageInput['embeds']>,
+    };
 
-    const message = await this.repo.addMessage(input, senderDisplayName, senderAvatarUrl);
+    const message = await this.repo.addMessage(fullInput, senderDisplayName, senderAvatarUrl);
 
     // Event bus tracking (legacy for analytics)
     await this.eventBus.publish('message.sent', {

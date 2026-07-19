@@ -36,4 +36,9 @@ export interface IUserRepository {
    * Replace the user's explicit interests with a new set.
    */
   updateInterests(accountId: string, categoryIds: string[]): Promise<void>;
+
+  /**
+   * Clears the user profile cache.
+   */
+  clearCache(accountId: string): Promise<void>;
 }

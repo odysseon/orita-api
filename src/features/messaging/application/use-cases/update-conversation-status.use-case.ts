@@ -1,25 +1,26 @@
-import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { IConversationRepository } from '../../domain/ports/conversation.repository.port.js';
 import { ConversationStatus, ConversationView } from '../../domain/types/messaging.types.js';
+import { ConversationParticipantResolver } from '../services/conversation-participant-resolver.service.js';
 
 @Injectable()
 export class UpdateConversationStatusUseCase {
-  constructor(private readonly repo: IConversationRepository) {}
+  constructor(
+    private readonly repo: IConversationRepository,
+    private readonly resolver: ConversationParticipantResolver,
+  ) {}
 
   async execute(
     conversationId: string,
-    participantId: string,
+    participantIds: string[],
     status: ConversationStatus,
   ): Promise<ConversationView> {
-    const exists = await this.repo.findById(conversationId);
-    if (!exists) {
+    const conversation = await this.repo.findById(conversationId);
+    if (!conversation) {
       throw new NotFoundException(`Conversation ${conversationId} not found.`);
     }
 
-    const isParticipant = await this.repo.isParticipant(conversationId, participantId);
-    if (!isParticipant) {
-      throw new ForbiddenException('User is not a participant of this conversation.');
-    }
+    this.resolver.resolve(conversation, participantIds);
     return this.repo.updateStatus(conversationId, status);
   }
 }
