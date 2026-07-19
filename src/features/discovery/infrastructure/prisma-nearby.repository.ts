@@ -64,11 +64,11 @@ export class PrismaNearbyRepository {
           op.body,
           op.type,
           op.status,
-          op.expires_at,
-          op.created_at,
-          op.author_id,
-          op.business_profile_id,
-          op.location_id,
+          op."expiresAt" AS expires_at,
+          op."createdAt" AS created_at,
+          op."authorId" AS author_id,
+          op."businessProfileId" AS business_profile_id,
+          op."locationId" AS location_id,
           l.name              AS location_name,
           l."formattedAddress" AS formatted_address,
           u.username          AS author_username,
@@ -79,16 +79,16 @@ export class PrismaNearbyRepository {
             loc.coordinates::geography,
             (SELECT pt FROM user_point)
           ) AS dist_meters,
-          EXTRACT(EPOCH FROM (NOW() - op.created_at)) / 3600  AS hours_old,
-          EXTRACT(EPOCH FROM (op.expires_at - NOW())) / 3600  AS hours_remaining
+          EXTRACT(EPOCH FROM (NOW() - op."createdAt")) / 3600  AS hours_old,
+          EXTRACT(EPOCH FROM (op."expiresAt" - NOW())) / 3600  AS hours_remaining
         FROM opportunity_posts op
-        JOIN locations l ON l.id = op.location_id
-        JOIN users u ON u.id = op.author_id
-        JOIN locations loc ON loc.id = op.location_id
-        LEFT JOIN business_profiles bp ON bp.id = op.business_profile_id
+        JOIN locations l ON l.id = op."locationId"
+        JOIN users u ON u.id = op."authorId"
+        JOIN locations loc ON loc.id = op."locationId"
+        LEFT JOIN business_profiles bp ON bp.id = op."businessProfileId"
         WHERE
           op.status = 'ACTIVE'
-          AND (op.expires_at IS NULL OR op.expires_at > NOW())
+          AND (op."expiresAt" IS NULL OR op."expiresAt" > NOW())
           AND ${typesFilterSql}
           AND ST_DWithin(
             loc.coordinates::geography,
@@ -120,13 +120,18 @@ export class PrismaNearbyRepository {
           END AS urgency_score
         FROM candidates
       ),
-      ranked AS (
+
+      computed_score AS (
         SELECT
           *,
           (${this.config.weights.distance} * distance_score
          + ${this.config.weights.freshness} * freshness_score
          + ${this.config.weights.urgency} * urgency_score) AS score
         FROM scored
+      ),
+      ranked AS (
+        SELECT *
+        FROM computed_score
         WHERE (${hasCursor} = false OR score < ${cursorScore}
                OR (score = ${cursorScore} AND id < ${cursorId}))
         ORDER BY score DESC, id DESC
