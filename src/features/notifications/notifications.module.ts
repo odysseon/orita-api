@@ -7,6 +7,7 @@ import { TemplateRendererService } from './application/services/template-rendere
 import { NearbyAudienceResolver } from './application/resolvers/nearby-audience.resolver.js';
 import { ListingPublishedPolicy } from './application/policies/listing-published.policy.js';
 import { BusinessPublishedPolicy } from './application/policies/business-published.policy.js';
+import { BusinessPublishedOwnerPolicy } from './application/policies/business-published-owner.policy.js';
 import { EmailWorker } from './infrastructure/workers/email.worker.js';
 import { PushWorker } from './infrastructure/workers/push.worker.js';
 import { InAppWorker } from './infrastructure/workers/in-app.worker.js';
@@ -47,6 +48,7 @@ import { NotificationPresenter } from './application/presenters/notification.pre
     // Policies
     ListingPublishedPolicy,
     BusinessPublishedPolicy,
+    BusinessPublishedOwnerPolicy,
 
     // Workers
     EmailWorker,
