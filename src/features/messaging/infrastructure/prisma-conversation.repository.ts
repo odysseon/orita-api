@@ -239,6 +239,7 @@ export class PrismaConversationRepository implements IConversationRepository {
       INNER JOIN "conversation_participants" cp ON m."conversationId" = cp."conversationId"
       WHERE cp."participantId" IN (${Prisma.join(myParticipantIds)})
         AND m."createdAt" > cp."lastReadAt"
+        AND m."participantId" NOT IN (${Prisma.join(myParticipantIds)})
       GROUP BY m."conversationId"
     `;
 
