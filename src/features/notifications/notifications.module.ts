@@ -19,6 +19,9 @@ import { NotificationsController } from './api/controllers/notifications.control
 import { NotificationsGateway } from './api/gateways/notifications.gateway.js';
 import { NotificationsService } from './application/services/notifications.service.js';
 import { NotificationPresenter } from './application/presenters/notification.presenter.js';
+import { PushSubscriptionsController } from './api/controllers/push-subscriptions.controller.js';
+import { PushSubscriptionService } from './application/services/push-subscriptions.service.js';
+import { PushNotificationSender } from './infrastructure/senders/push-notification.sender.js';
 
 @Module({
   imports: [
@@ -30,11 +33,12 @@ import { NotificationPresenter } from './application/presenters/notification.pre
       { name: 'in_app_delivery_queue' },
     ),
   ],
-  controllers: [NotificationsController],
+  controllers: [NotificationsController, PushSubscriptionsController],
   providers: [
     // Engine & Services
     NotificationEngine,
     NotificationsService,
+    PushSubscriptionService,
     PreferenceFilterService,
     ChannelRouterService,
     TemplateRendererService,
@@ -42,6 +46,7 @@ import { NotificationPresenter } from './application/presenters/notification.pre
     // Gateways & Presenters
     NotificationsGateway,
     NotificationPresenter,
+    PushNotificationSender,
 
     // Resolvers
     NearbyAudienceResolver,

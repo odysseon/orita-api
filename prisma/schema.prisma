@@ -96,6 +96,7 @@ model User {
   reviewsGiven            Review[]                 @relation("ReviewsGiven")
   savedListings           SavedListing[]           @relation("SavedListings")
   uploadIntents           UploadIntent[]
+  pushSubscriptions       PushSubscription[]
   media                   Media[]
   following               UserFollow[]             @relation("UserFollowing")
   followers               UserFollow[]             @relation("UserFollowers")
@@ -696,6 +697,23 @@ model InAppNotification {
 
   @@index([userId, createdAt(sort: Desc)])
   @@index([userId, readAt])
+}
+
+model PushSubscription {
+  id         String   @id @default(cuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  endpoint   String   @unique
+  p256dh     String
+  auth       String
+  userAgent  String?
+  platform   String?
+  lastSeenAt DateTime @default(now())
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([userId])
+  @@map("push_subscriptions")
 }
 
 /// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
