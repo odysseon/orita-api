@@ -64,15 +64,11 @@ export class SendMessageDto {
   @IsString()
   content?: string;
 
-  @ApiPropertyOptional()
+  @ApiPropertyOptional({ type: [String] })
   @IsOptional()
-  @IsString()
-  mediaUrl?: string;
-
-  @ApiPropertyOptional({ enum: ['IMAGE', 'VIDEO'] })
-  @IsOptional()
-  @IsEnum(['IMAGE', 'VIDEO'])
-  mediaType?: 'IMAGE' | 'VIDEO';
+  @IsArray()
+  @IsString({ each: true })
+  attachmentIds?: string[];
 
   @ApiPropertyOptional({ type: [MessageEmbedDto] })
   @IsOptional()
