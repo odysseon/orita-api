@@ -32,6 +32,7 @@ const OWNER_KEY_TO_TYPE: Record<MediaOwnerKey, UploadOwnerType> = {
   reviewId: UploadOwnerType.REVIEW,
   conversationId: UploadOwnerType.CONVERSATION,
   messageId: UploadOwnerType.CONVERSATION, // We don't have MESSAGE in UploadOwnerType, use CONVERSATION or USER or skip if it's unused
+  uploadIntentId: UploadOwnerType.CONVERSATION,
 };
 
 @Injectable()

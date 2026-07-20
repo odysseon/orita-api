@@ -69,6 +69,7 @@ export class ConsumeUploadIntentUseCase {
     return this.addMedia.execute({
       ownerKey: input.ownerKey,
       ownerId: input.ownerId,
+      uploadIntentId: intent.id,
       role: intent.role,
       mediaType: metadata.mimeType.startsWith('video/') ? 'VIDEO' : 'IMAGE',
       fileId: metadata.fileId,

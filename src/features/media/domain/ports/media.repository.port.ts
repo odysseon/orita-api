@@ -2,7 +2,7 @@ import { Media } from '../types/media.entity.js';
 import { AddMediaInput, ReorderMediaInput } from '../types/media.types.js';
 import { MediaRole } from '../types/media-role.enum.js';
 
-export type MediaOwnerKey = 'businessProfileId' | 'listingId' | 'businessTourId' | 'reviewId' | 'conversationId' | 'messageId';
+export type MediaOwnerKey = 'businessProfileId' | 'listingId' | 'businessTourId' | 'reviewId' | 'conversationId' | 'messageId' | 'uploadIntentId';
 
 export abstract class IMediaRepository {
   abstract add(input: AddMediaInput): Promise<Media>;

@@ -13,6 +13,7 @@ import { AddMediaInput as RepoAddMediaInput } from '../../domain/types/media.typ
 export interface AddMediaInput {
   readonly ownerKey: MediaOwnerKey;
   readonly ownerId: string;
+  readonly uploadIntentId?: string;
   readonly role: MediaRole;
   readonly mediaType: MediaType;
 
@@ -36,6 +37,7 @@ const MAX_GALLERY_ITEMS: Record<MediaOwnerKey, number> = {
   reviewId: 5,
   conversationId: 50,
   messageId: 10,
+  uploadIntentId: 50,
 };
 
 export const STORAGE_DESTINATION: Record<
@@ -53,6 +55,7 @@ export const STORAGE_DESTINATION: Record<
   reviewId: (id: string) => `reviews/${id}`,
   conversationId: (id: string) => `conversations/${id}`,
   messageId: (id: string) => `messages/${id}`,
+  uploadIntentId: (id: string) => `intents/${id}`,
 };
 
 @Injectable()
@@ -72,9 +75,12 @@ export class AddMediaUseCase {
 
     // 2. For GALLERY: enforce per-resource cap
     if (!isSingleton) {
+      const queryOwnerKey = input.ownerKey === 'conversationId' ? 'uploadIntentId' : input.ownerKey;
+      const queryOwnerId = input.ownerKey === 'conversationId' ? input.uploadIntentId! : input.ownerId;
+
       const galleryCount = await this.mediaRepo.countByRole(
-        input.ownerKey,
-        input.ownerId,
+        queryOwnerKey,
+        queryOwnerId,
         MediaRole.GALLERY,
       );
       const cap = MAX_GALLERY_ITEMS[input.ownerKey];
@@ -86,9 +92,11 @@ export class AddMediaUseCase {
     // 3. Persist the new media record.
     //    Singletons carry no position (order = null); GALLERY appended at end.
     //    NOTE: Singleton replacement (deleting old logo) is now the responsibility of the domain orchestrator.
+    const queryOwnerKey = input.ownerKey === 'conversationId' ? 'uploadIntentId' : input.ownerKey;
+    const queryOwnerId = input.ownerKey === 'conversationId' ? input.uploadIntentId! : input.ownerId;
     const order = isSingleton
       ? null
-      : await this.mediaRepo.countByRole(input.ownerKey, input.ownerId, MediaRole.GALLERY);
+      : await this.mediaRepo.countByRole(queryOwnerKey, queryOwnerId, MediaRole.GALLERY);
 
     const payload: RepoAddMediaInput = {
       fileId: input.fileId,
@@ -101,6 +109,8 @@ export class AddMediaUseCase {
       ...(input.ownerKey === 'listingId' ? { listingId: input.ownerId } : {}),
       ...(input.ownerKey === 'businessTourId' ? { businessTourId: input.ownerId } : {}),
       ...(input.ownerKey === 'reviewId' ? { reviewId: input.ownerId } : {}),
+      ...(input.ownerKey === 'messageId' ? { messageId: input.ownerId } : {}),
+      ...(input.ownerKey === 'conversationId' && input.uploadIntentId ? { uploadIntentId: input.uploadIntentId } : {}),
       ...(input.bytes !== undefined ? { bytes: input.bytes } : {}),
       ...(input.width !== undefined ? { width: input.width } : {}),
       ...(input.height !== undefined ? { height: input.height } : {}),
