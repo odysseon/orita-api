@@ -21,6 +21,20 @@ export class NotificationPresenter {
           actionUrl = `/l/${entity.referenceId}`;
         }
         break;
+      case 'MESSAGE_RECEIVED':
+        title =
+          typeof payload['senderDisplayName'] === 'string'
+            ? payload['senderDisplayName']
+            : 'New Message';
+        subtitle =
+          typeof payload['notificationPreview'] === 'string'
+            ? payload['notificationPreview']
+            : 'Sent a message';
+        icon = 'lucideMessageSquare';
+        if (entity.referenceId) {
+          actionUrl = `/messages/${entity.referenceId}`;
+        }
+        break;
       // Add other cases as needed
       default:
         title = 'New Notification';
