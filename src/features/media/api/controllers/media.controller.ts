@@ -36,9 +36,11 @@ import {
 } from '../dto/media.dto.js';
 import { GenerateUploadIntentUseCase } from '../../application/use-cases/generate-upload-intent.use-case.js';
 import { ConsumeUploadIntentUseCase } from '../../application/use-cases/consume-upload-intent.use-case.js';
-import { ApiTags } from '@nestjs/swagger';
+import { ConversationAccessPolicy } from '../../../messaging/application/policies/conversation-access.policy.js';
+import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
 
 @ApiTags('Media')
+@ApiBearerAuth()
 @Controller()
 export class MediaController {
   constructor(
@@ -48,6 +50,7 @@ export class MediaController {
     private readonly getResourceMedia: GetResourceMediaUseCase,
     private readonly generateUploadIntent: GenerateUploadIntentUseCase,
     private readonly consumeUploadIntent: ConsumeUploadIntentUseCase,
+    private readonly conversationAccessPolicy: ConversationAccessPolicy,
   ) {}
 
   // ---------------------------------------------------------------------------
@@ -379,21 +382,7 @@ export class MediaController {
     }
 
     if (ownerKey === 'conversationId') {
-      const participant = await this.prisma.conversationParticipant.findFirst({
-        where: {
-          conversationId: resourceId,
-          participant: {
-            userId,
-          },
-        },
-      });
-      if (!participant) {
-        throw new ForbiddenException('You are not a participant in this conversation.');
-      }
-      const conversation = await this.prisma.conversation.findUnique({
-        where: { id: resourceId }
-      });
-      if (!conversation) throw new NotFoundException('Conversation not found.');
+      await this.conversationAccessPolicy.resolve(userId, resourceId);
     }
   }
 

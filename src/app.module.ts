@@ -36,6 +36,7 @@ import { SeoModule } from './features/seo/seo.module.js';
 import { ScheduleModule } from '@nestjs/schedule';
 import { SharingModule } from './features/sharing/sharing.module.js';
 import { DiscoveryModule } from './features/discovery/discovery.module.js';
+import { SystemModule } from './features/system/system.module.js';
 
 @Module({
   imports: [
@@ -100,6 +101,7 @@ import { DiscoveryModule } from './features/discovery/discovery.module.js';
     SeoModule,
     SharingModule,
     DiscoveryModule,
+    SystemModule,
   ],
   controllers: [HealthController, AppController],
   providers: [

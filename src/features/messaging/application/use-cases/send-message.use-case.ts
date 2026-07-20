@@ -9,7 +9,7 @@ import { EmbedResolverService } from '../services/embed-resolver.service.js';
 import { ConversationParticipantResolver } from '../services/conversation-participant-resolver.service.js';
 import { MessagePreviewFactory } from '../../infrastructure/message-preview.factory.js';
 import { NotificationPreviewFactory } from '../../infrastructure/notification-preview.factory.js';
-import { AttachMediaToMessageUseCase } from '../../../media/application/use-cases/attach-media-to-message.use-case.js';
+import { FinalizeMessageAttachmentsUseCase } from '../../../media/application/use-cases/finalize-message-attachments.use-case.js';
 
 @Injectable()
 export class SendMessageUseCase {
@@ -23,7 +23,7 @@ export class SendMessageUseCase {
     private readonly resolver: ConversationParticipantResolver,
     private readonly previewFactory: MessagePreviewFactory,
     private readonly notificationPreviewFactory: NotificationPreviewFactory,
-    private readonly attachMedia: AttachMediaToMessageUseCase,
+    private readonly finalizeMedia: FinalizeMessageAttachmentsUseCase,
   ) {}
 
   async execute(
@@ -112,11 +112,13 @@ export class SendMessageUseCase {
     let message = await this.repo.addMessage(fullInput, senderDisplayName, senderAvatarUrl);
 
     if (input.attachmentIds && input.attachmentIds.length > 0) {
-      await this.attachMedia.execute(input.attachmentIds, message.id);
+      await this.finalizeMedia.execute(input.attachmentIds, message.id);
       
-      // Reload message to include newly attached media
-      const messages = await this.repo.getMessages(conversation.id);
-      message = messages.find(m => m.id === message.id) || message;
+      const media = await this.prisma.media.findMany({
+        where: { id: { in: input.attachmentIds } },
+        select: { id: true, fileId: true, provider: true, role: true, mimeType: true }
+      });
+      message.attachments = media as any;
     }
 
     // Figure out the recipients (all other participants in this conversation)
