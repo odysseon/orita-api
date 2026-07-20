@@ -27,6 +27,8 @@ export interface Media {
   readonly listingId: string | null;
   readonly businessTourId: string | null;
   readonly reviewId: string | null;
+  readonly messageId?: string | null;
+  readonly uploadIntentId?: string | null;
 
   /** Delivery URL */
   readonly url: string;

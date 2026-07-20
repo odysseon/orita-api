@@ -30,11 +30,12 @@ export interface AddMediaInput {
 
 /** Max gallery items per resource — business resources allow more (curated). */
 const MAX_GALLERY_ITEMS: Record<MediaOwnerKey, number> = {
-  listingId: 18,
-  businessProfileId: 18,
-  businessTourId: 18,
-  // Reviews are raw & concise — 8 photos max.
-  reviewId: 8,
+  listingId: 30,
+  businessProfileId: 10,
+  businessTourId: 30,
+  reviewId: 5,
+  conversationId: 50,
+  messageId: 10,
 };
 
 export const STORAGE_DESTINATION: Record<
@@ -47,9 +48,11 @@ export const STORAGE_DESTINATION: Record<
       : role === MediaRole.BANNER
         ? `business/${id}/banner`
         : `business/${id}/gallery`,
-  listingId: (id) => `listing/${id}`,
-  businessTourId: (id) => `tour/${id}`,
-  reviewId: (id) => `review/${id}`,
+  listingId: (id: string) => `listings/${id}`,
+  businessTourId: (id: string) => `tours/${id}`,
+  reviewId: (id: string) => `reviews/${id}`,
+  conversationId: (id: string) => `conversations/${id}`,
+  messageId: (id: string) => `messages/${id}`,
 };
 
 @Injectable()

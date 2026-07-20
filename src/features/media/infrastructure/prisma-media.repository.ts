@@ -25,6 +25,8 @@ export class PrismaMediaRepository extends IMediaRepository {
       listingId: raw.listingId,
       businessTourId: raw.businessTourId,
       reviewId: raw.reviewId,
+      messageId: raw.messageId,
+      uploadIntentId: raw.uploadIntentId,
       url: this.mediaUrlService.getMediaUrl(
         raw.provider,
         raw.fileId,
@@ -77,6 +79,8 @@ export class PrismaMediaRepository extends IMediaRepository {
     if (input.listingId !== undefined) data.listingId = input.listingId;
     if (input.businessTourId !== undefined) data.businessTourId = input.businessTourId;
     if (input.reviewId !== undefined) data.reviewId = input.reviewId;
+    if (input.messageId !== undefined) data.messageId = input.messageId;
+    if (input.uploadIntentId !== undefined) data.uploadIntentId = input.uploadIntentId;
 
     if (input.bytes !== undefined) data.bytes = input.bytes;
     if (input.width !== undefined) data.width = input.width;
@@ -133,6 +137,17 @@ export class PrismaMediaRepository extends IMediaRepository {
     await this.invalidateParentCache(ownerKey, ownerId);
 
     return this.findByRole(ownerKey, ownerId, MediaRole.GALLERY);
+  }
+
+  async attachToMessage(mediaIds: string[], messageId: string): Promise<void> {
+    if (!mediaIds.length) return;
+    await this.prisma.media.updateMany({
+      where: { id: { in: mediaIds } },
+      data: {
+        messageId,
+        uploadIntentId: null,
+      },
+    });
   }
 
   async delete(id: string): Promise<void> {

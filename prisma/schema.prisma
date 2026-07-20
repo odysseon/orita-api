@@ -246,9 +246,11 @@ model Media {
   createdAt         DateTime         @default(now())
   businessProfileId String?
   listingId         String?
-  reviewId          String?
   businessTourId    String?
+  reviewId          String?
   userId            String?
+  messageId         String?
+  uploadIntentId    String?
   bytes             Int?
   duration          Float?
   format            String?
@@ -262,6 +264,8 @@ model Media {
   listing           Listing?         @relation(fields: [listingId], references: [id], onDelete: Cascade)
   review            Review?          @relation(fields: [reviewId], references: [id], onDelete: Cascade)
   user              User?            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  message           Message?         @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  uploadIntent      UploadIntent?    @relation(fields: [uploadIntentId], references: [id], onDelete: SetNull)
 
   @@index([businessProfileId])
   @@index([listingId])
@@ -282,6 +286,7 @@ model UploadIntent {
   createdAt   DateTime        @default(now())
   consumedAt  DateTime?
   createdBy   User            @relation(fields: [createdById], references: [id], onDelete: Cascade)
+  media       Media[]
 
   @@index([ownerId])
   @@index([createdById])
@@ -523,6 +528,7 @@ model Message {
   readReceipts      MessageReadReceipt[]
   conversation      Conversation         @relation(fields: [conversationId], references: [id], onDelete: Cascade)
   participant       Participant          @relation(fields: [participantId], references: [id])
+  media             Media[]
 
   @@index([conversationId, createdAt])
   @@index([participantId])
@@ -772,6 +778,7 @@ enum UploadOwnerType {
   REVIEW
   USER
   OPPORTUNITY_POST
+  CONVERSATION
 }
 
 enum MediaType {
@@ -790,6 +797,8 @@ enum MediaRole {
   GALLERY
   /// User profile avatar
   AVATAR
+  /// Messaging attachments
+  MESSAGE
 }
 
 enum AttributeType {
