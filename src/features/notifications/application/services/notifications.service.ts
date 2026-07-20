@@ -37,7 +37,7 @@ export class NotificationsService {
     const nextCursor = hasMore ? items[items.length - 1]?.id : undefined;
 
     const result: PaginatedNotificationsDto = {
-      items: this.presenter.presentMany(items),
+      items: this.presenter.toInAppDtoMany(items),
       hasMore,
     };
 
@@ -67,7 +67,7 @@ export class NotificationsService {
     }
 
     if (notification.readAt) {
-      return this.presenter.present(notification); // already read
+      return this.presenter.toInAppDto(notification); // already read
     }
 
     const updated = await this.prisma.inAppNotification.update({
@@ -75,7 +75,7 @@ export class NotificationsService {
       data: { readAt: new Date() },
     });
 
-    return this.presenter.present(updated);
+    return this.presenter.toInAppDto(updated);
   }
 
   async markAllAsRead(userId: string): Promise<void> {

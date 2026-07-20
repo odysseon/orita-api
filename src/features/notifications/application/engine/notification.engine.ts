@@ -4,10 +4,13 @@ import { Queue } from 'bullmq';
 import { BaseNotificationPolicy } from '../policies/base.policy.js';
 import { PreferenceFilterService } from '../services/preference-filter.service.js';
 import { ChannelRouterService, DeliveryChannel } from '../services/channel-router.service.js';
+import { PrismaService } from '../../../../prisma/prisma.service.js';
+import { Prisma } from '../../../../../generated/prisma/client.js';
 
 @Injectable()
 export class NotificationEngine {
   constructor(
+    private readonly prisma: PrismaService,
     private readonly preferenceFilter: PreferenceFilterService,
     private readonly channelRouter: ChannelRouterService,
     @InjectQueue('email_delivery_queue') private readonly emailQueue: Queue,
@@ -41,12 +44,22 @@ export class NotificationEngine {
     const payload = await policy.getPayload(event);
 
     // 6. Enqueue Jobs for each channel and user
-    // In a real high-scale system, you might chunk this or push a single job that fans out.
-    // For MVP, we enqueue a job per user per channel.
     const jobs = [];
 
     for (const userId of finalAudience) {
-      const jobData = { userId, payload };
+      // 6a. Persist Notification Entity Centrally
+      const notification = await this.prisma.inAppNotification.create({
+        data: {
+          userId,
+          type: payload.type,
+          actorId: payload.actorId || null,
+          referenceType: payload.referenceType || null,
+          referenceId: payload.referenceId || null,
+          payload: payload.payload as unknown as Prisma.InputJsonValue,
+        },
+      });
+
+      const jobData = { userId, notificationId: notification.id };
 
       for (const channel of channels) {
         if (channel === DeliveryChannel.IN_APP) {

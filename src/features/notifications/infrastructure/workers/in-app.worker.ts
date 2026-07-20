@@ -1,9 +1,7 @@
 import { Processor, WorkerHost } from '@nestjs/bullmq';
 import { Job } from 'bullmq';
 import { Injectable, Logger } from '@nestjs/common';
-import { NotificationPayload } from '../../application/policies/base.policy.js';
 import { PrismaService } from '../../../../prisma/prisma.service.js';
-import { Prisma } from '../../../../../generated/prisma/client.js';
 import { NotificationsGateway } from '../../api/gateways/notifications.gateway.js';
 import { NotificationPresenter } from '../../application/presenters/notification.presenter.js';
 
@@ -20,24 +18,21 @@ export class InAppWorker extends WorkerHost {
     super();
   }
 
-  async process(job: Job<{ userId: string; payload: NotificationPayload }>): Promise<void> {
-    const { userId, payload } = job.data;
+  async process(job: Job<{ userId: string; notificationId: string }>): Promise<void> {
+    const { userId, notificationId } = job.data;
 
-    // Save structured payload to DB
-    const notification = await this.prisma.inAppNotification.create({
-      data: {
-        userId,
-        type: payload.type,
-        actorId: payload.actorId || null,
-        referenceType: payload.referenceType || null,
-        referenceId: payload.referenceId || null,
-        payload: payload.payload as unknown as Prisma.InputJsonValue,
-      },
+    const notification = await this.prisma.inAppNotification.findUnique({
+      where: { id: notificationId },
     });
 
-    const notificationView = this.presenter.present(notification);
+    if (!notification) {
+      this.logger.warn(`[InAppWorker] Notification ${notificationId} not found`);
+      return;
+    }
+
+    const notificationView = this.presenter.toInAppDto(notification);
     this.gateway.broadcastNotification(userId, notificationView);
 
-    this.logger.log(`[InAppWorker] Persisted and broadcast In-App notification for user ${userId}`);
+    this.logger.log(`[InAppWorker] Broadcast In-App notification for user ${userId}`);
   }
 }

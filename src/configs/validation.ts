@@ -58,6 +58,11 @@ export const configSchema = z
     SWAGGER_VERSION: z.string().default('1.0'),
     SWAGGER_TAG_NAME: z.string().default('events'),
     SWAGGER_TAG_DESC: z.string().default('Event management endpoints'),
+
+    // ── VAPID (Push Notifications) ────────────────────────────────────────
+    VAPID_PUBLIC_KEY: z.string().optional(),
+    VAPID_PRIVATE_KEY: z.string().optional(),
+    VAPID_SUBJECT: z.string().default('mailto:support@orita.com'),
   })
 
   .refine((d) => d.NODE_ENV !== 'production' || !!d.GOOGLE_CLIENT_ID, {

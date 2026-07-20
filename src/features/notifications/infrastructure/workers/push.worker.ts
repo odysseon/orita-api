@@ -1,35 +1,46 @@
 import { Processor, WorkerHost } from '@nestjs/bullmq';
 import { Job } from 'bullmq';
 import { Injectable, Logger } from '@nestjs/common';
-import { TemplateRendererService } from '../../application/services/template-renderer.service.js';
-import { NotificationPayload } from '../../application/policies/base.policy.js';
+import { PrismaService } from '../../../../prisma/prisma.service.js';
+import { PushNotificationSender } from '../senders/push-notification.sender.js';
+import { NotificationPresenter } from '../../application/presenters/notification.presenter.js';
 
 @Injectable()
 @Processor('push_delivery_queue')
 export class PushWorker extends WorkerHost {
   private readonly logger = new Logger(PushWorker.name);
 
-  constructor(private readonly templateRenderer: TemplateRendererService) {
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly pushSender: PushNotificationSender,
+    private readonly presenter: NotificationPresenter,
+  ) {
     super();
   }
 
-  process(job: Job<{ userId: string; payload: NotificationPayload }>): Promise<void> {
-    const { userId, payload } = job.data;
+  async process(job: Job<{ userId: string; notificationId: string }>): Promise<void> {
+    const { userId, notificationId } = job.data;
 
-    // 1. Render the template
-    const rendered = this.templateRenderer.render(payload);
+    const notification = await this.prisma.inAppNotification.findUnique({
+      where: { id: notificationId },
+    });
 
-    // 2. Deliver via Push Provider (Mocked for MVP)
-    const pushPayload = {
-      recipient: userId,
-      title: rendered.title,
-      body: rendered.body,
-      actionUrl: rendered.actionUrl,
-    };
+    if (!notification) {
+      this.logger.warn(`[PushWorker] Notification ${notificationId} not found`);
+      return;
+    }
 
-    this.logger.log(
-      `[PushWorker] Sending Push Notification: \n${JSON.stringify(pushPayload, null, 2)}`,
-    );
-    return Promise.resolve();
+    const subscriptions = await this.prisma.pushSubscription.findMany({
+      where: { userId },
+    });
+
+    if (subscriptions.length === 0) {
+      return;
+    }
+
+    const pushPayload = this.presenter.toPushDto(notification);
+
+    await this.pushSender.sendToSubscriptions(subscriptions, pushPayload);
+    this.logger.log(`[PushWorker] Sent Push Notification to user ${userId}`);
   }
 }
