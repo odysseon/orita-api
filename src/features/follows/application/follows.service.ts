@@ -127,7 +127,7 @@ export class FollowsService {
         where: { followerId },
         include: {
           following: {
-            select: { id: true, username: true, avatarUrl: true },
+            select: { id: true, username: true, media: { where: { role: 'AVATAR' }, take: 1 } },
           },
         },
         orderBy: { createdAt: 'desc' },
@@ -153,7 +153,7 @@ export class FollowsService {
     const users = await this.prisma.userFollow.findMany({
       where: { followerId },
       include: {
-        following: { select: { id: true, username: true, avatarUrl: true } },
+        following: { select: { id: true, username: true, media: { where: { role: 'AVATAR' }, take: 1 } } },
       },
     });
 
