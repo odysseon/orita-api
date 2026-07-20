@@ -138,8 +138,7 @@ export class ConversationsController {
       {
         conversationId,
         ...(dto.content ? { content: dto.content } : {}),
-        ...(dto.mediaUrl ? { mediaUrl: dto.mediaUrl } : {}),
-        ...(dto.mediaType ? { mediaType: dto.mediaType } : {}),
+        ...(dto.attachmentIds ? { attachmentIds: dto.attachmentIds } : {}),
         ...(dto.embeds ? { embeds: dto.embeds } : {}),
       },
       myParticipantIds,

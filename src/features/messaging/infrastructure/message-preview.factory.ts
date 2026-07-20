@@ -14,6 +14,7 @@ export interface MessagePreviewInput {
   mediaUrl: string | null;
   mediaType: string | null;
   embeds?: { embedType: import('../../../../generated/prisma/client.js').MessageEmbedType }[];
+  attachments?: { mediaType: string }[];
 }
 
 @Injectable()
@@ -27,6 +28,11 @@ export class MessagePreviewFactory {
       descriptor = {
         kind: 'EMBED',
         embedType: message.embeds![0]!.embedType,
+      };
+    } else if (message.attachments && message.attachments.length > 0) {
+      descriptor = {
+        kind: 'ATTACHMENT',
+        attachmentType: (message.attachments[0]!.mediaType as MessageMediaType) || 'IMAGE',
       };
     } else if (message.mediaUrl) {
       descriptor = {

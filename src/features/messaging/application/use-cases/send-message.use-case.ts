@@ -9,6 +9,7 @@ import { EmbedResolverService } from '../services/embed-resolver.service.js';
 import { ConversationParticipantResolver } from '../services/conversation-participant-resolver.service.js';
 import { MessagePreviewFactory } from '../../infrastructure/message-preview.factory.js';
 import { NotificationPreviewFactory } from '../../infrastructure/notification-preview.factory.js';
+import { AttachMediaToMessageUseCase } from '../../../media/application/use-cases/attach-media-to-message.use-case.js';
 
 @Injectable()
 export class SendMessageUseCase {
@@ -22,14 +23,20 @@ export class SendMessageUseCase {
     private readonly resolver: ConversationParticipantResolver,
     private readonly previewFactory: MessagePreviewFactory,
     private readonly notificationPreviewFactory: NotificationPreviewFactory,
+    private readonly attachMedia: AttachMediaToMessageUseCase,
   ) {}
 
   async execute(
     input: Omit<SendMessageInput, 'participantId'>,
     requesterParticipantIds: string[],
   ): Promise<MessageView> {
-    if (!input.content && !input.mediaUrl && (!input.embeds || input.embeds.length === 0)) {
-      throw new BadRequestException('Message must contain content, media, or an embed');
+    if (
+      !input.content &&
+      !input.mediaUrl &&
+      (!input.embeds || input.embeds.length === 0) &&
+      (!input.attachmentIds || input.attachmentIds.length === 0)
+    ) {
+      throw new BadRequestException('Message must contain content, media, embeds, or attachments');
     }
 
     const conversation = await this.repo.findById(input.conversationId);
@@ -102,7 +109,15 @@ export class SendMessageUseCase {
       embeds: resolvedEmbeds as NonNullable<SendMessageInput['embeds']>,
     };
 
-    const message = await this.repo.addMessage(fullInput, senderDisplayName, senderAvatarUrl);
+    let message = await this.repo.addMessage(fullInput, senderDisplayName, senderAvatarUrl);
+
+    if (input.attachmentIds && input.attachmentIds.length > 0) {
+      await this.attachMedia.execute(input.attachmentIds, message.id);
+      
+      // Reload message to include newly attached media
+      const messages = await this.repo.getMessages(conversation.id);
+      message = messages.find(m => m.id === message.id) || message;
+    }
 
     // Figure out the recipients (all other participants in this conversation)
     const otherParticipants = await this.prisma.participant.findMany({
@@ -124,6 +139,7 @@ export class SendMessageUseCase {
       mediaUrl: message.mediaUrl,
       mediaType: message.mediaType,
       embeds: message.embeds,
+      attachments: message.attachments,
     });
 
     // Event bus tracking & Notifications

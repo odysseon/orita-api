@@ -82,6 +82,14 @@ export interface MessageEmbedView {
   ctaPath: string | null;
 }
 
+export interface MessageAttachmentView {
+  id: string;
+  url: string;
+  mediaType: MessageMediaType;
+  mimeType: string;
+  bytes: number | null;
+}
+
 export interface MessageView {
   id: string;
   conversationId: string;
@@ -91,6 +99,7 @@ export interface MessageView {
   content: string | null;
   mediaUrl: string | null;
   mediaType: MessageMediaType | null;
+  attachments: MessageAttachmentView[];
   embeds: MessageEmbedView[];
   readReceipts: MessageReadReceiptView[];
   createdAt: Date;
@@ -119,6 +128,7 @@ export interface SendMessageInput {
   content?: string;
   mediaUrl?: string;
   mediaType?: MessageMediaType;
+  attachmentIds?: string[];
   embeds?: {
     embedType: MessageEmbedType;
     targetId: string;

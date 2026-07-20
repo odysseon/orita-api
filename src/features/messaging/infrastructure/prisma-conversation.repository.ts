@@ -25,7 +25,7 @@ import { MessagePreviewFactory } from './message-preview.factory.js';
 import { Prisma } from '../../../../generated/prisma/client.js';
 import { MediaUrlService } from '../../media/application/services/media-url.service.js';
 
-type HydratedMessage = Message & { embeds?: MessageEmbed[]; readReceipts?: MessageReadReceipt[] };
+type HydratedMessage = Message & { embeds?: MessageEmbed[]; readReceipts?: MessageReadReceipt[]; media?: any[] };
 type HydratedConversation = Conversation & {
   anchor?: ConversationAnchor | null;
   participants: ConversationParticipant[];
@@ -49,6 +49,13 @@ export class PrismaConversationRepository implements IConversationRepository {
       content: m.content,
       mediaUrl: m.mediaUrl,
       mediaType: m.mediaType,
+      attachments: (m.media || []).map((a: any) => ({
+        id: a.id,
+        url: this.mediaUrlService.getMediaUrl(a.provider, a.fileId, a.mimeType, a.version, a.format),
+        mediaType: a.mediaType,
+        mimeType: a.mimeType,
+        bytes: a.bytes,
+      })),
       embeds: (m.embeds || []).map((e: MessageEmbed): MessageEmbedView => ({
         id: e.id,
         embedType: e.embedType,
@@ -159,7 +166,7 @@ export class PrismaConversationRepository implements IConversationRepository {
           create: embedsData,
         },
       },
-      include: { readReceipts: true, embeds: true },
+      include: { readReceipts: true, embeds: true, media: true },
     });
 
     await this.prisma.conversation.update({
@@ -222,6 +229,7 @@ export class PrismaConversationRepository implements IConversationRepository {
             mediaUrl: true,
             mediaType: true,
             embeds: { take: 1, select: { embedType: true } },
+            media: { take: 1, select: { mediaType: true } },
           },
         },
       },
@@ -297,7 +305,18 @@ export class PrismaConversationRepository implements IConversationRepository {
       const unreadCount = unreadCountMap.get(c.id) || 0;
 
       if (c.messages.length > 0) {
-        latestMessagePreview = this.messagePreviewFactory.create(c.messages[0]!);
+        const msg = c.messages[0]!;
+        latestMessagePreview = this.messagePreviewFactory.create({
+          id: msg.id,
+          content: msg.content,
+          participantId: msg.participantId,
+          senderDisplayName: msg.senderDisplayName,
+          createdAt: msg.createdAt,
+          mediaUrl: msg.mediaUrl,
+          mediaType: msg.mediaType,
+          embeds: msg.embeds as any,
+          attachments: msg.media as any,
+        });
       }
 
       const preview: import('../domain/types/messaging.types.js').ConversationPreviewView = {
@@ -320,7 +339,7 @@ export class PrismaConversationRepository implements IConversationRepository {
   async getMessages(conversationId: string): Promise<MessageView[]> {
     const messages = await this.prisma.message.findMany({
       where: { conversationId },
-      include: { readReceipts: true, embeds: true },
+      include: { readReceipts: true, embeds: true, media: true },
       orderBy: { createdAt: 'asc' },
     });
 
