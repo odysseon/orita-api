@@ -7,6 +7,7 @@ import { PrismaService } from '../../../../prisma/prisma.service.js';
 import { ResourcePreviewService } from '../services/resource-preview.service.js';
 import { EmbedResolverService } from '../services/embed-resolver.service.js';
 import { ConversationParticipantResolver } from '../services/conversation-participant-resolver.service.js';
+import { MessagePreviewFactory } from '../../infrastructure/message-preview.factory.js';
 
 @Injectable()
 export class SendMessageUseCase {
@@ -18,6 +19,7 @@ export class SendMessageUseCase {
     private readonly resourcePreviewService: ResourcePreviewService,
     private readonly embedResolver: EmbedResolverService,
     private readonly resolver: ConversationParticipantResolver,
+    private readonly previewFactory: MessagePreviewFactory,
   ) {}
 
   async execute(
@@ -100,10 +102,37 @@ export class SendMessageUseCase {
 
     const message = await this.repo.addMessage(fullInput, senderDisplayName, senderAvatarUrl);
 
-    // Event bus tracking (legacy for analytics)
+    // Figure out the recipients (all other participants in this conversation)
+    const otherParticipants = await this.prisma.participant.findMany({
+      where: {
+        id: { in: conversation.participantIds.filter((id) => id !== participantId) },
+      },
+      include: { business: true },
+    });
+    const recipientUserIds = otherParticipants
+      .map((p) => p.userId || p.business?.ownerId)
+      .filter(Boolean) as string[];
+
+    const previewView = this.previewFactory.create({
+      id: message.id,
+      content: message.content,
+      participantId: message.participantId,
+      senderDisplayName: message.senderDisplayName,
+      createdAt: message.createdAt,
+      mediaUrl: message.mediaUrl,
+      mediaType: message.mediaType,
+      embeds: message.embeds,
+    });
+
+    // Event bus tracking & Notifications
     await this.eventBus.publish('message.sent', {
-      senderId: message.participantId,
+      messageId: message.id,
       conversationId: message.conversationId,
+      senderUserId: participant.userId || participant.business?.ownerId || null,
+      senderDisplayName: message.senderDisplayName,
+      recipientUserIds,
+      preview: previewView.descriptor,
+      sentAt: message.createdAt,
     });
 
     return message;

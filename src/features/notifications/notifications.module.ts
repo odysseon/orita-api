@@ -8,6 +8,7 @@ import { NearbyAudienceResolver } from './application/resolvers/nearby-audience.
 import { ListingPublishedPolicy } from './application/policies/listing-published.policy.js';
 import { BusinessPublishedPolicy } from './application/policies/business-published.policy.js';
 import { BusinessPublishedOwnerPolicy } from './application/policies/business-published-owner.policy.js';
+import { MessageReceivedPolicy } from './application/policies/message-received.policy.js';
 import { EmailWorker } from './infrastructure/workers/email.worker.js';
 import { PushWorker } from './infrastructure/workers/push.worker.js';
 import { InAppWorker } from './infrastructure/workers/in-app.worker.js';
@@ -49,6 +50,7 @@ import { NotificationPresenter } from './application/presenters/notification.pre
     ListingPublishedPolicy,
     BusinessPublishedPolicy,
     BusinessPublishedOwnerPolicy,
+    MessageReceivedPolicy,
 
     // Workers
     EmailWorker,
