@@ -11,7 +11,7 @@ import {
   HttpCode,
   HttpStatus,
 } from '@nestjs/common';
-import { ApiTags } from '@nestjs/swagger';
+import { ApiTags , ApiBearerAuth } from '@nestjs/swagger';
 import { CurrentIdentity, Public } from '@odysseon/whoami-adapter-nestjs';
 import type { RequestIdentity } from '@odysseon/whoami-adapter-nestjs';
 import { PrismaService } from '../../../../prisma/prisma.service.js';
@@ -32,6 +32,7 @@ import { BusinessTourStatus } from '../../domain/types/business-tour.entity.js';
 import { ModeratorOrAdminGuard } from '../../../../shared/decorators/moderator-or-admin-guard.decorator.js';
 
 @ApiTags('Store Tours')
+@ApiBearerAuth()
 @Controller()
 export class BusinessTourController {
   constructor(

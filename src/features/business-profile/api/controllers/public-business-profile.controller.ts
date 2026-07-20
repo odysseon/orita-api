@@ -11,9 +11,10 @@ import { GetTagsUseCase } from '../../application/use-cases/get-tags.use-case.js
 import { GetBusinessesQueryDto } from '../dto/request.dto.js';
 import { BusinessProfileResponseDto, PaginatedBusinessesResponseDto } from '../dto/response.dto.js';
 import { TagDto } from '../dto/tag.dto.js';
-import { ApiTags } from '@nestjs/swagger';
+import { ApiTags , ApiBearerAuth } from '@nestjs/swagger';
 
 @ApiTags('businesses public access')
+@ApiBearerAuth()
 @OptionalAuth()
 @Controller('businesses')
 export class PublicBusinessProfileController {

@@ -8,11 +8,12 @@ import { DiscoverListingsUseCase } from '../../application/use-cases/discover-li
 import { GetPublicListingUseCase } from '../../application/use-cases/get-public-listing.use-case.js';
 import { GetListingsQueryDto } from '../dto/request.dto.js';
 import { ListingResponseDto, PaginatedListingsResponseDto } from '../dto/response.dto.js';
-import { ApiTags } from '@nestjs/swagger';
+import { ApiTags , ApiBearerAuth } from '@nestjs/swagger';
 import { IBusinessProfileRepository } from '../../../business-profile/domain/ports/business-profile.repository.port.js';
 import { PrismaService } from '../../../../prisma/prisma.service.js';
 
 @ApiTags('Listing Public Surface')
+@ApiBearerAuth()
 @OptionalAuth()
 @Controller()
 export class PublicListingController {

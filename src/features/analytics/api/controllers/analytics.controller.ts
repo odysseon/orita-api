@@ -1,5 +1,5 @@
 import { Controller, Post, Get, Body, Param } from '@nestjs/common';
-import { ApiTags, ApiOperation } from '@nestjs/swagger';
+import { ApiTags, ApiOperation , ApiBearerAuth } from '@nestjs/swagger';
 import { AnalyticsService, TrackEventDto } from '../../application/use-cases/analytics.service.js';
 import { AnalyticsEventType } from '../../../../../generated/prisma/client.js';
 import { CurrentIdentity, type RequestIdentity } from '@odysseon/whoami-adapter-nestjs';
@@ -11,6 +11,7 @@ export class TrackEventRequestDto {
 }
 
 @ApiTags('Analytics')
+@ApiBearerAuth()
 @Controller('api')
 export class AnalyticsController {
   constructor(private readonly analyticsService: AnalyticsService) {}

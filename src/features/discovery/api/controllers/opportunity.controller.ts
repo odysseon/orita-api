@@ -13,9 +13,10 @@ import { OpportunityService } from '../../application/services/opportunity.servi
 import { CreateOpportunityDto, UpdateOpportunityDto } from '../dto/opportunity-request.dto.js';
 import { CurrentIdentity, type RequestIdentity } from '@odysseon/whoami-adapter-nestjs';
 import { IdentityService } from '../../../../shared/identity/identity.service.js';
-import { ApiTags } from '@nestjs/swagger';
+import { ApiTags , ApiBearerAuth } from '@nestjs/swagger';
 
 @ApiTags('opportunities')
+@ApiBearerAuth()
 @Controller('opportunities')
 export class OpportunityController {
   constructor(

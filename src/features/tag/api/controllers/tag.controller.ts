@@ -11,7 +11,7 @@ import {
   Query,
 } from '@nestjs/common';
 import { Public } from '@odysseon/whoami-adapter-nestjs';
-import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { ApiOperation, ApiResponse, ApiTags , ApiBearerAuth } from '@nestjs/swagger';
 import { AdminGuard } from '../../../../shared/decorators/admin-guard.decorator.js';
 import { CreateTagUseCase } from '../../application/use-cases/create-tag.use-case.js';
 import { DeleteTagUseCase } from '../../application/use-cases/delete-tag.use-case.js';
@@ -22,6 +22,7 @@ import { CreateTagRequestDto, UpdateTagRequestDto } from '../dto/request.dto.js'
 import { PaginatedTagsResponseDto, TagResponseDto } from '../dto/response.dto.js';
 
 @ApiTags('Tags')
+@ApiBearerAuth()
 @Controller('tags')
 export class TagController {
   constructor(

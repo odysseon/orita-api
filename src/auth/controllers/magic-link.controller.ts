@@ -7,6 +7,7 @@ import {
   ApiBody,
   ApiOkResponse,
   ApiUnauthorizedResponse,
+  ApiBearerAuth,
 } from '@nestjs/swagger';
 import { Public, moduleToken } from '@odysseon/whoami-adapter-nestjs';
 import type { MagicLinkMethods } from '@odysseon/whoami-core/magiclink';
@@ -19,6 +20,7 @@ import {
 import { MailQueueService } from '../../mail/mail-queue.service.js';
 
 @ApiTags('Magic Link Authentication')
+@ApiBearerAuth()
 @Controller('auth/magic-link')
 export class MagicLinkController {
   constructor(

@@ -8,7 +8,7 @@ import {
   NotFoundException,
   BadRequestException,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiQuery, ApiBody } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiQuery, ApiBody , ApiBearerAuth } from '@nestjs/swagger';
 import { LocationsService } from '../application/locations.service.js';
 import {
   Public,
@@ -48,6 +48,7 @@ class EnsureLocationDto {
 }
 
 @ApiTags('Locations')
+@ApiBearerAuth()
 @Controller('v1/locations')
 export class LocationsController {
   constructor(private readonly locationsService: LocationsService) {}

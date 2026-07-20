@@ -27,6 +27,7 @@ import { toCategoryView } from '../../domain/types/category.types.js';
 import { CreateCategoryAttributeUseCase } from '../../application/use-cases/create-category-attribute.use-case.js';
 import { UpdateCategoryAttributeUseCase } from '../../application/use-cases/update-category-attribute.use-case.js';
 import { DeleteCategoryAttributeUseCase } from '../../application/use-cases/delete-category-attribute.use-case.js';
+import { ApiBearerAuth } from '@nestjs/swagger';
 
 /**
  * Admin-only category management endpoints.
@@ -43,6 +44,7 @@ import { DeleteCategoryAttributeUseCase } from '../../application/use-cases/dele
  * PATCH  /admin/categories/:id/attributes/:attrId — update attribute
  * DELETE /admin/categories/:id/attributes/:attrId — delete attribute
  */
+@ApiBearerAuth()
 @Controller('admin/categories')
 @AdminGuard()
 export class CategoryController {
