@@ -9,7 +9,7 @@ import {
   HttpStatus,
   NotFoundException,
 } from '@nestjs/common';
-import { ApiTags } from '@nestjs/swagger';
+import { ApiTags , ApiBearerAuth } from '@nestjs/swagger';
 import { CurrentIdentity } from '@odysseon/whoami-adapter-nestjs';
 import type { RequestIdentity } from '@odysseon/whoami-adapter-nestjs';
 import { PrismaService } from '../../../../prisma/prisma.service.js';
@@ -19,6 +19,7 @@ import { UnsaveListingUseCase } from '../../application/use-cases/unsave-listing
 import { GetSavedListingsUseCase } from '../../application/use-cases/get-saved-listings.use-case.js';
 
 @ApiTags('Saves')
+@ApiBearerAuth()
 @Controller()
 export class SavesController {
   constructor(

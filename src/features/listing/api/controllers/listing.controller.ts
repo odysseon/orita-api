@@ -27,9 +27,10 @@ import {
   TransitionListingStatusDto,
 } from '../dto/request.dto.js';
 import { ListingResponseDto } from '../dto/response.dto.js';
-import { ApiTags } from '@nestjs/swagger';
+import { ApiTags , ApiBearerAuth } from '@nestjs/swagger';
 
 @ApiTags('Listing')
+@ApiBearerAuth()
 @Controller()
 export class ListingController {
   constructor(

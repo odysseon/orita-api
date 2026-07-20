@@ -1,5 +1,7 @@
 import { Controller, Get, Header } from '@nestjs/common';
+import { ApiBearerAuth } from '@nestjs/swagger';
 
+@ApiBearerAuth()
 @Controller()
 export class AppController {
   @Get('robots.txt')

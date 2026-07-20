@@ -1,5 +1,5 @@
 import { Body, Controller, Get, Patch, Post, Put } from '@nestjs/common';
-import { ApiTags, ApiOperation } from '@nestjs/swagger';
+import { ApiTags, ApiOperation , ApiBearerAuth } from '@nestjs/swagger';
 import { CurrentIdentity, type RequestIdentity } from '@odysseon/whoami-adapter-nestjs';
 import { UsersService } from '../../use-cases/users.service.js';
 import { UpdateUserProfileDto } from './dto/update-user-profile.dto.js';
@@ -7,6 +7,7 @@ import { UpdateExplorationContextDto } from './dto/update-exploration-context.dt
 import { UpdateUserInterestsDto } from './dto/update-user-interest.dto.js';
 
 @ApiTags('Users')
+@ApiBearerAuth()
 @Controller('users')
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}

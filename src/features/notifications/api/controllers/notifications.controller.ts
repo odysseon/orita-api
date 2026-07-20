@@ -3,7 +3,9 @@ import { CurrentIdentity, type RequestIdentity } from '@odysseon/whoami-adapter-
 import { NotificationsService } from '../../application/services/notifications.service.js';
 import { NotificationViewDto, PaginatedNotificationsDto } from '../dto/response.dto.js';
 import { IdentityService } from '../../../../shared/identity/identity.service.js';
+import { ApiBearerAuth } from '@nestjs/swagger';
 
+@ApiBearerAuth()
 @Controller('notifications')
 export class NotificationsController {
   constructor(

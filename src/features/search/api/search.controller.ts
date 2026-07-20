@@ -1,5 +1,5 @@
 import { Controller, Get, Query, HttpCode, HttpStatus } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiOkResponse } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiOkResponse , ApiBearerAuth } from '@nestjs/swagger';
 import { ListingSearchService } from '../application/listing-search.service.js';
 import { BusinessSearchService } from '../application/business-search.service.js';
 import {
@@ -15,6 +15,7 @@ import { TourSearchService } from '../application/tour-search.service.js';
 import { ShareableSearchResultDto } from '../../sharing/api/dto/response.dto.js';
 
 @ApiTags('Search')
+@ApiBearerAuth()
 @Controller('search')
 export class SearchController {
   constructor(

@@ -1,10 +1,11 @@
 import { Controller, Get, Req } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiOkResponse, ApiInternalServerErrorResponse } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiOkResponse, ApiInternalServerErrorResponse , ApiBearerAuth } from '@nestjs/swagger';
 import { SystemService } from '../../application/system.service.js';
 import { SystemStatusDto, VersionDto } from '../dto/system-status.dto.js';
 import { Public } from '@odysseon/whoami-adapter-nestjs';
 
 @ApiTags('System')
+@ApiBearerAuth()
 @Controller('status')
 export class SystemController {
   constructor(private readonly systemService: SystemService) {}
