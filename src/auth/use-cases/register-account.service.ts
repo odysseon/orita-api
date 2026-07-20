@@ -6,6 +6,8 @@ import { RegisterDto } from '../dto/index.js';
 import { MailQueueService } from '../../mail/mail-queue.service.js';
 import { USER_REPOSITORY_TOKEN } from '../../users/core/ports/user.repository.interface.js';
 import type { IUserRepository } from '../../users/core/ports/user.repository.interface.js';
+import { ConfigService } from '@nestjs/config';
+import { AppConfig } from '../../configs/validation.js';
 
 @Injectable()
 export class RegisterAccountUseCase {
@@ -18,6 +20,7 @@ export class RegisterAccountUseCase {
     private readonly mailQueueService: MailQueueService,
     @Inject(USER_REPOSITORY_TOKEN)
     private readonly userRepository: IUserRepository,
+    private readonly configService: ConfigService<AppConfig, true>,
   ) {}
 
   async execute(dto: RegisterDto) {
@@ -38,7 +41,7 @@ export class RegisterAccountUseCase {
         template: 'welcome',
         context: {
           username: user.username,
-          action_url: 'https://orita.app/login', // Adjust the URL as needed
+          action_url: `${this.configService.get('FRONTEND_URL')}/login`,
         },
       });
 

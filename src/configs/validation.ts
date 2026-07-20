@@ -6,7 +6,7 @@ export const configSchema = z
     PORT: z.coerce.number().int().min(1).max(65535).default(3000),
     GLOBAL_PREFIX: z.string().default('api'),
     DATABASE_URL: z.string().url(),
-    FRONTEND_URL: z.string().url().default('https://orita.app'),
+    FRONTEND_URL: z.string().url(),
     ALLOWED_ORIGINS: z.string().optional(),
 
     // ── Storage ───────────────────────────────────────────────────────────

@@ -4,6 +4,8 @@ import { BusinessTour, BusinessTourStatus } from '../../domain/types/business-to
 import { UpdateBusinessTourInput } from '../../domain/types/business-tour.types.js';
 import { MailQueueService } from '../../../../mail/mail-queue.service.js';
 import { PrismaService } from '../../../../prisma/prisma.service.js';
+import { ConfigService } from '@nestjs/config';
+import { AppConfig } from '../../../../configs/validation.js';
 
 @Injectable()
 export class UpdateBusinessTourUseCase {
@@ -11,6 +13,7 @@ export class UpdateBusinessTourUseCase {
     private readonly businessTourRepo: IBusinessTourRepository,
     private readonly prisma: PrismaService,
     private readonly mailQueueService: MailQueueService,
+    private readonly configService: ConfigService<AppConfig, true>,
   ) {}
 
   async execute(id: string, input: UpdateBusinessTourInput): Promise<BusinessTour> {
@@ -45,7 +48,7 @@ export class UpdateBusinessTourUseCase {
           template: 'business-tour-published',
           context: {
             businessName: business.name,
-            action_url: `https://orita.app/business-tours/${updatedTour.id}`,
+            action_url: `${this.configService.get('FRONTEND_URL')}/business-tours/${updatedTour.id}`,
           },
         });
       }
