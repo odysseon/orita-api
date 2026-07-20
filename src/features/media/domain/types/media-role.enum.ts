@@ -16,6 +16,7 @@ export const MediaRole = {
   COVER: 'COVER',
   GALLERY: 'GALLERY',
   AVATAR: 'AVATAR',
+  MESSAGE: 'MESSAGE',
 } as const;
 
 export type MediaRole = (typeof MediaRole)[keyof typeof MediaRole];
@@ -36,4 +37,6 @@ export const ROLES_BY_FK_NAME: Record<string, ReadonlySet<MediaRole>> = {
   // Reviews only support raw gallery photos — no logo, banner, or cover slots.
   reviewId: new Set([MediaRole.GALLERY]),
   userId: new Set([MediaRole.AVATAR]),
+  conversationId: new Set([MediaRole.MESSAGE]),
+  messageId: new Set([MediaRole.MESSAGE]),
 };

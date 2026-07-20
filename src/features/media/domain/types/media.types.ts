@@ -7,6 +7,8 @@ export interface AddMediaInput {
   readonly listingId?: string;
   readonly businessTourId?: string;
   readonly reviewId?: string;
+  readonly messageId?: string;
+  readonly uploadIntentId?: string;
   readonly fileId: string;
   readonly mediaType: MediaType;
   readonly role: MediaRole;
@@ -35,6 +37,8 @@ export interface MediaView {
   readonly listingId: string | null;
   readonly businessTourId: string | null;
   readonly reviewId: string | null;
+  readonly messageId: string | null;
+  readonly uploadIntentId: string | null;
   readonly url: string;
   readonly mediaType: MediaType;
   readonly role: MediaRole;

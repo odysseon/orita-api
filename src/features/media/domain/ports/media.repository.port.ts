@@ -2,7 +2,7 @@ import { Media } from '../types/media.entity.js';
 import { AddMediaInput, ReorderMediaInput } from '../types/media.types.js';
 import { MediaRole } from '../types/media-role.enum.js';
 
-export type MediaOwnerKey = 'businessProfileId' | 'listingId' | 'businessTourId' | 'reviewId';
+export type MediaOwnerKey = 'businessProfileId' | 'listingId' | 'businessTourId' | 'reviewId' | 'conversationId' | 'messageId';
 
 export abstract class IMediaRepository {
   abstract add(input: AddMediaInput): Promise<Media>;
@@ -43,6 +43,12 @@ export abstract class IMediaRepository {
    * Called after a GALLERY item is deleted to close gaps.
    */
   abstract renormalize(ownerKey: MediaOwnerKey, ownerId: string): Promise<void>;
+
+  /**
+   * Attach a set of media items to a message.
+   * Also clears their uploadIntentId since they are now permanently owned by the message.
+   */
+  abstract attachToMessage(mediaIds: string[], messageId: string): Promise<void>;
 
   /**
    * Count total media items for a resource.

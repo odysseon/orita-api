@@ -91,6 +91,15 @@ export class MediaController {
     return this.#handleGenerateIntent(identity, 'businessTourId', resourceId, dto.role);
   }
 
+  @Post('conversations/:resourceId/media/upload-intent')
+  async generateConversationIntent(
+    @CurrentIdentity() identity: RequestIdentity,
+    @Param('resourceId') resourceId: string,
+    @Body() dto: UploadIntentRequestDto,
+  ): Promise<UploadIntentResponseDto> {
+    return this.#handleGenerateIntent(identity, 'conversationId', resourceId, dto.role);
+  }
+
   // ---------------------------------------------------------------------------
   // Persist Direct Uploads
   // ---------------------------------------------------------------------------
@@ -130,6 +139,15 @@ export class MediaController {
     @Body() dto: ConsumeIntentRequestDto,
   ): Promise<MediaResponseDto> {
     return this.#handleConsumeIntent(identity, 'businessTourId', resourceId, dto);
+  }
+
+  @Post('conversations/:resourceId/media')
+  async consumeConversationIntent(
+    @CurrentIdentity() identity: RequestIdentity,
+    @Param('resourceId') resourceId: string,
+    @Body() dto: ConsumeIntentRequestDto,
+  ): Promise<MediaResponseDto> {
+    return this.#handleConsumeIntent(identity, 'conversationId', resourceId, dto);
   }
 
   // ---------------------------------------------------------------------------
@@ -359,6 +377,24 @@ export class MediaController {
         throw new ForbiddenException('You can only manage media on your own store tours.');
       }
     }
+
+    if (ownerKey === 'conversationId') {
+      const participant = await this.prisma.conversationParticipant.findFirst({
+        where: {
+          conversationId: resourceId,
+          participant: {
+            userId,
+          },
+        },
+      });
+      if (!participant) {
+        throw new ForbiddenException('You are not a participant in this conversation.');
+      }
+      const conversation = await this.prisma.conversation.findUnique({
+        where: { id: resourceId }
+      });
+      if (!conversation) throw new NotFoundException('Conversation not found.');
+    }
   }
 
   async #assertMediaOwnership(id: string, accountId: string): Promise<void> {
@@ -379,12 +415,29 @@ export class MediaController {
     } else if (media.reviewId) {
       ownerKey = 'reviewId';
       resourceId = media.reviewId;
+    } else if (media.messageId) {
+      // For message media, we check ownership through the message's participant
+      ownerKey = 'messageId';
+      resourceId = media.messageId;
     }
 
     if (!ownerKey) {
       throw new BadRequestException('Media is orphaned');
     }
-    await this.#assertResourceOwnership(ownerKey, resourceId, accountId);
+    
+    if (ownerKey === 'messageId') {
+      const message = await this.prisma.message.findUnique({
+        where: { id: resourceId },
+        select: { participant: { select: { userId: true } } }
+      });
+      if (!message) throw new NotFoundException('Message not found.');
+      const userId = await this.#resolveUserId(accountId);
+      if (message.participant.userId !== userId) {
+        throw new ForbiddenException('You can only manage your own message media.');
+      }
+    } else {
+      await this.#assertResourceOwnership(ownerKey, resourceId, accountId);
+    }
   }
 
   async #resolveUserId(accountId: string): Promise<string> {
