@@ -1,4 +1,5 @@
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
+import { MessagingModule } from '../messaging/messaging.module.js';
 import { IMediaRepository } from './domain/ports/media.repository.port.js';
 import { PrismaMediaRepository } from './infrastructure/prisma-media.repository.js';
 import { AddMediaUseCase } from './application/use-cases/add-media.use-case.js';
@@ -11,11 +12,12 @@ import { PrismaUploadIntentRepository } from './infrastructure/prisma-upload-int
 import { IUploadIntentRepository } from './domain/ports/upload-intent.repository.port.js';
 import { GenerateUploadIntentUseCase } from './application/use-cases/generate-upload-intent.use-case.js';
 import { ConsumeUploadIntentUseCase } from './application/use-cases/consume-upload-intent.use-case.js';
-import { AttachMediaToMessageUseCase } from './application/use-cases/attach-media-to-message.use-case.js';
+import { FinalizeMessageAttachmentsUseCase } from './application/use-cases/finalize-message-attachments.use-case.js';
 import { MediaUrlService } from './application/services/media-url.service.js';
 import { OrphanCleanupJob } from './application/jobs/orphan-cleanup.job.js';
 
 @Module({
+  imports: [forwardRef(() => MessagingModule)],
   controllers: [MediaController],
   providers: [
     {
@@ -32,7 +34,7 @@ import { OrphanCleanupJob } from './application/jobs/orphan-cleanup.job.js';
     GetResourceMediaUseCase,
     GenerateUploadIntentUseCase,
     ConsumeUploadIntentUseCase,
-    AttachMediaToMessageUseCase,
+    FinalizeMessageAttachmentsUseCase,
     MediaUrlService,
     OrphanCleanupJob,
   ],
@@ -43,7 +45,7 @@ import { OrphanCleanupJob } from './application/jobs/orphan-cleanup.job.js';
     GetResourceMediaUseCase,
     GenerateUploadIntentUseCase,
     ConsumeUploadIntentUseCase,
-    AttachMediaToMessageUseCase,
+    FinalizeMessageAttachmentsUseCase,
     MediaUrlService,
     IMediaRepository,
   ],

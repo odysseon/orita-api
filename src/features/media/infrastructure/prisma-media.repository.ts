@@ -139,13 +139,14 @@ export class PrismaMediaRepository extends IMediaRepository {
     return this.findByRole(ownerKey, ownerId, MediaRole.GALLERY);
   }
 
-  async attachToMessage(mediaIds: string[], messageId: string): Promise<void> {
-    if (!mediaIds.length) return;
+  async finalizeMessageAttachments(mediaIds: string[], messageId: string): Promise<void> {
     await this.prisma.media.updateMany({
-      where: { id: { in: mediaIds } },
+      where: {
+        id: { in: mediaIds },
+      },
       data: {
         messageId,
-        uploadIntentId: null,
+        uploadIntentId: null, // Clear uploadIntentId since message is now the canonical owner
       },
     });
   }

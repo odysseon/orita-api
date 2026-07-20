@@ -1,5 +1,15 @@
 import { Controller, Get, Post, Body, Param, Patch } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiBearerAuth,
+  ApiOkResponse,
+  ApiCreatedResponse,
+  ApiUnauthorizedResponse,
+  ApiForbiddenResponse,
+  ApiNotFoundResponse,
+  ApiBadRequestResponse,
+} from '@nestjs/swagger';
 import { CurrentIdentity, type RequestIdentity } from '@odysseon/whoami-adapter-nestjs';
 import { PrismaService } from '../../../../prisma/prisma.service.js';
 
@@ -43,7 +53,9 @@ export class ConversationsController {
 
   @Post()
   @ApiOperation({ summary: 'Create a new conversation' })
-  @ApiResponse({ status: 201, type: ConversationResponseDto })
+  @ApiCreatedResponse({ type: ConversationResponseDto })
+  @ApiBadRequestResponse({ description: 'Invalid input' })
+  @ApiUnauthorizedResponse({ description: 'Not authenticated' })
   async create(
     @CurrentIdentity() identity: RequestIdentity,
     @Body() dto: CreateConversationDto,
@@ -65,7 +77,9 @@ export class ConversationsController {
 
   @Post('open')
   @ApiOperation({ summary: 'Open or create a direct conversation with a target' })
-  @ApiResponse({ status: 200, type: ConversationResponseDto })
+  @ApiOkResponse({ type: ConversationResponseDto })
+  @ApiBadRequestResponse({ description: 'Invalid input' })
+  @ApiUnauthorizedResponse({ description: 'Not authenticated' })
   async openConversation(
     @CurrentIdentity() identity: RequestIdentity,
     @Body() dto: OpenConversationDto,
@@ -87,7 +101,8 @@ export class ConversationsController {
   @ApiOperation({
     summary: 'List all conversations for the current user (including their businesses)',
   })
-  @ApiResponse({ status: 200, type: [ConversationPreviewResponseDto] })
+  @ApiOkResponse({ type: [ConversationPreviewResponseDto] })
+  @ApiUnauthorizedResponse({ description: 'Not authenticated' })
   async listAll(
     @CurrentIdentity() identity: RequestIdentity,
   ): Promise<ConversationPreviewResponseDto[]> {
@@ -100,7 +115,10 @@ export class ConversationsController {
 
   @Get(':id')
   @ApiOperation({ summary: 'Get conversation details and messages' })
-  @ApiResponse({ status: 200, type: ConversationResponseDto })
+  @ApiOkResponse({ type: ConversationResponseDto })
+  @ApiNotFoundResponse({ description: 'Conversation not found' })
+  @ApiForbiddenResponse({ description: 'User is not a participant' })
+  @ApiUnauthorizedResponse({ description: 'Not authenticated' })
   async getDetails(
     @CurrentIdentity() identity: RequestIdentity,
     @Param('id') id: string,
@@ -122,7 +140,11 @@ export class ConversationsController {
 
   @Post(':id/messages')
   @ApiOperation({ summary: 'Send a message' })
-  @ApiResponse({ status: 201, type: MessageResponseDto })
+  @ApiCreatedResponse({ type: MessageResponseDto })
+  @ApiBadRequestResponse({ description: 'Message is empty or invalid' })
+  @ApiNotFoundResponse({ description: 'Conversation not found' })
+  @ApiForbiddenResponse({ description: 'User is not a participant' })
+  @ApiUnauthorizedResponse({ description: 'Not authenticated' })
   async send(
     @CurrentIdentity() identity: RequestIdentity,
     @Param('id') conversationId: string,
@@ -148,7 +170,10 @@ export class ConversationsController {
 
   @Patch(':id/status')
   @ApiOperation({ summary: 'Update conversation status' })
-  @ApiResponse({ status: 200, type: ConversationResponseDto })
+  @ApiOkResponse({ type: ConversationResponseDto })
+  @ApiNotFoundResponse({ description: 'Conversation not found' })
+  @ApiForbiddenResponse({ description: 'User is not a participant' })
+  @ApiUnauthorizedResponse({ description: 'Not authenticated' })
   async setStatus(
     @CurrentIdentity() identity: RequestIdentity,
     @Param('id') id: string,
@@ -165,7 +190,10 @@ export class ConversationsController {
 
   @Post(':id/read-receipts')
   @ApiOperation({ summary: 'Mark messages as read' })
-  @ApiResponse({ status: 200 })
+  @ApiOkResponse({ description: 'Messages marked as read successfully' })
+  @ApiNotFoundResponse({ description: 'Conversation not found' })
+  @ApiForbiddenResponse({ description: 'User is not a participant' })
+  @ApiUnauthorizedResponse({ description: 'Not authenticated' })
   async markRead(
     @CurrentIdentity() identity: RequestIdentity,
     @Param('id') conversationId: string,

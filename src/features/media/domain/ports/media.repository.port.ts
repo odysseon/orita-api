@@ -45,10 +45,10 @@ export abstract class IMediaRepository {
   abstract renormalize(ownerKey: MediaOwnerKey, ownerId: string): Promise<void>;
 
   /**
-   * Attach a set of media items to a message.
+   * Finalize ownership of a set of media items to a message.
    * Also clears their uploadIntentId since they are now permanently owned by the message.
    */
-  abstract attachToMessage(mediaIds: string[], messageId: string): Promise<void>;
+  abstract finalizeMessageAttachments(mediaIds: string[], messageId: string): Promise<void>;
 
   /**
    * Count total media items for a resource.

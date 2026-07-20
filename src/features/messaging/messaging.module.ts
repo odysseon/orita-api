@@ -14,6 +14,7 @@ import { MarkMessagesReadUseCase } from './application/use-cases/mark-messages-r
 import { OpenConversationUseCase } from './application/use-cases/open-conversation.use-case.js';
 import { ParticipantService } from './application/services/participant.service.js';
 import { ConversationParticipantResolver } from './application/services/conversation-participant-resolver.service.js';
+import { ConversationAccessPolicy } from './application/policies/conversation-access.policy.js';
 import { AnchorService } from './application/services/anchor.service.js';
 import { ResourcePreviewService } from './application/services/resource-preview.service.js';
 import { EmbedResolverService } from './application/services/embed-resolver.service.js';
@@ -47,6 +48,7 @@ import { NotificationPreviewFactory } from './infrastructure/notification-previe
     // Services
     ParticipantService,
     ConversationParticipantResolver,
+    ConversationAccessPolicy,
     AnchorService,
     ResourcePreviewService,
     EmbedResolverService,
@@ -68,6 +70,7 @@ import { NotificationPreviewFactory } from './infrastructure/notification-previe
   exports: [
     IConversationRepository,
     ParticipantService,
+    ConversationAccessPolicy,
     OpenConversationUseCase,
     SendMessageUseCase,
   ],

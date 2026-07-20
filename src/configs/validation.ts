@@ -63,6 +63,18 @@ export const configSchema = z
     VAPID_PUBLIC_KEY: z.string().optional(),
     VAPID_PRIVATE_KEY: z.string().optional(),
     VAPID_SUBJECT: z.string().default('mailto:support@orita.com'),
+
+    // ── Application Limits ────────────────────────────────────────────────
+    MAX_CONVERSATION_ATTACHMENTS: z.coerce.number().default(10),
+    MAX_ATTACHMENT_SIZE_MB: z.coerce.number().default(25),
+    MAX_NEARBY_IMAGES: z.coerce.number().default(5),
+    MAX_AVATAR_SIZE_MB: z.coerce.number().default(5),
+    MAX_BUSINESS_COVER_PHOTOS: z.coerce.number().default(10),
+
+    // ── Application Version ───────────────────────────────────────────────
+    APP_VERSION: z.string().default('1.8.0'),
+    API_VERSION: z.string().default('v1'),
+    MINIMUM_SUPPORTED_CLIENT: z.string().default('1.6.0'),
   })
 
   .refine((d) => d.NODE_ENV !== 'production' || !!d.GOOGLE_CLIENT_ID, {
