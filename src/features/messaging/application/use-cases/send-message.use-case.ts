@@ -8,6 +8,7 @@ import { ResourcePreviewService } from '../services/resource-preview.service.js'
 import { EmbedResolverService } from '../services/embed-resolver.service.js';
 import { ConversationParticipantResolver } from '../services/conversation-participant-resolver.service.js';
 import { MessagePreviewFactory } from '../../infrastructure/message-preview.factory.js';
+import { NotificationPreviewFactory } from '../../infrastructure/notification-preview.factory.js';
 
 @Injectable()
 export class SendMessageUseCase {
@@ -20,6 +21,7 @@ export class SendMessageUseCase {
     private readonly embedResolver: EmbedResolverService,
     private readonly resolver: ConversationParticipantResolver,
     private readonly previewFactory: MessagePreviewFactory,
+    private readonly notificationPreviewFactory: NotificationPreviewFactory,
   ) {}
 
   async execute(
@@ -132,6 +134,7 @@ export class SendMessageUseCase {
       senderDisplayName: message.senderDisplayName,
       recipientUserIds,
       preview: previewView.descriptor,
+      notificationPreview: this.notificationPreviewFactory.build(previewView.descriptor),
       sentAt: message.createdAt,
     });
 

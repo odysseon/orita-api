@@ -25,6 +25,7 @@ import { WsAuthGuard } from './api/gateways/ws-auth.guard.js';
 import { MessagingGateway } from './api/gateways/messaging.gateway.js';
 import { ConversationsController } from './api/controllers/conversations.controller.js';
 import { MessagePreviewFactory } from './infrastructure/message-preview.factory.js';
+import { NotificationPreviewFactory } from './infrastructure/notification-preview.factory.js';
 
 @Module({
   imports: [PrismaModule, RedisModule, forwardRef(() => MediaModule)],
@@ -62,6 +63,7 @@ import { MessagePreviewFactory } from './infrastructure/message-preview.factory.
     MarkMessagesReadUseCase,
     OpenConversationUseCase,
     MessagePreviewFactory,
+    NotificationPreviewFactory,
   ],
   exports: [
     IConversationRepository,

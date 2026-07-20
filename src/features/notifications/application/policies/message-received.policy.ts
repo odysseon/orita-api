@@ -12,6 +12,7 @@ export interface MessageSentEvent {
   senderDisplayName: string;
   recipientUserIds: string[];
   preview: MessagePreviewDescriptor;
+  notificationPreview: string;
   sentAt: Date;
 }
 
@@ -52,6 +53,7 @@ export class MessageReceivedPolicy extends BaseNotificationPolicy<EventType> {
       payload: {
         senderDisplayName: event.data.senderDisplayName,
         preview: event.data.preview,
+        notificationPreview: event.data.notificationPreview,
       },
     };
 
