@@ -2,7 +2,12 @@ import { Controller, Get, Query, HttpCode, HttpStatus } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiOkResponse } from '@nestjs/swagger';
 import { ListingSearchService } from '../application/listing-search.service.js';
 import { BusinessSearchService } from '../application/business-search.service.js';
-import { SearchListingsDto, SearchBusinessesDto, SearchUsersDto } from '../dto/search.dto.js';
+import {
+  SearchListingsDto,
+  SearchBusinessesDto,
+  SearchUsersDto,
+  SearchToursDto,
+} from '../dto/search.dto.js';
 import { Public } from '@odysseon/whoami-adapter-nestjs';
 import { UserSearchService } from '../application/user-search.service.js';
 import { ShareableSearchService } from '../application/shareable-search.service.js';
@@ -63,7 +68,7 @@ export class SearchController {
   @Public()
   @Get('tours')
   @HttpCode(HttpStatus.OK)
-  async searchTours(@Query() dto: any) {
+  async searchTours(@Query() dto: SearchToursDto) {
     return this.tourSearchService.search(dto);
   }
 }

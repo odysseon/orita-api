@@ -38,7 +38,11 @@ export interface ConversationView {
   updatedAt: Date;
 }
 
-export type MessagePreviewType = 'TEXT' | 'MEDIA' | 'EMBED' | 'SYSTEM';
+export type MessagePreviewDescriptor =
+  | { kind: 'TEXT'; text: string }
+  | { kind: 'EMBED'; embedType: MessageEmbedType }
+  | { kind: 'ATTACHMENT'; attachmentType: MessageMediaType }
+  | { kind: 'SYSTEM'; text: string };
 
 export interface MessagePreviewView {
   id: string;
@@ -46,8 +50,7 @@ export interface MessagePreviewView {
   participantId: string;
   senderDisplayName: string;
   createdAt: Date;
-  previewType: MessagePreviewType;
-  snippet: string;
+  descriptor: MessagePreviewDescriptor;
 }
 
 export interface ConversationPreviewView {

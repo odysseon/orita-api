@@ -145,8 +145,8 @@ export class MessagePreviewResponseDto {
   @ApiProperty() participantId!: string;
   @ApiProperty() senderDisplayName!: string;
   @ApiProperty() createdAt!: Date;
-  @ApiProperty() previewType!: string;
-  @ApiProperty() snippet!: string;
+  @ApiProperty()
+  descriptor!: import('../../domain/types/messaging.types.js').MessagePreviewDescriptor;
 
   static from(
     m: import('../../domain/types/messaging.types.js').MessagePreviewView,
@@ -157,8 +157,7 @@ export class MessagePreviewResponseDto {
     dto.participantId = m.participantId;
     dto.senderDisplayName = m.senderDisplayName;
     dto.createdAt = m.createdAt;
-    dto.previewType = m.previewType;
-    dto.snippet = m.snippet;
+    dto.descriptor = m.descriptor;
     return dto;
   }
 }

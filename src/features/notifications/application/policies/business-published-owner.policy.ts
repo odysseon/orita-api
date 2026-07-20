@@ -22,11 +22,11 @@ export class BusinessPublishedOwnerPolicy extends BaseNotificationPolicy<EventTy
     return true;
   }
 
-  async resolveAudience(event: EventType): Promise<string[]> {
+  resolveAudience(event: EventType): Promise<string[]> {
     if (!event.data.ownerId) {
-      return [];
+      return Promise.resolve([]);
     }
-    return [event.data.ownerId];
+    return Promise.resolve([event.data.ownerId]);
   }
 
   getUrgency(): NotificationUrgency {

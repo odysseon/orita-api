@@ -1,5 +1,9 @@
 import { Injectable } from '@nestjs/common';
-import { MessagePreviewView, MessagePreviewType } from '../domain/types/messaging.types.js';
+import {
+  MessagePreviewView,
+  MessagePreviewDescriptor,
+  MessageMediaType,
+} from '../domain/types/messaging.types.js';
 
 export interface MessagePreviewInput {
   id: string;
@@ -17,25 +21,28 @@ export class MessagePreviewFactory {
   create(message: MessagePreviewInput): MessagePreviewView {
     const hasEmbeds = message.embeds && message.embeds.length > 0;
 
-    let previewType: MessagePreviewType = 'TEXT';
-    let snippet = message.content || '';
+    let descriptor: MessagePreviewDescriptor;
 
     if (hasEmbeds) {
-      previewType = 'EMBED';
-      const embed = message.embeds![0]!;
-      if (embed.embedType === 'BUSINESS') snippet = '📍 Shared a business';
-      else if (embed.embedType === 'LISTING') snippet = '🛍️ Shared a listing';
-      else if (embed.embedType === 'LOCATION') snippet = '🗺️ Shared a location';
-      else if (embed.embedType === 'TOUR') snippet = '🚶 Shared a tour';
-      else snippet = 'Shared an item';
+      descriptor = {
+        kind: 'EMBED',
+        embedType: message.embeds![0]!.embedType,
+      };
     } else if (message.mediaUrl) {
-      previewType = 'MEDIA';
-      snippet = message.mediaType === 'VIDEO' ? '🎥 Sent a video' : '🖼️ Sent a photo';
-    }
-
-    // Default fallback
-    if (!snippet) {
-      snippet = 'Sent a message';
+      descriptor = {
+        kind: 'ATTACHMENT',
+        attachmentType: (message.mediaType as MessageMediaType) || 'IMAGE',
+      };
+    } else if (message.content) {
+      descriptor = {
+        kind: 'TEXT',
+        text: message.content,
+      };
+    } else {
+      descriptor = {
+        kind: 'SYSTEM',
+        text: 'Sent a message',
+      };
     }
 
     return {
@@ -44,8 +51,7 @@ export class MessagePreviewFactory {
       participantId: message.participantId,
       senderDisplayName: message.senderDisplayName,
       createdAt: message.createdAt,
-      previewType,
-      snippet,
+      descriptor,
     };
   }
 }
