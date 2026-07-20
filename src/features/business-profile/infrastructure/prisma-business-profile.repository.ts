@@ -53,7 +53,7 @@ type PrismaBusinessProfileExtended = {
     name: string;
   } | null;
   media?: {
-    role: 'LOGO' | 'BANNER' | 'COVER' | 'GALLERY' | 'AVATAR';
+    role: 'LOGO' | 'BANNER' | 'COVER' | 'GALLERY' | 'AVATAR' | 'MESSAGE';
     provider: StorageProvider;
     fileId: string;
     mimeType: string;
