@@ -126,10 +126,10 @@ export class PrismaListingRepository extends IListingRepository {
       .catch(() => {}); // fire and forget
   }
 
-  async create(input: CreateListingInput, slug: string): Promise<Listing> {
+  async create(businessProfileId: string, input: CreateListingInput, slug: string): Promise<Listing> {
     const raw = await this.prisma.listing.create({
       data: {
-        businessProfileId: input.businessProfileId,
+        businessProfileId,
         title: input.title,
         categoryId: input.categoryId,
         slug,

@@ -1,4 +1,4 @@
-import { Injectable, ForbiddenException, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { IListingRepository } from '../../domain/ports/listing.repository.port.js';
 import { IBusinessProfileRepository } from '../../../business-profile/domain/ports/business-profile.repository.port.js';
 import { Listing } from '../../domain/types/listing.entity.js';
@@ -10,17 +10,13 @@ export class GetBusinessListingsUseCase {
     private readonly businessRepo: IBusinessProfileRepository,
   ) {}
 
-  async execute(businessProfileId: string, requesterId: string): Promise<Listing[]> {
-    const profile = await this.businessRepo.findById(businessProfileId);
+  async execute(ownerId: string): Promise<Listing[]> {
+    const profile = await this.businessRepo.findByOwner(ownerId);
 
     if (!profile) {
-      throw new NotFoundException('Business profile not found.');
+      throw new NotFoundException('You must create a business profile before managing listings.');
     }
 
-    if (profile.ownerId !== requesterId) {
-      throw new ForbiddenException('You do not own this business profile.');
-    }
-
-    return this.listingRepo.findByBusinessProfile(businessProfileId);
+    return this.listingRepo.findByBusinessProfile(profile.id);
   }
 }

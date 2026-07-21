@@ -25,9 +25,9 @@ export class CreateListingUseCase {
   ) {}
 
   async execute(input: CreateListingInput): Promise<Listing> {
-    const businessProfile = await this.businessProfileRepo.findById(input.businessProfileId);
+    const businessProfile = await this.businessProfileRepo.findByOwner(input.ownerId);
     if (!businessProfile) {
-      throw new NotFoundException('Business profile not found.');
+      throw new NotFoundException('You must create a business profile before managing listings.');
     }
 
     const category = await this.categoryRepo.findById(input.categoryId);
@@ -50,8 +50,8 @@ export class CreateListingUseCase {
       await this.attributeValidator.validate(input.categoryId, input.attributes);
     }
 
-    const slug = await this.deriveUniqueSlug(input.businessProfileId, input.title);
-    const listing = await this.repo.create(input, slug);
+    const slug = await this.deriveUniqueSlug(businessProfile.id, input.title);
+    const listing = await this.repo.create(businessProfile.id, input, slug);
 
     await this.eventBus.publish(
       'listing.published',
