@@ -25,6 +25,8 @@ import {
   WsReadReceiptEvent,
 } from '../dto/ws-events.dto.js';
 import { MessageView, SendMessageInput } from '../../domain/types/messaging.types.js';
+import { OnEvent } from '@nestjs/event-emitter';
+import { PrismaService } from '../../../../prisma/prisma.service.js';
 
 @WebSocketGateway({ namespace: '/ws/messaging', cors: { origin: '*', credentials: true } })
 export class MessagingGateway
@@ -33,12 +35,16 @@ export class MessagingGateway
   @WebSocketServer() server!: Server;
   private readonly logger = new Logger(MessagingGateway.name);
 
+  private sessionSockets = new Map<string, Set<Socket>>();
+  private accountSockets = new Map<string, Set<Socket>>();
+
   constructor(
     private readonly identityService: IdentityService,
     private readonly conversationRepo: IConversationRepository,
     private readonly sendMessageUseCase: SendMessageUseCase,
     private readonly markReadUseCase: MarkMessagesReadUseCase,
     private readonly participantService: ParticipantService,
+    private readonly prisma: PrismaService,
   ) {}
 
   // ─── Lifecycle ────────────────────────────────────────────────────────────
@@ -49,6 +55,57 @@ export class MessagingGateway
 
   handleDisconnect(client: Socket): void {
     this.logger.log(`Client disconnected: ${client.id}`);
+    
+    // Remove from tracking sets
+    const data = client.data as { sessionId?: string; identity?: { accountId: string } };
+    if (data.sessionId) {
+      this.sessionSockets.get(data.sessionId)?.delete(client);
+    }
+    if (data.identity?.accountId) {
+      this.accountSockets.get(data.identity.accountId)?.delete(client);
+    }
+  }
+
+  private registerSocket(client: Socket) {
+    const data = client.data as { sessionId?: string; identity?: { accountId: string } };
+    if (data.sessionId) {
+      if (!this.sessionSockets.has(data.sessionId)) {
+        this.sessionSockets.set(data.sessionId, new Set());
+      }
+      this.sessionSockets.get(data.sessionId)!.add(client);
+    }
+    if (data.identity?.accountId) {
+      if (!this.accountSockets.has(data.identity.accountId)) {
+        this.accountSockets.set(data.identity.accountId, new Set());
+      }
+      this.accountSockets.get(data.identity.accountId)!.add(client);
+    }
+  }
+
+  // ─── Event Bus Handlers (Session Revocation) ─────────────────────────────
+
+  @OnEvent('session.revoked')
+  handleSessionRevoked(payload: { sessionId: string }) {
+    const sockets = this.sessionSockets.get(payload.sessionId);
+    if (sockets) {
+      this.logger.log(`Force disconnecting ${sockets.size} sockets for revoked session ${payload.sessionId}`);
+      for (const socket of sockets) {
+        socket.disconnect(true);
+      }
+      this.sessionSockets.delete(payload.sessionId);
+    }
+  }
+
+  @OnEvent('account.sessions.revoked')
+  handleGlobalRevoked(payload: { accountId: string }) {
+    const sockets = this.accountSockets.get(payload.accountId);
+    if (sockets) {
+      this.logger.log(`Force disconnecting ${sockets.size} sockets for global account revocation ${payload.accountId}`);
+      for (const socket of sockets) {
+        socket.disconnect(true);
+      }
+      this.accountSockets.delete(payload.accountId);
+    }
   }
 
   // ─── Helpers ──────────────────────────────────────────────────────────────
@@ -91,6 +148,8 @@ export class MessagingGateway
   ): Promise<void> {
     const data = client.data as { identity?: { accountId: string } };
     if (!data.identity) throw new WsException('Unauthorized');
+    
+    this.registerSocket(client);
 
     const participantIds = await this.resolveParticipantIds(data.identity.accountId);
 
@@ -113,8 +172,20 @@ export class MessagingGateway
     @MessageBody() payload: WsSendMessagePayload,
     @ConnectedSocket() client: Socket,
   ): Promise<void> {
-    const data = client.data as { identity?: { accountId: string } };
-    if (!data.identity) throw new WsException('Unauthorized');
+    const data = client.data as { sessionId?: string; identity?: { accountId: string } };
+    if (!data.identity || !data.sessionId) throw new WsException('Unauthorized');
+
+    this.registerSocket(client);
+
+    // Dynamic Validation: ensure session is still valid before sensitive operation
+    const session = await this.prisma.session.findUnique({
+      where: { id: data.sessionId },
+      include: { account: true },
+    });
+    if (!session || session.revokedAt || session.expiresAt < new Date()) {
+      client.disconnect(true);
+      throw new WsException('Session is no longer valid');
+    }
 
     const participantIds = await this.resolveParticipantIds(data.identity.accountId);
 
@@ -138,6 +209,8 @@ export class MessagingGateway
   ): Promise<void> {
     const data = client.data as { identity?: { accountId: string } };
     if (!data.identity) throw new WsException('Unauthorized');
+
+    this.registerSocket(client);
 
     const participantIds = await this.resolveParticipantIds(data.identity.accountId);
 

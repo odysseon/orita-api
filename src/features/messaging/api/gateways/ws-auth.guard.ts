@@ -1,19 +1,17 @@
 import { CanActivate, ExecutionContext, Injectable, Logger } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
 import { WsException } from '@nestjs/websockets';
 import { Socket } from 'socket.io';
-import { JoseReceiptVerifier } from '@odysseon/whoami-adapter-jose';
-import { joseConfig } from '../../../../auth/password.config.js';
+import { JwtService } from '@nestjs/jwt';
+import { PrismaService } from '../../../../prisma/prisma.service.js';
 
 @Injectable()
 export class WsAuthGuard implements CanActivate {
-  private readonly verifier: JoseReceiptVerifier;
   private readonly logger = new Logger(WsAuthGuard.name);
 
-  constructor(private readonly configService: ConfigService) {
-    const secret = this.configService.getOrThrow<string>('RECEIPT_SECRET');
-    this.verifier = new JoseReceiptVerifier({ ...joseConfig, secret });
-  }
+  constructor(
+    private readonly jwtService: JwtService,
+    private readonly prisma: PrismaService,
+  ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const client: Socket = context.switchToWs().getClient<Socket>();
@@ -30,9 +28,28 @@ export class WsAuthGuard implements CanActivate {
     const token = rawToken.startsWith('Bearer ') ? rawToken.slice(7) : rawToken;
 
     try {
-      const identity = await this.verifier.verify(token);
-      // Attach resolved identity for downstream handlers
-      (client.data as Record<string, unknown>)['identity'] = identity;
+      // 1. Verify cryptographically
+      const payload = this.jwtService.verify<{ sub: string; sessionId: string; sv: number }>(token);
+      const { sub: accountId, sessionId, sv } = payload;
+
+      if (!accountId || !sessionId || sv === undefined) {
+        throw new WsException('Invalid token structure');
+      }
+
+      // 2. Stateful session lookup
+      const session = await this.prisma.session.findUnique({
+        where: { id: sessionId },
+        include: { account: true },
+      });
+
+      if (!session) throw new WsException('Session not found');
+      if (session.revokedAt) throw new WsException('Session revoked');
+      if (session.expiresAt < new Date()) throw new WsException('Session expired');
+      if (session.account.sessionVersion !== sv) throw new WsException('Global session revoked');
+
+      // 3. Attach trusted identity to socket
+      (client.data as Record<string, unknown>)['identity'] = { accountId };
+      (client.data as Record<string, unknown>)['sessionId'] = sessionId;
       return true;
     } catch (err) {
       this.logger.warn('WebSocket auth failed', err);

@@ -16,6 +16,7 @@ import { PrismaModule } from '../prisma/prisma.module.js';
 import { JwtModule } from '@nestjs/jwt';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { SessionService } from './use-cases/session.service.js';
+import { SessionRevocationNotifier, EventEmitterSessionRevocationNotifier } from './events/session-revocation.notifier.js';
 
 @Module({
   imports: [
@@ -39,7 +40,15 @@ import { SessionService } from './use-cases/session.service.js';
     GoogleAuthController,
     SessionController,
   ],
-  providers: [RegisterAccountUseCase, GoogleAuthUseCase, SessionService],
-  exports: [SessionService, JwtModule],
+  providers: [
+    RegisterAccountUseCase,
+    GoogleAuthUseCase,
+    SessionService,
+    {
+      provide: SessionRevocationNotifier,
+      useClass: EventEmitterSessionRevocationNotifier,
+    },
+  ],
+  exports: [SessionService, JwtModule, SessionRevocationNotifier],
 })
 export class AuthModule {}

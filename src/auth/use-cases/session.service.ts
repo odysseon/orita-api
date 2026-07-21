@@ -2,12 +2,14 @@ import { Injectable, UnauthorizedException, ForbiddenException } from '@nestjs/c
 import { PrismaService } from '../../prisma/prisma.service.js';
 import { JwtService } from '@nestjs/jwt';
 import { randomBytes, createHash } from 'crypto';
+import { SessionRevocationNotifier } from '../events/session-revocation.notifier.js';
 
 @Injectable()
 export class SessionService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly jwtService: JwtService,
+    private readonly notifier: SessionRevocationNotifier,
   ) {}
 
   /**
@@ -105,6 +107,8 @@ export class SessionService {
           where: { id: session.accountId },
           data: { sessionVersion: { increment: 1 } },
         });
+        // We defer notification until after the transaction or notify directly if it doesn't matter
+        this.notifier.notifyGlobalRevoked(session.accountId);
         throw new ForbiddenException('Compromised refresh token detected. Account secured.');
       }
 
@@ -117,6 +121,7 @@ export class SessionService {
         where: { id: session.id },
         data: { revokedAt: new Date() },
       });
+      this.notifier.notifySessionRevoked(session.id);
 
       // Issue a new session/token (rotation)
       const { token: newRefreshToken, hash: newRefreshTokenHash } = this.generateRefreshToken();
@@ -161,6 +166,7 @@ export class SessionService {
       where: { id: sessionId, accountId },
       data: { revokedAt: new Date() },
     });
+    this.notifier.notifySessionRevoked(sessionId);
   }
 
   /**
@@ -176,5 +182,6 @@ export class SessionService {
       where: { accountId },
       data: { revokedAt: new Date() },
     });
+    this.notifier.notifyGlobalRevoked(accountId);
   }
 }
