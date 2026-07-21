@@ -67,8 +67,8 @@ export class OpportunityService {
       });
 
       return this.mapToDto(post);
-    } catch (error: any) {
-      if (error.code === 'P2003') {
+    } catch (error: unknown) {
+      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2003') {
         throw new UnprocessableEntityException('The provided location does not exist.');
       }
       throw error;

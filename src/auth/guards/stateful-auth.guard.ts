@@ -1,6 +1,16 @@
 import { CanActivate, ExecutionContext, Injectable, UnauthorizedException } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service.js';
 import { JwtService } from '@nestjs/jwt';
+import { Request } from 'express';
+
+interface AuthenticatedRequest extends Request {
+  whoami?: {
+    identity?: {
+      accountId: string;
+    };
+  };
+  sessionId?: string;
+}
 
 @Injectable()
 export class StatefulAuthGuard implements CanActivate {
@@ -10,8 +20,8 @@ export class StatefulAuthGuard implements CanActivate {
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
-    const request = context.switchToHttp().getRequest();
-    
+    const request = context.switchToHttp().getRequest<AuthenticatedRequest>();
+
     // OVERLAY PATTERN:
     // If there is no whoami identity on the request, it means either:
     // 1. This is a public route (so WhoamiAuthGuard skipped).
@@ -33,7 +43,7 @@ export class StatefulAuthGuard implements CanActivate {
 
     try {
       // 1. Verify the JWT cryptographically
-      const payload = this.jwtService.verify(token);
+      const payload = this.jwtService.verify<{ sub: string; sessionId: string; sv: number }>(token);
       const { sub: accountId, sessionId, sv } = payload;
 
       if (!accountId || !sessionId || sv === undefined) {
@@ -50,11 +60,12 @@ export class StatefulAuthGuard implements CanActivate {
       if (!session) throw new UnauthorizedException('Session not found');
       if (session.revokedAt) throw new UnauthorizedException('Session revoked');
       if (session.expiresAt < new Date()) throw new UnauthorizedException('Session expired');
-      if (session.account.sessionVersion !== sv) throw new UnauthorizedException('Global session revoked');
+      if (session.account.sessionVersion !== sv)
+        throw new UnauthorizedException('Global session revoked');
 
       // Update the request with the authenticated identity so @CurrentIdentity works
       request.whoami = { identity: { accountId: session.accountId } };
-      
+
       // We could also attach the sessionId if we need it for logout-device
       request.sessionId = sessionId;
 

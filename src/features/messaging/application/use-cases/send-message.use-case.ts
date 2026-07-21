@@ -109,18 +109,34 @@ export class SendMessageUseCase {
       embeds: resolvedEmbeds as NonNullable<SendMessageInput['embeds']>,
     };
 
-    let message = await this.repo.addMessage(fullInput, senderDisplayName, senderAvatarUrl);
+    const message = await this.repo.addMessage(fullInput, senderDisplayName, senderAvatarUrl);
 
     if (input.attachmentIds && input.attachmentIds.length > 0) {
       await this.finalizeMedia.execute(input.attachmentIds, message.id);
-      
+
       const media = await this.prisma.media.findMany({
         where: { id: { in: input.attachmentIds } },
-        select: { id: true, fileId: true, provider: true, role: true, mimeType: true, version: true, format: true, mediaType: true, bytes: true }
+        select: {
+          id: true,
+          fileId: true,
+          provider: true,
+          role: true,
+          mimeType: true,
+          version: true,
+          format: true,
+          mediaType: true,
+          bytes: true,
+        },
       });
-      message.attachments = media.map((a: any) => ({
+      message.attachments = media.map((a) => ({
         id: a.id,
-        url: this.mediaUrlService.getMediaUrl(a.provider, a.fileId, a.mimeType, a.version, a.format),
+        url: this.mediaUrlService.getMediaUrl(
+          a.provider,
+          a.fileId,
+          a.mimeType,
+          a.version,
+          a.format,
+        ),
         mediaType: a.mediaType,
         mimeType: a.mimeType,
         bytes: a.bytes,
