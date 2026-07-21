@@ -76,7 +76,8 @@ export class AddMediaUseCase {
     // 2. For GALLERY: enforce per-resource cap
     if (!isSingleton) {
       const queryOwnerKey = input.ownerKey === 'conversationId' ? 'uploadIntentId' : input.ownerKey;
-      const queryOwnerId = input.ownerKey === 'conversationId' ? input.uploadIntentId! : input.ownerId;
+      const queryOwnerId =
+        input.ownerKey === 'conversationId' ? input.uploadIntentId! : input.ownerId;
 
       const galleryCount = await this.mediaRepo.countByRole(
         queryOwnerKey,
@@ -93,7 +94,8 @@ export class AddMediaUseCase {
     //    Singletons carry no position (order = null); GALLERY appended at end.
     //    NOTE: Singleton replacement (deleting old logo) is now the responsibility of the domain orchestrator.
     const queryOwnerKey = input.ownerKey === 'conversationId' ? 'uploadIntentId' : input.ownerKey;
-    const queryOwnerId = input.ownerKey === 'conversationId' ? input.uploadIntentId! : input.ownerId;
+    const queryOwnerId =
+      input.ownerKey === 'conversationId' ? input.uploadIntentId! : input.ownerId;
     const order = isSingleton
       ? null
       : await this.mediaRepo.countByRole(queryOwnerKey, queryOwnerId, MediaRole.GALLERY);
@@ -110,7 +112,9 @@ export class AddMediaUseCase {
       ...(input.ownerKey === 'businessTourId' ? { businessTourId: input.ownerId } : {}),
       ...(input.ownerKey === 'reviewId' ? { reviewId: input.ownerId } : {}),
       ...(input.ownerKey === 'messageId' ? { messageId: input.ownerId } : {}),
-      ...(input.ownerKey === 'conversationId' && input.uploadIntentId ? { uploadIntentId: input.uploadIntentId } : {}),
+      ...(input.ownerKey === 'conversationId' && input.uploadIntentId
+        ? { uploadIntentId: input.uploadIntentId }
+        : {}),
       ...(input.bytes !== undefined ? { bytes: input.bytes } : {}),
       ...(input.width !== undefined ? { width: input.width } : {}),
       ...(input.height !== undefined ? { height: input.height } : {}),

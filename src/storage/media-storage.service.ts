@@ -202,7 +202,12 @@ export class MediaStorageService {
     return this.storageProvider.getMetadata(fileId);
   }
 
-  public async generateUploadSignature(folder: string, publicId: string, timestamp: number) {
-    return this.storageProvider.generateUploadSignature(folder, publicId, timestamp);
+  public async generateUploadSignature(
+    folder: string,
+    publicId: string,
+    timestamp: number,
+    constraints?: import('./ports/provider.port.js').SignatureConstraints,
+  ) {
+    return this.storageProvider.generateUploadSignature(folder, publicId, timestamp, constraints);
   }
 }

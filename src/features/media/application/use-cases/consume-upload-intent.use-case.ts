@@ -4,6 +4,7 @@ import { MediaStorageService } from '../../../../storage/media-storage.service.j
 import { MediaOwnerKey } from '../../domain/ports/media.repository.port.js';
 import { AddMediaUseCase } from './add-media.use-case.js';
 import { Media } from '../../domain/types/media.entity.js';
+import { MEDIA_CONSTRAINTS } from '../../domain/policies/media-constraints.policy.js';
 
 export interface ConsumeUploadIntentInput {
   intentId: string;
@@ -58,6 +59,52 @@ export class ConsumeUploadIntentUseCase {
     // 4. Validate metadata matches expectations
     if (!metadata.fileId.startsWith(intent.folder)) {
       throw new BadRequestException('Asset was uploaded to the wrong folder.');
+    }
+
+    const policy = MEDIA_CONSTRAINTS[intent.role];
+
+    const cleanUpAndThrow = async (message: string) => {
+      await this.storage.deleteMedia(metadata.fileId).catch(() => {}); // fire and forget cleanup
+      throw new BadRequestException(message);
+    };
+
+    // 4a. Validate size
+    if (metadata.bytes && metadata.bytes > policy.maxSizeBytes) {
+      await cleanUpAndThrow(`Asset size exceeds maximum allowed (${policy.maxSizeBytes} bytes).`);
+    }
+
+    // 4b. Validate format
+    if (metadata.format && !policy.allowedFormats.includes(metadata.format.toLowerCase())) {
+      await cleanUpAndThrow(`Asset format '${metadata.format}' is not allowed.`);
+    }
+
+    // 4c. Validate resource type (image vs video)
+    const resourceType = metadata.mimeType.split('/')[0] as 'image' | 'video';
+    if (!policy.allowedResourceTypes.includes(resourceType)) {
+      await cleanUpAndThrow(`Asset type '${resourceType}' is not allowed.`);
+    }
+
+    // 4d. Validate dimensions
+    if (resourceType === 'image' || resourceType === 'video') {
+      if (policy.maxWidth && metadata.width && metadata.width > policy.maxWidth) {
+        await cleanUpAndThrow(`Asset width exceeds maximum allowed (${policy.maxWidth}px).`);
+      }
+      if (policy.maxHeight && metadata.height && metadata.height > policy.maxHeight) {
+        await cleanUpAndThrow(`Asset height exceeds maximum allowed (${policy.maxHeight}px).`);
+      }
+    }
+
+    // 4e. Validate duration
+    if (resourceType === 'video') {
+      if (
+        policy.maxDurationSeconds &&
+        metadata.duration &&
+        metadata.duration > policy.maxDurationSeconds
+      ) {
+        await cleanUpAndThrow(
+          `Video duration exceeds maximum allowed (${policy.maxDurationSeconds}s).`,
+        );
+      }
     }
 
     // (Assuming upload time is checked loosely, or we trust Cloudinary metadata)

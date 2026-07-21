@@ -11,6 +11,7 @@ import { UploadSignatureResult } from '../../../../storage/ports/provider.port.j
 import { STORAGE_DESTINATION } from './add-media.use-case.js';
 import { ROLES_BY_FK_NAME } from '../../domain/types/media-role.enum.js';
 import { MediaOwnerKey } from '../../domain/ports/media.repository.port.js';
+import { MEDIA_CONSTRAINTS } from '../../domain/policies/media-constraints.policy.js';
 
 export interface GenerateUploadIntentInput {
   ownerKey: MediaOwnerKey;
@@ -58,7 +59,16 @@ export class GenerateUploadIntentUseCase {
 
     // 3. Generate Cloudinary signature (assuming Cloudinary is active provider)
     // In the future, if we use another provider, we might need a factory or check.
-    const signatureResult = await this.storage.generateUploadSignature(folder, publicId, timestamp);
+    const policy = MEDIA_CONSTRAINTS[input.role];
+    const signatureResult = await this.storage.generateUploadSignature(
+      folder,
+      publicId,
+      timestamp,
+      {
+        maxFileSize: policy.maxSizeBytes,
+        allowedFormats: policy.allowedFormats,
+      },
+    );
 
     // 4. Create and persist UploadIntent
     const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
