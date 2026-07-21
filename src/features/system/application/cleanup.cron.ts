@@ -11,7 +11,7 @@ export class CleanupCronService {
   @Cron(CronExpression.EVERY_DAY_AT_MIDNIGHT)
   async handleCleanup() {
     this.logger.log('Starting daily cleanup job...');
-    
+
     // 1. Delete expired sessions
     const expiredSessions = await this.prisma.session.deleteMany({
       where: { expiresAt: { lt: new Date() } },
@@ -34,9 +34,9 @@ export class CleanupCronService {
     const thirtyDaysAgo = new Date();
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
     const usersToDelete = await this.prisma.user.findMany({
-      where: { 
+      where: {
         status: 'PENDING_DELETION',
-        deletedAt: { lt: thirtyDaysAgo } 
+        deletedAt: { lt: thirtyDaysAgo },
       },
     });
 
@@ -44,7 +44,7 @@ export class CleanupCronService {
       try {
         // Cascade will delete the Account and associated Sessions
         await this.prisma.user.delete({
-          where: { id: user.id }
+          where: { id: user.id },
         });
         this.logger.log(`Permanently deleted user: ${user.id}`);
       } catch (err) {

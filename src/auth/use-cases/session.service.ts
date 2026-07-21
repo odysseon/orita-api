@@ -42,7 +42,7 @@ export class SessionService {
     ipAddress?: string,
   ): Promise<{ accessToken: string; refreshToken: string; expiresAt: Date }> {
     const { token: refreshToken, hash: refreshTokenHash } = this.generateRefreshToken();
-    
+
     // Set refresh token expiration (e.g. 30 days)
     const expiresAt = new Date();
     expiresAt.setDate(expiresAt.getDate() + 30);
@@ -62,16 +62,16 @@ export class SessionService {
     });
 
     const accessToken = this.jwtService.sign(
-      { 
-        sub: accountId, 
+      {
+        sub: accountId,
         whoami_kind: 'receipt',
-        sessionId: session.id, 
-        sv: account.sessionVersion 
+        sessionId: session.id,
+        sv: account.sessionVersion,
       },
-      { 
+      {
         expiresIn: '15m',
         issuer: 'show',
-        audience: 'password-users'
+        audience: 'password-users',
       },
     );
 
@@ -136,16 +136,16 @@ export class SessionService {
       });
 
       const accessToken = this.jwtService.sign(
-        { 
-          sub: session.accountId, 
+        {
+          sub: session.accountId,
           whoami_kind: 'receipt',
-          sessionId: newSession.id, 
-          sv: session.account.sessionVersion 
+          sessionId: newSession.id,
+          sv: session.account.sessionVersion,
         },
-        { 
+        {
           expiresIn: '15m',
           issuer: 'show',
-          audience: 'password-users'
+          audience: 'password-users',
         },
       );
 

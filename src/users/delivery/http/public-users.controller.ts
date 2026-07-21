@@ -1,5 +1,5 @@
 import { Controller, Get, Post, Delete, Param } from '@nestjs/common';
-import { ApiTags, ApiOperation , ApiBearerAuth } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { PublicUsersService } from '../../use-cases/public-users.service.js';
 import {
   CurrentIdentity,

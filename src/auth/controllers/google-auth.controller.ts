@@ -57,7 +57,7 @@ export class GoogleAuthController {
   ): Promise<ReceiptTokenResponse & { refreshToken: string }> {
     const { accountId } = await this.googleAuthUseCase.execute(dto.idToken);
 
-    const userAgent = req.headers['user-agent'] as string | undefined;
+    const userAgent = req.headers['user-agent'];
     const ipAddress = req.ip;
 
     const { accessToken, refreshToken, expiresAt } = await this.sessionService.createSession(

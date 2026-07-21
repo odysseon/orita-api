@@ -46,6 +46,10 @@ export class PushSubscriptionsController {
   @ApiOperation({ summary: 'Get the VAPID public key for push notifications' })
   getVapidPublicKey() {
     // Note: The VAPID public key is mathematically designed to be public and is not a sensitive secret.
-    return { publicKey: this.config.get('VAPID_PUBLIC_KEY', { infer: true }) || 'BPv_placeholder_vapid_public_key_from_server' };
+    return {
+      publicKey:
+        this.config.get('VAPID_PUBLIC_KEY', { infer: true }) ||
+        'BPv_placeholder_vapid_public_key_from_server',
+    };
   }
 }

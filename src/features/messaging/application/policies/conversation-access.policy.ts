@@ -31,10 +31,7 @@ export class ConversationAccessPolicy {
     const participants = await this.participantService.getMyParticipants(userId);
     const myParticipantIds = participants.map((p) => p.id);
 
-    const activeParticipantId = this.participantResolver.resolve(
-      conversation,
-      myParticipantIds,
-    );
+    const activeParticipantId = this.participantResolver.resolve(conversation, myParticipantIds);
 
     return {
       conversation,

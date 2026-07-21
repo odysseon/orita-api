@@ -153,7 +153,9 @@ export class FollowsService {
     const users = await this.prisma.userFollow.findMany({
       where: { followerId },
       include: {
-        following: { select: { id: true, username: true, media: { where: { role: 'AVATAR' }, take: 1 } } },
+        following: {
+          select: { id: true, username: true, media: { where: { role: 'AVATAR' }, take: 1 } },
+        },
       },
     });
 
