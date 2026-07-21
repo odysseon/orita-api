@@ -55,7 +55,7 @@ export class MessagingGateway
 
   handleDisconnect(client: Socket): void {
     this.logger.log(`Client disconnected: ${client.id}`);
-    
+
     // Remove from tracking sets
     const data = client.data as { sessionId?: string; identity?: { accountId: string } };
     if (data.sessionId) {
@@ -88,7 +88,9 @@ export class MessagingGateway
   handleSessionRevoked(payload: { sessionId: string }) {
     const sockets = this.sessionSockets.get(payload.sessionId);
     if (sockets) {
-      this.logger.log(`Force disconnecting ${sockets.size} sockets for revoked session ${payload.sessionId}`);
+      this.logger.log(
+        `Force disconnecting ${sockets.size} sockets for revoked session ${payload.sessionId}`,
+      );
       for (const socket of sockets) {
         socket.disconnect(true);
       }
@@ -100,7 +102,9 @@ export class MessagingGateway
   handleGlobalRevoked(payload: { accountId: string }) {
     const sockets = this.accountSockets.get(payload.accountId);
     if (sockets) {
-      this.logger.log(`Force disconnecting ${sockets.size} sockets for global account revocation ${payload.accountId}`);
+      this.logger.log(
+        `Force disconnecting ${sockets.size} sockets for global account revocation ${payload.accountId}`,
+      );
       for (const socket of sockets) {
         socket.disconnect(true);
       }
@@ -148,7 +152,7 @@ export class MessagingGateway
   ): Promise<void> {
     const data = client.data as { identity?: { accountId: string } };
     if (!data.identity) throw new WsException('Unauthorized');
-    
+
     this.registerSocket(client);
 
     const participantIds = await this.resolveParticipantIds(data.identity.accountId);
