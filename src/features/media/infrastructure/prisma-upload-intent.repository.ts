@@ -28,4 +28,14 @@ export class PrismaUploadIntentRepository implements IUploadIntentRepository {
       data: { consumedAt: new Date() },
     });
   }
+
+  async countActiveByUserId(userId: string): Promise<number> {
+    return this.prisma.uploadIntent.count({
+      where: {
+        createdById: userId,
+        consumedAt: null,
+        expiresAt: { gt: new Date() },
+      },
+    });
+  }
 }

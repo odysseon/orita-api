@@ -52,6 +52,14 @@ export class GenerateUploadIntentUseCase {
       );
     }
 
+    // 1.5 Limit active upload intents per user to prevent abuse
+    const activeIntentsCount = await this.intentRepo.countActiveByUserId(input.createdById);
+    if (activeIntentsCount >= 5) {
+      throw new BadRequestException(
+        'You have too many active upload intents. Please wait for them to expire or complete your uploads.',
+      );
+    }
+
     // 2. Compute semantic folder and publicId
     const folder = STORAGE_DESTINATION[input.ownerKey](input.ownerId, input.role);
     const publicId = `media_${uuidv4()}`;
