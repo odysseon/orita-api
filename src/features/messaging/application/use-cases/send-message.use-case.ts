@@ -116,9 +116,15 @@ export class SendMessageUseCase {
       
       const media = await this.prisma.media.findMany({
         where: { id: { in: input.attachmentIds } },
-        select: { id: true, fileId: true, provider: true, role: true, mimeType: true }
+        select: { id: true, fileId: true, provider: true, role: true, mimeType: true, version: true, format: true, mediaType: true, bytes: true }
       });
-      message.attachments = media as any;
+      message.attachments = media.map((a: any) => ({
+        id: a.id,
+        url: this.mediaUrlService.getMediaUrl(a.provider, a.fileId, a.mimeType, a.version, a.format),
+        mediaType: a.mediaType,
+        mimeType: a.mimeType,
+        bytes: a.bytes,
+      }));
     }
 
     // Figure out the recipients (all other participants in this conversation)
