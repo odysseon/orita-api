@@ -28,8 +28,10 @@ import { ConversationsController } from './api/controllers/conversations.control
 import { MessagePreviewFactory } from './infrastructure/message-preview.factory.js';
 import { NotificationPreviewFactory } from './infrastructure/notification-preview.factory.js';
 
+import { AuthModule } from '../../auth/auth.module.js';
+
 @Module({
-  imports: [PrismaModule, RedisModule, forwardRef(() => MediaModule)],
+  imports: [PrismaModule, RedisModule, forwardRef(() => AuthModule), forwardRef(() => MediaModule)],
   controllers: [ConversationsController],
   providers: [
     // Repository binding
