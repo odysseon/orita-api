@@ -11,6 +11,8 @@ import { Public } from '@odysseon/whoami-adapter-nestjs';
 import { RegisterDto, RegisterResponse } from '../dto/index.js';
 import { RegisterAccountUseCase } from '../use-cases/register-account.service.js';
 
+import { Throttle } from '@nestjs/throttler';
+
 @ApiTags('Accounts')
 @ApiBearerAuth()
 @Controller('accounts')
@@ -22,6 +24,7 @@ export class AccountsController {
   @ApiCreatedResponse({ type: RegisterResponse })
   @ApiConflictResponse({ description: 'Email already registered' })
   @Public()
+  @Throttle({ default: { limit: 10, ttl: 300000 } }) // 10 attempts per 5 minutes
   @Post('register')
   @HttpCode(HttpStatus.CREATED)
   async register(@Body() dto: RegisterDto) {

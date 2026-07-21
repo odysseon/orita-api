@@ -38,6 +38,7 @@ import { GenerateUploadIntentUseCase } from '../../application/use-cases/generat
 import { ConsumeUploadIntentUseCase } from '../../application/use-cases/consume-upload-intent.use-case.js';
 import { ConversationAccessPolicy } from '../../../messaging/application/policies/conversation-access.policy.js';
 import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
+import { Throttle } from '@nestjs/throttler';
 
 @ApiTags('Media')
 @ApiBearerAuth()
@@ -57,6 +58,7 @@ export class MediaController {
   // Upload Intents (Direct Upload flow)
   // ---------------------------------------------------------------------------
 
+  @Throttle({ default: { limit: 10, ttl: 60000 } })
   @Post('listings/:resourceId/media/upload-intent')
   async generateListingIntent(
     @CurrentIdentity() identity: RequestIdentity,
@@ -66,6 +68,7 @@ export class MediaController {
     return this.#handleGenerateIntent(identity, 'listingId', resourceId, dto.role);
   }
 
+  @Throttle({ default: { limit: 10, ttl: 60000 } })
   @Post('business-profiles/:resourceId/media/upload-intent')
   async generateBusinessProfileIntent(
     @CurrentIdentity() identity: RequestIdentity,
@@ -75,6 +78,7 @@ export class MediaController {
     return this.#handleGenerateIntent(identity, 'businessProfileId', resourceId, dto.role);
   }
 
+  @Throttle({ default: { limit: 10, ttl: 60000 } })
   @Post('reviews/:resourceId/media/upload-intent')
   async generateReviewIntent(
     @CurrentIdentity() identity: RequestIdentity,
@@ -85,6 +89,7 @@ export class MediaController {
   }
 
   @ModeratorOrAdminGuard()
+  @Throttle({ default: { limit: 10, ttl: 60000 } })
   @Post('business-tours/:resourceId/media/upload-intent')
   async generateBusinessTourIntent(
     @CurrentIdentity() identity: RequestIdentity,
@@ -94,6 +99,7 @@ export class MediaController {
     return this.#handleGenerateIntent(identity, 'businessTourId', resourceId, dto.role);
   }
 
+  @Throttle({ default: { limit: 10, ttl: 60000 } })
   @Post('conversations/:resourceId/media/upload-intent')
   async generateConversationIntent(
     @CurrentIdentity() identity: RequestIdentity,

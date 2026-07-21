@@ -40,6 +40,8 @@ import { Req } from '@nestjs/common';
 import { StatefulAuthGuard } from '../guards/stateful-auth.guard.js';
 import { UseGuards } from '@nestjs/common';
 
+import { Throttle } from '@nestjs/throttler';
+
 @ApiTags('Password Authentication')
 @Controller('auth')
 export class PasswordAuthController {
@@ -57,6 +59,7 @@ export class PasswordAuthController {
   @ApiOkResponse({ type: ReceiptTokenResponse })
   @ApiUnauthorizedResponse({ description: 'Invalid credentials' })
   @Public()
+  @Throttle({ default: { limit: 5, ttl: 300000 } }) // 5 attempts per 5 minutes
   @Post('login')
   @HttpCode(HttpStatus.OK)
   async loginPassword(
@@ -84,6 +87,7 @@ export class PasswordAuthController {
   @ApiBody({ type: RequestPasswordResetDto })
   @ApiOkResponse({ description: 'Password reset email sent if account exists' })
   @Public()
+  @Throttle({ default: { limit: 3, ttl: 300000 } }) // 3 attempts per 5 minutes
   @Post('password/reset/request')
   @HttpCode(HttpStatus.OK)
   async requestPasswordReset(@Body() dto: RequestPasswordResetDto): Promise<{ message: string }> {
@@ -114,6 +118,7 @@ export class PasswordAuthController {
   @ApiOkResponse({ type: ReceiptTokenResponse, description: 'Password reset successfully' })
   @ApiUnauthorizedResponse({ description: 'Invalid or expired token' })
   @Public()
+  @Throttle({ default: { limit: 5, ttl: 300000 } }) // 5 attempts per 5 minutes
   @Post('password/reset')
   @HttpCode(HttpStatus.OK)
   async resetPassword(
