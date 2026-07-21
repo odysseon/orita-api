@@ -413,11 +413,11 @@ export class MediaController {
     if (!ownerKey) {
       throw new BadRequestException('Media is orphaned');
     }
-    
+
     if (ownerKey === 'messageId') {
       const message = await this.prisma.message.findUnique({
         where: { id: resourceId },
-        select: { participant: { select: { userId: true } } }
+        select: { participant: { select: { userId: true } } },
       });
       if (!message) throw new NotFoundException('Message not found.');
       const userId = await this.#resolveUserId(accountId);

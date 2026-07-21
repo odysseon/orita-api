@@ -24,6 +24,11 @@ export interface UploadSignatureResult {
   cloudName?: string;
 }
 
+export interface SignatureConstraints {
+  maxFileSize?: number;
+  allowedFormats?: string[];
+}
+
 /**
  * Specific arguments required to perform an upload operation.
  * This is a DTO, not a class dependency.
@@ -72,5 +77,6 @@ export abstract class StorageProvider {
     folder: string,
     publicId: string,
     timestamp: number,
+    constraints?: SignatureConstraints,
   ): Promise<UploadSignatureResult>;
 }
