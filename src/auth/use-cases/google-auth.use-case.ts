@@ -43,7 +43,7 @@ export class GoogleAuthUseCase {
     const { email, sub: googleId, picture } = payload;
 
     // 1. Authenticate or create account via OAuth
-    const { account, receipt, isNewAccount } = await this.oauth.authenticateWithOAuth({
+    const { account, isNewAccount } = await this.oauth.authenticateWithOAuth({
       provider: 'google',
       providerId: googleId,
       email,
@@ -81,8 +81,7 @@ export class GoogleAuthUseCase {
     }
 
     return {
-      token: receipt.token,
-      expiresAt: receipt.expiresAt,
+      accountId: account.id,
     };
   }
 

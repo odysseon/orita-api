@@ -34,6 +34,11 @@ import {
 } from '../dto/index.js';
 import { MailQueueService } from '../../mail/mail-queue.service.js';
 import { PrismaService } from '../../prisma/prisma.service.js';
+import { SessionService } from '../use-cases/session.service.js';
+import type { Request } from 'express';
+import { Req } from '@nestjs/common';
+import { StatefulAuthGuard } from '../guards/stateful-auth.guard.js';
+import { UseGuards } from '@nestjs/common';
 
 @ApiTags('Password Authentication')
 @Controller('auth')
@@ -44,6 +49,7 @@ export class PasswordAuthController {
     private readonly mailQueueService: MailQueueService,
     private readonly configService: ConfigService<AppConfig>,
     private readonly prisma: PrismaService,
+    private readonly sessionService: SessionService,
   ) {}
 
   @ApiOperation({ summary: 'Login with email + password' })
@@ -53,12 +59,25 @@ export class PasswordAuthController {
   @Public()
   @Post('login')
   @HttpCode(HttpStatus.OK)
-  async loginPassword(@Body() dto: LoginPasswordDto): Promise<ReceiptTokenResponse> {
-    const { receipt } = await this.password.authenticateWithPassword({
+  async loginPassword(
+    @Body() dto: LoginPasswordDto,
+    @Req() req: Request,
+  ): Promise<ReceiptTokenResponse & { refreshToken: string }> {
+    const { account } = await this.password.authenticateWithPassword({
       email: dto.email,
       password: dto.password,
     });
-    return { token: receipt.token, expiresAt: receipt.expiresAt };
+
+    const userAgent = req.headers['user-agent'] as string | undefined;
+    const ipAddress = req.ip;
+
+    const { accessToken, refreshToken, expiresAt } = await this.sessionService.createSession(
+      account.id,
+      userAgent,
+      ipAddress,
+    );
+
+    return { token: accessToken, refreshToken, expiresAt };
   }
 
   @ApiOperation({ summary: 'Request a password reset email' })
@@ -97,15 +116,33 @@ export class PasswordAuthController {
   @Public()
   @Post('password/reset')
   @HttpCode(HttpStatus.OK)
-  async resetPassword(@Body() dto: ResetPasswordDto): Promise<ReceiptTokenResponse> {
-    const { receipt, accountId } = await this.password.verifyPasswordReset({ token: dto.token });
+  async resetPassword(
+    @Body() dto: ResetPasswordDto,
+    @Req() req: Request,
+  ): Promise<ReceiptTokenResponse & { refreshToken: string }> {
+    const { accountId } = await this.password.verifyPasswordReset({ token: dto.token });
 
     await this.password.addPasswordToAccount({
       accountId,
       password: dto.newPassword,
     });
 
-    return { token: receipt.token, expiresAt: receipt.expiresAt };
+    // Invalidate all existing sessions globally
+    await this.prisma.account.update({
+      where: { id: accountId },
+      data: { sessionVersion: { increment: 1 } },
+    });
+
+    const userAgent = req.headers['user-agent'] as string | undefined;
+    const ipAddress = req.ip;
+
+    const { accessToken, refreshToken, expiresAt } = await this.sessionService.createSession(
+      accountId,
+      userAgent,
+      ipAddress,
+    );
+
+    return { token: accessToken, refreshToken, expiresAt };
   }
 
   @ApiOperation({ summary: 'Change current password' })
@@ -125,6 +162,12 @@ export class PasswordAuthController {
       newPassword: dto.newPassword,
     });
 
+    // Invalidate all existing sessions globally
+    await this.prisma.account.update({
+      where: { id: identity.accountId },
+      data: { sessionVersion: { increment: 1 } },
+    });
+
     return { success: true };
   }
 
@@ -132,6 +175,8 @@ export class PasswordAuthController {
   @ApiBody({ type: AddPasswordDto })
   @ApiOkResponse({ description: 'Password added successfully' })
   @ApiBearerAuth()
+  @UseGuards(StatefulAuthGuard)
+  @Public() // Bypass WhoamiAuthGuard
   @Post('password/add')
   @HttpCode(HttpStatus.OK)
   async addPassword(

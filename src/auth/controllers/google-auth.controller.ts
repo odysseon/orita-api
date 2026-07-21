@@ -18,6 +18,9 @@ import type { OAuthMethods } from '@odysseon/whoami-core/oauth';
 import { AuthenticateGoogleDto, LinkGoogleDto } from '../dto/google-auth.dto.js';
 import { ReceiptTokenResponse } from '../dto/receipt.dto.js';
 import { GoogleAuthUseCase } from '../use-cases/google-auth.use-case.js';
+import { SessionService } from '../use-cases/session.service.js';
+import { Req } from '@nestjs/common';
+import type { Request } from 'express';
 
 @ApiTags('Google Authentication')
 @Controller('auth/google')
@@ -27,6 +30,7 @@ export class GoogleAuthController {
     @Inject(moduleToken('oauth'))
     private readonly oauth: OAuthMethods,
     private readonly configService: ConfigService,
+    private readonly sessionService: SessionService,
   ) {}
 
   @ApiOperation({ summary: 'Get Google Client ID' })
@@ -47,8 +51,22 @@ export class GoogleAuthController {
   @Public()
   @Post()
   @HttpCode(HttpStatus.OK)
-  async authenticate(@Body() dto: AuthenticateGoogleDto): Promise<ReceiptTokenResponse> {
-    return this.googleAuthUseCase.execute(dto.idToken);
+  async authenticate(
+    @Body() dto: AuthenticateGoogleDto,
+    @Req() req: Request,
+  ): Promise<ReceiptTokenResponse & { refreshToken: string }> {
+    const { accountId } = await this.googleAuthUseCase.execute(dto.idToken);
+
+    const userAgent = req.headers['user-agent'] as string | undefined;
+    const ipAddress = req.ip;
+
+    const { accessToken, refreshToken, expiresAt } = await this.sessionService.createSession(
+      accountId,
+      userAgent,
+      ipAddress,
+    );
+
+    return { token: accessToken, refreshToken, expiresAt };
   }
 
   @ApiOperation({ summary: 'Link Google account to current user' })

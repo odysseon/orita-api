@@ -130,4 +130,24 @@ export class UsersService {
 
     return { url: metadata.url, role: MediaRole.AVATAR };
   }
+
+  async requestAccountDeletion(accountId: string) {
+    const user = await this.getMyProfile(accountId);
+
+    await this.prisma.$transaction(async (tx) => {
+      // 1. Mark user as pending deletion
+      await tx.user.update({
+        where: { id: user.id },
+        data: { status: 'PENDING_DELETION', deletedAt: new Date() },
+      });
+
+      // 2. Invalidate all existing sessions for this account globally
+      await tx.account.update({
+        where: { id: accountId },
+        data: { sessionVersion: { increment: 1 } },
+      });
+    });
+
+    await this.userRepository.clearCache(accountId);
+  }
 }
