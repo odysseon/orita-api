@@ -31,4 +31,9 @@ export abstract class IUploadIntentRepository {
    * Marks an upload intent as consumed.
    */
   abstract markConsumed(intentId: string): Promise<void>;
+
+  /**
+   * Counts active upload intents for a given user.
+   */
+  abstract countActiveByUserId(userId: string): Promise<number>;
 }
