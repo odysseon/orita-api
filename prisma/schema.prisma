@@ -148,7 +148,7 @@ model BusinessVerification {
   updatedAt       DateTime                       @updatedAt
   documents       BusinessVerificationDocument[]
   business        BusinessProfile                @relation(fields: [businessId], references: [id], onDelete: Cascade)
-  reviewer        User?                          @relation(fields: [reviewedById], references: [id])
+  reviewer        User?                          @relation(fields: [reviewedById], references: [id], onDelete: SetNull)
 
   @@index([status])
   @@map("business_verifications")
@@ -248,7 +248,7 @@ model Listing {
   attributes          Json?
   conversationAnchors ConversationAnchor[]
   businessProfile     BusinessProfile      @relation(fields: [businessProfileId], references: [id], onDelete: Cascade)
-  category            Category?            @relation("ListingCategory", fields: [categoryId], references: [id])
+  category            Category?            @relation("ListingCategory", fields: [categoryId], references: [id], onDelete: SetNull)
   media               Media[]
   reviews             Review[]
   savedByUsers        SavedListing[]       @relation("SavedByUsers")
@@ -406,7 +406,7 @@ model Review {
   listingId  String
   media      Media[]
   listing    Listing  @relation(fields: [listingId], references: [id], onDelete: Cascade)
-  reviewer   User     @relation("ReviewsGiven", fields: [reviewerId], references: [id])
+  reviewer   User     @relation("ReviewsGiven", fields: [reviewerId], references: [id], onDelete: Cascade)
 
   @@unique([listingId, reviewerId])
   @@index([reviewerId])
@@ -427,7 +427,7 @@ model BusinessTour {
   updatedAt           DateTime                @updatedAt
   highlights          BusinessTourHighlight[]
   businessProfile     BusinessProfile         @relation(fields: [businessProfileId], references: [id], onDelete: Cascade)
-  createdBy           User                    @relation(fields: [createdById], references: [id])
+  createdBy           User                    @relation(fields: [createdById], references: [id], onDelete: Cascade)
   conversationAnchors ConversationAnchor[]
   media               Media[]
 
@@ -501,10 +501,10 @@ model ConversationAnchor {
   title        String
   subtitle     String?
   imageUrl     String?
-  business     BusinessProfile? @relation(fields: [businessId], references: [id])
-  listing      Listing?         @relation(fields: [listingId], references: [id])
-  location     Location?        @relation(fields: [locationId], references: [id])
-  tour         BusinessTour?    @relation(fields: [tourId], references: [id])
+  business     BusinessProfile? @relation(fields: [businessId], references: [id], onDelete: SetNull)
+  listing      Listing?         @relation(fields: [listingId], references: [id], onDelete: SetNull)
+  location     Location?        @relation(fields: [locationId], references: [id], onDelete: SetNull)
+  tour         BusinessTour?    @relation(fields: [tourId], references: [id], onDelete: SetNull)
   conversation Conversation?
 
   @@map("conversation_anchors")
@@ -554,7 +554,7 @@ model Message {
   embeds            MessageEmbed[]
   readReceipts      MessageReadReceipt[]
   conversation      Conversation         @relation(fields: [conversationId], references: [id], onDelete: Cascade)
-  participant       Participant          @relation(fields: [participantId], references: [id])
+  participant       Participant          @relation(fields: [participantId], references: [id], onDelete: Cascade)
   media             Media[]
 
   @@index([conversationId, createdAt])
@@ -668,9 +668,9 @@ model AnalyticsEvent {
 model ItemShare {
   id             String           @id @default(cuid())
   senderId       String
-  sender         User             @relation("SentShares", fields: [senderId], references: [id])
+  sender         User             @relation("SentShares", fields: [senderId], references: [id], onDelete: Cascade)
   recipientId    String
-  recipient      User             @relation("ReceivedShares", fields: [recipientId], references: [id])
+  recipient      User             @relation("ReceivedShares", fields: [recipientId], references: [id], onDelete: Cascade)
   embedType      MessageEmbedType
   targetId       String
   conversationId String?
@@ -897,7 +897,7 @@ enum NotificationCategory {
 }
 
 model OpportunityPost {
-  id                String              @id @default(cuid())
+  id                String            @id @default(cuid())
   authorId          String
   businessProfileId String?
   title             String
@@ -905,14 +905,14 @@ model OpportunityPost {
   type              OpportunityType
   locationId        String
   expiresAt         DateTime?
-  status            OpportunityStatus   @default(ACTIVE)
-  createdAt         DateTime            @default(now())
-  updatedAt         DateTime            @updatedAt
+  status            OpportunityStatus @default(ACTIVE)
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
 
-  author            User                @relation(fields: [authorId], references: [id], onDelete: Cascade)
-  businessProfile   BusinessProfile?    @relation(fields: [businessProfileId], references: [id])
-  location          Location            @relation(fields: [locationId], references: [id])
-  media             OpportunityMedia[]
+  author          User               @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  businessProfile BusinessProfile?   @relation(fields: [businessProfileId], references: [id], onDelete: SetNull)
+  location        Location           @relation(fields: [locationId], references: [id], onDelete: Restrict)
+  media           OpportunityMedia[]
 
   @@index([status, expiresAt])
   @@index([authorId])
@@ -921,9 +921,9 @@ model OpportunityPost {
 }
 
 model OpportunityMedia {
-  id        String           @id @default(cuid())
+  id        String          @id @default(cuid())
   postId    String
-  fileId    String           @unique
+  fileId    String          @unique
   provider  StorageProvider
   mimeType  String
   format    String?
@@ -931,9 +931,9 @@ model OpportunityMedia {
   width     Int?
   height    Int?
   bytes     Int?
-  createdAt DateTime         @default(now())
+  createdAt DateTime        @default(now())
 
-  post      OpportunityPost  @relation(fields: [postId], references: [id], onDelete: Cascade)
+  post OpportunityPost @relation(fields: [postId], references: [id], onDelete: Cascade)
 
   @@index([postId])
   @@map("opportunity_media")
