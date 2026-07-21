@@ -44,13 +44,15 @@ export class ListingController {
     private readonly checkListingPublicationReadiness: CheckListingPublicationReadinessUseCase,
   ) {}
 
-  @Post('businesses/:businessProfileId/listings')
+  @Post('listings')
   async create(
-    @Param('businessProfileId') businessProfileId: string,
+    @CurrentIdentity() identity: RequestIdentity,
     @Body() dto: CreateListingDto,
   ): Promise<ListingResponseDto> {
+    const userId = await this.resolveUserId(identity.accountId);
+    
     const listing = await this.createListing.execute({
-      businessProfileId,
+      ownerId: userId,
       title: dto.title,
       ...(dto.description !== undefined && { description: dto.description }),
       categoryId: dto.categoryId,
@@ -115,13 +117,12 @@ export class ListingController {
     await this.deleteListing.execute(id, userId);
   }
 
-  @Get('businesses/:businessProfileId/listings/mine')
+  @Get('listings/mine')
   async getMyListings(
     @CurrentIdentity() identity: RequestIdentity,
-    @Param('businessProfileId') businessProfileId: string,
   ): Promise<ListingResponseDto[]> {
     const userId = await this.resolveUserId(identity.accountId);
-    const listings = await this.getBusinessListings.execute(businessProfileId, userId);
+    const listings = await this.getBusinessListings.execute(userId);
     return listings.map((l) => ListingResponseDto.from(l));
   }
 

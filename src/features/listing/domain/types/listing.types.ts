@@ -21,7 +21,7 @@ export interface ListingPriceInput {
  * Status defaults to DRAFT.
  */
 export interface CreateListingInput {
-  readonly businessProfileId: string;
+  readonly ownerId: string;
   readonly title: string;
   readonly categoryId: string;
   readonly description?: string;
