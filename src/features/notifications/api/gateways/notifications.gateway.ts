@@ -59,7 +59,9 @@ export class NotificationsGateway implements OnGatewayConnection, OnGatewayDisco
   handleSessionRevoked(payload: { sessionId: string }) {
     const sockets = this.sessionSockets.get(payload.sessionId);
     if (sockets) {
-      this.logger.log(`Force disconnecting ${sockets.size} notification sockets for revoked session ${payload.sessionId}`);
+      this.logger.log(
+        `Force disconnecting ${sockets.size} notification sockets for revoked session ${payload.sessionId}`,
+      );
       for (const socket of sockets) {
         socket.disconnect(true);
       }
@@ -71,7 +73,9 @@ export class NotificationsGateway implements OnGatewayConnection, OnGatewayDisco
   handleGlobalRevoked(payload: { accountId: string }) {
     const sockets = this.accountSockets.get(payload.accountId);
     if (sockets) {
-      this.logger.log(`Force disconnecting ${sockets.size} notification sockets for global account revocation ${payload.accountId}`);
+      this.logger.log(
+        `Force disconnecting ${sockets.size} notification sockets for global account revocation ${payload.accountId}`,
+      );
       for (const socket of sockets) {
         socket.disconnect(true);
       }
