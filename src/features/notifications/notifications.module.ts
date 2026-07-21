@@ -22,11 +22,13 @@ import { NotificationPresenter } from './application/presenters/notification.pre
 import { PushSubscriptionsController } from './api/controllers/push-subscriptions.controller.js';
 import { PushSubscriptionService } from './application/services/push-subscriptions.service.js';
 import { PushNotificationSender } from './infrastructure/senders/push-notification.sender.js';
+import { AuthModule } from '../../auth/auth.module.js';
 
 @Module({
   imports: [
     PrismaModule,
     IdentityModule,
+    AuthModule,
     BullModule.registerQueue(
       { name: 'email_delivery_queue' },
       { name: 'push_delivery_queue' },
