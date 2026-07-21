@@ -28,7 +28,7 @@ import { BusinessProfileResponseDto, DashboardStatsResponseDto } from '../dto/re
 import { SetOperatingHoursDto } from '../dto/operating-hours.dto.js';
 import { SetTagsDto } from '../dto/tag.dto.js';
 import { IdentityService } from '../../../../shared/identity/identity.service.js';
-import { ApiTags , ApiBearerAuth } from '@nestjs/swagger';
+import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
 
 @ApiTags('business management')
 @ApiBearerAuth()

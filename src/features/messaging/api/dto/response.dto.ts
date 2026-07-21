@@ -73,7 +73,8 @@ export class MessageResponseDto {
   @ApiPropertyOptional() content!: string | null;
   @ApiPropertyOptional() mediaUrl!: string | null;
   @ApiPropertyOptional() mediaType!: string | null;
-  @ApiProperty({ type: [MessageAttachmentResponseDto] }) attachments!: MessageAttachmentResponseDto[];
+  @ApiProperty({ type: [MessageAttachmentResponseDto] })
+  attachments!: MessageAttachmentResponseDto[];
   @ApiProperty({ type: [MessageEmbedResponseDto] }) embeds!: MessageEmbedResponseDto[];
   @ApiProperty() createdAt!: Date;
   @ApiProperty({ type: [MessageReadReceiptResponseDto] })

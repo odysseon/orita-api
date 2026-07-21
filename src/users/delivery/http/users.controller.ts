@@ -1,5 +1,5 @@
 import { Body, Controller, Get, Patch, Post, Put, Delete } from '@nestjs/common';
-import { ApiTags, ApiOperation , ApiBearerAuth } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { CurrentIdentity, type RequestIdentity } from '@odysseon/whoami-adapter-nestjs';
 import { UsersService } from '../../use-cases/users.service.js';
 import { UpdateUserProfileDto } from './dto/update-user-profile.dto.js';

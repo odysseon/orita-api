@@ -1,5 +1,5 @@
 import { Controller, Get } from '@nestjs/common';
-import { ApiTags, ApiOperation , ApiBearerAuth } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { AdminMetricsService } from '../../application/admin-metrics.service.js';
 import { AdminGuard } from '../../../../shared/decorators/admin-guard.decorator.js';
 

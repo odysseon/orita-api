@@ -79,7 +79,7 @@ export class MagicLinkController {
       token: dto.token,
     });
 
-    const userAgent = req.headers['user-agent'] as string | undefined;
+    const userAgent = req.headers['user-agent'];
     const ipAddress = req.ip;
 
     const { accessToken, refreshToken, expiresAt } = await this.sessionService.createSession(

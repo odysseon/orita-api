@@ -27,7 +27,7 @@ import {
   TransitionListingStatusDto,
 } from '../dto/request.dto.js';
 import { ListingResponseDto } from '../dto/response.dto.js';
-import { ApiTags , ApiBearerAuth } from '@nestjs/swagger';
+import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
 
 @ApiTags('Listing')
 @ApiBearerAuth()
@@ -50,7 +50,7 @@ export class ListingController {
     @Body() dto: CreateListingDto,
   ): Promise<ListingResponseDto> {
     const userId = await this.resolveUserId(identity.accountId);
-    
+
     const listing = await this.createListing.execute({
       ownerId: userId,
       title: dto.title,
@@ -118,9 +118,7 @@ export class ListingController {
   }
 
   @Get('listings/mine')
-  async getMyListings(
-    @CurrentIdentity() identity: RequestIdentity,
-  ): Promise<ListingResponseDto[]> {
+  async getMyListings(@CurrentIdentity() identity: RequestIdentity): Promise<ListingResponseDto[]> {
     const userId = await this.resolveUserId(identity.accountId);
     const listings = await this.getBusinessListings.execute(userId);
     return listings.map((l) => ListingResponseDto.from(l));

@@ -5,7 +5,6 @@ import type { Request } from 'express';
 import { Public, CurrentIdentity } from '@odysseon/whoami-adapter-nestjs';
 import type { RequestIdentity } from '@odysseon/whoami-adapter-nestjs';
 
-
 class RefreshTokenDto {
   token!: string;
 }
@@ -22,7 +21,7 @@ export class SessionController {
   @Post('refresh')
   @HttpCode(HttpStatus.OK)
   async refreshSession(@Body() dto: RefreshTokenDto, @Req() req: Request) {
-    const userAgent = req.headers['user-agent'] as string | undefined;
+    const userAgent = req.headers['user-agent'];
     const ipAddress = req.ip;
 
     const { accessToken, refreshToken, expiresAt } = await this.sessionService.refreshSession(

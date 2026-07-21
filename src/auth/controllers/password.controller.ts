@@ -68,7 +68,7 @@ export class PasswordAuthController {
       password: dto.password,
     });
 
-    const userAgent = req.headers['user-agent'] as string | undefined;
+    const userAgent = req.headers['user-agent'];
     const ipAddress = req.ip;
 
     const { accessToken, refreshToken, expiresAt } = await this.sessionService.createSession(
@@ -133,7 +133,7 @@ export class PasswordAuthController {
       data: { sessionVersion: { increment: 1 } },
     });
 
-    const userAgent = req.headers['user-agent'] as string | undefined;
+    const userAgent = req.headers['user-agent'];
     const ipAddress = req.ip;
 
     const { accessToken, refreshToken, expiresAt } = await this.sessionService.createSession(

@@ -40,7 +40,9 @@ export class SystemService {
     return {
       cdn: this.config.get('CDN_URL', { infer: true })!,
       media: this.config.get('MEDIA_URL', { infer: true })!,
-      docs: this.config.get('SWAGGER_PATH_DOCS', { infer: true }) ? `/${this.config.get('SWAGGER_PATH_DOCS', { infer: true })!}` : '/api/docs',
+      docs: this.config.get('SWAGGER_PATH_DOCS', { infer: true })
+        ? `/${this.config.get('SWAGGER_PATH_DOCS', { infer: true })!}`
+        : '/api/docs',
       ws: this.config.get('WS_URL', { infer: true })!,
     };
   }

@@ -17,7 +17,11 @@ import {
  * and serves as a NestJS injection token directly.
  */
 export abstract class IListingRepository {
-  abstract create(businessProfileId: string, input: CreateListingInput, slug: string): Promise<Listing>;
+  abstract create(
+    businessProfileId: string,
+    input: CreateListingInput,
+    slug: string,
+  ): Promise<Listing>;
 
   abstract findById(id: string): Promise<Listing | null>;
 

@@ -1,5 +1,5 @@
 import { Controller, Post, Get, Body, NotFoundException } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse , ApiBearerAuth } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { CurrentIdentity, type RequestIdentity } from '@odysseon/whoami-adapter-nestjs';
 import { InternalShareDto } from '../dto/request.dto.js';
 import {
