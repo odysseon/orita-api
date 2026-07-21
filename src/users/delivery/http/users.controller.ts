@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Patch, Post, Put } from '@nestjs/common';
+import { Body, Controller, Get, Patch, Post, Put, Delete } from '@nestjs/common';
 import { ApiTags, ApiOperation , ApiBearerAuth } from '@nestjs/swagger';
 import { CurrentIdentity, type RequestIdentity } from '@odysseon/whoami-adapter-nestjs';
 import { UsersService } from '../../use-cases/users.service.js';
@@ -59,5 +59,12 @@ export class UsersController {
   ) {
     await this.usersService.updateInterests(identity.accountId, payload.categoryIds);
     return { success: true };
+  }
+
+  @ApiOperation({ summary: 'Request account deletion' })
+  @Delete('me')
+  async deleteAccount(@CurrentIdentity() identity: RequestIdentity) {
+    await this.usersService.requestAccountDeletion(identity.accountId);
+    return { success: true, message: 'Account scheduled for deletion' };
   }
 }

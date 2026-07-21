@@ -18,6 +18,9 @@ import {
   ReceiptTokenResponse,
 } from '../dto/index.js';
 import { MailQueueService } from '../../mail/mail-queue.service.js';
+import { SessionService } from '../use-cases/session.service.js';
+import { Req } from '@nestjs/common';
+import type { Request } from 'express';
 
 @ApiTags('Magic Link Authentication')
 @ApiBearerAuth()
@@ -28,6 +31,7 @@ export class MagicLinkController {
     private readonly magicLink: MagicLinkMethods,
     private readonly mailQueueService: MailQueueService,
     private readonly configService: ConfigService<AppConfig>,
+    private readonly sessionService: SessionService,
   ) {}
 
   @ApiOperation({ summary: 'Request a magic link for login' })
@@ -67,14 +71,23 @@ export class MagicLinkController {
   @Public()
   @Post('authenticate')
   @HttpCode(HttpStatus.OK)
-  async authenticate(@Body() dto: AuthenticateMagicLinkDto): Promise<ReceiptTokenResponse> {
-    const { receipt } = await this.magicLink.authenticateWithMagicLink({
+  async authenticate(
+    @Body() dto: AuthenticateMagicLinkDto,
+    @Req() req: Request,
+  ): Promise<ReceiptTokenResponse & { refreshToken: string }> {
+    const { accountId } = await this.magicLink.authenticateWithMagicLink({
       token: dto.token,
     });
 
-    return {
-      token: receipt.token,
-      expiresAt: receipt.expiresAt,
-    };
+    const userAgent = req.headers['user-agent'] as string | undefined;
+    const ipAddress = req.ip;
+
+    const { accessToken, refreshToken, expiresAt } = await this.sessionService.createSession(
+      accountId,
+      userAgent,
+      ipAddress,
+    );
+
+    return { token: accessToken, refreshToken, expiresAt };
   }
 }

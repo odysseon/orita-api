@@ -6,6 +6,7 @@ import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import { validateConfig } from './configs/validation.js';
 import { PrismaModule } from './prisma/prisma.module.js';
 import { AuthModule } from './auth/auth.module.js';
+import { StatefulAuthGuard } from './auth/guards/stateful-auth.guard.js';
 import { HealthController } from './health/health.controller.js';
 import { AppController } from './app.controller.js';
 import { IdentityModule } from './shared/identity/identity.module.js';
@@ -108,6 +109,10 @@ import { SystemModule } from './features/system/system.module.js';
     {
       provide: APP_GUARD,
       useClass: ThrottlerGuard,
+    },
+    {
+      provide: APP_GUARD,
+      useClass: StatefulAuthGuard,
     },
   ],
 })
