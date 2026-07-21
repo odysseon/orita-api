@@ -20,6 +20,9 @@ export const configSchema = z
     B2_REGION: z.string().optional(),
     B2_BUCKET_NAME: z.string().optional(),
     B2_PUBLIC_URL_BASE: z.string().optional(),
+    CDN_URL: z.string().url().default('https://cdn.orita.app'),
+    MEDIA_URL: z.string().url().default('https://media.orita.app'),
+    WS_URL: z.string().url().default('wss://api.orita.app'),
 
     // ── Receipt Secret ────────────────────────────────────────────────────
     RECEIPT_SECRET: z.string().min(32),
