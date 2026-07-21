@@ -1,8 +1,15 @@
 import { Controller, Get, Req } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiOkResponse, ApiInternalServerErrorResponse , ApiBearerAuth } from '@nestjs/swagger';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiOkResponse,
+  ApiInternalServerErrorResponse,
+  ApiBearerAuth,
+} from '@nestjs/swagger';
 import { SystemService } from '../../application/system.service.js';
 import { SystemStatusDto, VersionDto } from '../dto/system-status.dto.js';
 import { Public } from '@odysseon/whoami-adapter-nestjs';
+import { Request } from 'express';
 
 @ApiTags('System')
 @ApiBearerAuth()
@@ -15,11 +22,11 @@ export class SystemController {
   @ApiOperation({ summary: 'Get application bootstrap configuration and status' })
   @ApiOkResponse({ type: SystemStatusDto, description: 'System status payload' })
   @ApiInternalServerErrorResponse({ description: 'Server error' })
-  getStatus(@Req() req: any): SystemStatusDto {
+  getStatus(@Req() req: Request): SystemStatusDto {
     return {
       status: 'operational',
       timestamp: new Date().toISOString(),
-      requestId: req.id || req.headers['x-request-id'] || 'unknown',
+      requestId: (req.headers['x-request-id'] as string) || 'unknown',
       environment: this.systemService.getEnvironment(),
       maintenance: { enabled: false, message: null },
       version: this.systemService.getVersion(),

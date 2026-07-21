@@ -19,13 +19,18 @@ import type {
   MessageReadReceipt,
   Conversation,
   ConversationParticipant,
+  Media,
 } from '../../../../generated/prisma/client.js';
 
 import { MessagePreviewFactory } from './message-preview.factory.js';
 import { Prisma } from '../../../../generated/prisma/client.js';
 import { MediaUrlService } from '../../media/application/services/media-url.service.js';
 
-type HydratedMessage = Message & { embeds?: MessageEmbed[]; readReceipts?: MessageReadReceipt[]; media?: any[] };
+type HydratedMessage = Message & {
+  embeds?: MessageEmbed[];
+  readReceipts?: MessageReadReceipt[];
+  media?: Media[];
+};
 type HydratedConversation = Conversation & {
   anchor?: ConversationAnchor | null;
   participants: ConversationParticipant[];
@@ -49,9 +54,15 @@ export class PrismaConversationRepository implements IConversationRepository {
       content: m.content,
       mediaUrl: m.mediaUrl,
       mediaType: m.mediaType,
-      attachments: (m.media || []).map((a: any) => ({
+      attachments: (m.media || []).map((a) => ({
         id: a.id,
-        url: this.mediaUrlService.getMediaUrl(a.provider, a.fileId, a.mimeType, a.version, a.format),
+        url: this.mediaUrlService.getMediaUrl(
+          a.provider,
+          a.fileId,
+          a.mimeType,
+          a.version,
+          a.format,
+        ),
         mediaType: a.mediaType,
         mimeType: a.mimeType,
         bytes: a.bytes,
@@ -314,8 +325,8 @@ export class PrismaConversationRepository implements IConversationRepository {
           createdAt: msg.createdAt,
           mediaUrl: msg.mediaUrl,
           mediaType: msg.mediaType,
-          embeds: msg.embeds as any,
-          attachments: msg.media as any,
+          embeds: msg.embeds,
+          attachments: msg.media,
         });
       }
 
