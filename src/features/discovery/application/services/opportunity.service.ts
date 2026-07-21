@@ -47,25 +47,32 @@ export class OpportunityService {
       expiresAt.setHours(expiresAt.getHours() + policy.ttlHours);
     }
 
-    const post = await this.prisma.opportunityPost.create({
-      data: {
-        authorId,
-        businessProfileId: dto.businessProfileId ?? null,
-        title: dto.title,
-        body: dto.body ?? null,
-        type: dto.type,
-        locationId: dto.locationId,
-        expiresAt,
-      },
-      include: {
-        location: true,
-        author: true,
-        businessProfile: true,
-        media: true,
-      },
-    });
+    try {
+      const post = await this.prisma.opportunityPost.create({
+        data: {
+          authorId,
+          businessProfileId: dto.businessProfileId ?? null,
+          title: dto.title,
+          body: dto.body ?? null,
+          type: dto.type,
+          locationId: dto.locationId,
+          expiresAt,
+        },
+        include: {
+          location: true,
+          author: true,
+          businessProfile: true,
+          media: true,
+        },
+      });
 
-    return this.mapToDto(post);
+      return this.mapToDto(post);
+    } catch (error: any) {
+      if (error.code === 'P2003') {
+        throw new UnprocessableEntityException('The provided location does not exist.');
+      }
+      throw error;
+    }
   }
 
   async getMyPosts(authorId: string): Promise<NearbyItemDto[]> {

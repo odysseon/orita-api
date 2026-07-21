@@ -38,10 +38,10 @@ export class SystemService {
   getServices(): ServicesDto {
     // In the future, these can be pulled from DB or env variables based on environment
     return {
-      cdn: this.config.get('B2_PUBLIC_URL_BASE', { infer: true }) || 'https://cdn.orita.app',
-      media: 'https://media.orita.app',
-      docs: '/api/docs',
-      ws: 'wss://api.orita.app',
+      cdn: this.config.get('CDN_URL', { infer: true })!,
+      media: this.config.get('MEDIA_URL', { infer: true })!,
+      docs: this.config.get('SWAGGER_PATH_DOCS', { infer: true }) ? `/${this.config.get('SWAGGER_PATH_DOCS', { infer: true })!}` : '/api/docs',
+      ws: this.config.get('WS_URL', { infer: true })!,
     };
   }
 
