@@ -4,6 +4,7 @@ import { SessionService } from '../use-cases/session.service.js';
 import type { Request } from 'express';
 import { Public, CurrentIdentity } from '@odysseon/whoami-adapter-nestjs';
 import type { RequestIdentity } from '@odysseon/whoami-adapter-nestjs';
+import { Throttle } from '@nestjs/throttler';
 
 class RefreshTokenDto {
   token!: string;
@@ -18,6 +19,7 @@ export class SessionController {
   @ApiBody({ type: RefreshTokenDto })
   @ApiOkResponse({ description: 'Returns a new access and refresh token' })
   @Public() // Public because they don't have a valid access token yet
+  @Throttle({ default: { limit: 10, ttl: 60000 } }) // 10 attempts per minute
   @Post('refresh')
   @HttpCode(HttpStatus.OK)
   async refreshSession(@Body() dto: RefreshTokenDto, @Req() req: Request) {

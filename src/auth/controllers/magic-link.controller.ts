@@ -21,6 +21,7 @@ import { MailQueueService } from '../../mail/mail-queue.service.js';
 import { SessionService } from '../use-cases/session.service.js';
 import { Req } from '@nestjs/common';
 import type { Request } from 'express';
+import { Throttle } from '@nestjs/throttler';
 
 @ApiTags('Magic Link Authentication')
 @ApiBearerAuth()
@@ -38,6 +39,7 @@ export class MagicLinkController {
   @ApiBody({ type: RequestMagicLinkDto })
   @ApiOkResponse({ type: RequestMagicLinkResponseDto })
   @Public()
+  @Throttle({ default: { limit: 2, ttl: 60000 } }) // 2 attempts per minute
   @Post('request')
   @HttpCode(HttpStatus.OK)
   async requestMagicLink(@Body() dto: RequestMagicLinkDto): Promise<RequestMagicLinkResponseDto> {
@@ -69,6 +71,7 @@ export class MagicLinkController {
   @ApiOkResponse({ type: ReceiptTokenResponse })
   @ApiUnauthorizedResponse({ description: 'Invalid or expired magic link' })
   @Public()
+  @Throttle({ default: { limit: 5, ttl: 60000 } }) // 5 attempts per minute
   @Post('authenticate')
   @HttpCode(HttpStatus.OK)
   async authenticate(
