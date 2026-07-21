@@ -5,6 +5,7 @@ import {
   MessageReadReceiptView,
   ConversationAnchorView,
   MessageEmbedView,
+  MessageAttachmentView,
 } from '../../domain/types/messaging.types.js';
 
 export class MessageReadReceiptResponseDto {
@@ -45,6 +46,24 @@ export class MessageEmbedResponseDto {
   }
 }
 
+export class MessageAttachmentResponseDto {
+  @ApiProperty() id!: string;
+  @ApiProperty() url!: string;
+  @ApiProperty() mediaType!: string;
+  @ApiProperty() mimeType!: string;
+  @ApiPropertyOptional() bytes!: number | null;
+
+  static from(a: MessageAttachmentView): MessageAttachmentResponseDto {
+    const dto = new MessageAttachmentResponseDto();
+    dto.id = a.id;
+    dto.url = a.url;
+    dto.mediaType = a.mediaType;
+    dto.mimeType = a.mimeType;
+    dto.bytes = a.bytes;
+    return dto;
+  }
+}
+
 export class MessageResponseDto {
   @ApiProperty() id!: string;
   @ApiProperty() conversationId!: string;
@@ -54,6 +73,7 @@ export class MessageResponseDto {
   @ApiPropertyOptional() content!: string | null;
   @ApiPropertyOptional() mediaUrl!: string | null;
   @ApiPropertyOptional() mediaType!: string | null;
+  @ApiProperty({ type: [MessageAttachmentResponseDto] }) attachments!: MessageAttachmentResponseDto[];
   @ApiProperty({ type: [MessageEmbedResponseDto] }) embeds!: MessageEmbedResponseDto[];
   @ApiProperty() createdAt!: Date;
   @ApiProperty({ type: [MessageReadReceiptResponseDto] })
@@ -69,6 +89,7 @@ export class MessageResponseDto {
     dto.content = m.content;
     dto.mediaUrl = m.mediaUrl;
     dto.mediaType = m.mediaType;
+    dto.attachments = (m.attachments || []).map((a) => MessageAttachmentResponseDto.from(a));
     dto.embeds = m.embeds.map((e) => MessageEmbedResponseDto.from(e));
     dto.createdAt = m.createdAt;
     dto.readReceipts = m.readReceipts.map((r) => MessageReadReceiptResponseDto.from(r));
