@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../../prisma/prisma.service.js';
 import { SearchUsersDto } from '../dto/search.dto.js';
 import { MediaUrlService } from '../../media/application/services/media-url.service.js';
+import { buildActiveUserWhere } from '../../../users/core/queries/user-queries.js';
 
 @Injectable()
 export class UserSearchService {
@@ -26,12 +27,12 @@ export class UserSearchService {
 
     const [users, total] = await this.prisma.$transaction([
       this.prisma.user.findMany({
-        where: {
+        where: buildActiveUserWhere({
           OR: [
-            { username: { contains: query, mode: 'insensitive' } },
-            { displayName: { contains: query, mode: 'insensitive' } },
+            { username: { contains: query, mode: 'insensitive' as const } },
+            { displayName: { contains: query, mode: 'insensitive' as const } },
           ],
-        },
+        }),
         skip: offset,
         take: limit,
         select: {
@@ -50,12 +51,12 @@ export class UserSearchService {
         },
       }),
       this.prisma.user.count({
-        where: {
+        where: buildActiveUserWhere({
           OR: [
-            { username: { contains: query, mode: 'insensitive' } },
-            { displayName: { contains: query, mode: 'insensitive' } },
+            { username: { contains: query, mode: 'insensitive' as const } },
+            { displayName: { contains: query, mode: 'insensitive' as const } },
           ],
-        },
+        }),
       }),
     ]);
 

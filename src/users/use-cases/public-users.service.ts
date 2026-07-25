@@ -5,6 +5,7 @@ import {
   type IUserRepository,
 } from '../core/ports/user.repository.interface.js';
 import { MediaUrlService } from '../../features/media/application/services/media-url.service.js';
+import { buildActiveUserWhere } from '../core/queries/user-queries.js';
 
 @Injectable()
 export class PublicUsersService {
@@ -16,8 +17,8 @@ export class PublicUsersService {
   ) {}
 
   async getPublicProfile(username: string, viewerAccountId?: string) {
-    const user = await this.prisma.user.findUnique({
-      where: { username },
+    const user = await this.prisma.user.findFirst({
+      where: buildActiveUserWhere({ username }),
       select: {
         id: true,
         username: true,
@@ -89,7 +90,9 @@ export class PublicUsersService {
       throw new NotFoundException('Your user profile was not found');
     }
 
-    const following = await this.prisma.user.findUnique({ where: { username: followingUsername } });
+    const following = await this.prisma.user.findFirst({
+      where: buildActiveUserWhere({ username: followingUsername }),
+    });
     if (!following) {
       throw new NotFoundException('User to follow not found');
     }
@@ -121,7 +124,9 @@ export class PublicUsersService {
       throw new NotFoundException('Your user profile was not found');
     }
 
-    const following = await this.prisma.user.findUnique({ where: { username: followingUsername } });
+    const following = await this.prisma.user.findFirst({
+      where: buildActiveUserWhere({ username: followingUsername }),
+    });
     if (!following) {
       throw new NotFoundException('User to unfollow not found');
     }

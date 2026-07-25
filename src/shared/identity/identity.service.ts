@@ -15,8 +15,10 @@ export class IdentityService {
       where: { accountId },
     });
 
-    if (!user) {
-      throw new UnauthorizedException('Your session has expired. Please sign in again.');
+    if (!user || user.status !== 'ACTIVE' || user.deletedAt !== null) {
+      throw new UnauthorizedException(
+        'Your session has expired or your account is inactive. Please sign in again.',
+      );
     }
 
     return user;
@@ -24,11 +26,13 @@ export class IdentityService {
 
   /**
    * Resolves an accountId to a User.
-   * Returns null if the user profile does not exist.
+   * Returns null if the user profile does not exist or is inactive.
    */
   async resolveUser(accountId: string): Promise<User | null> {
-    return this.prisma.user.findUnique({
+    const user = await this.prisma.user.findUnique({
       where: { accountId },
     });
+    if (!user || user.status !== 'ACTIVE' || user.deletedAt !== null) return null;
+    return user;
   }
 }

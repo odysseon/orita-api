@@ -69,7 +69,10 @@ export class PrismaUserRepository implements IUserRepository {
 
   async findByAccountId(accountId: string): Promise<UserEntity | null> {
     const cached = await this.redisService.get<UserEntity>(this.getCacheKey(accountId));
-    if (cached) return cached;
+    if (cached) {
+      if (cached.status !== 'ACTIVE' || cached.deletedAt !== null) return null;
+      return cached;
+    }
     const user = await this.prisma.user.findUnique({
       where: { accountId },
       include: {
@@ -91,7 +94,7 @@ export class PrismaUserRepository implements IUserRepository {
       },
     });
 
-    if (!user) return null;
+    if (!user || user.status !== 'ACTIVE' || user.deletedAt !== null) return null;
 
     const { account, businessProfile, ...rest } = user;
     const domain = {
@@ -232,9 +235,10 @@ export class PrismaUserRepository implements IUserRepository {
   async updateInterests(accountId: string, categoryIds: string[]): Promise<void> {
     const user = await this.prisma.user.findUnique({
       where: { accountId },
-      select: { id: true },
+      select: { id: true, status: true, deletedAt: true },
     });
-    if (!user) throw new NotFoundException('User not found');
+    if (!user || user.status !== 'ACTIVE' || user.deletedAt !== null)
+      throw new NotFoundException('User not found');
 
     await this.prisma.$transaction(async (tx) => {
       await tx.userInterestedCategory.deleteMany({
