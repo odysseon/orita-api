@@ -1,6 +1,7 @@
 import { ArgumentsHost, Catch, ExceptionFilter, HttpStatus, Logger } from '@nestjs/common';
-import { Response, Request } from 'express';
+import { Response } from 'express';
 import { Prisma } from '../../../generated/prisma/client.js';
+import { AuthenticatedRequest } from '../identity/authenticated-request.interface.js';
 
 @Catch(Prisma.PrismaClientKnownRequestError)
 export class PrismaClientExceptionFilter implements ExceptionFilter {
@@ -9,12 +10,12 @@ export class PrismaClientExceptionFilter implements ExceptionFilter {
   catch(exception: Prisma.PrismaClientKnownRequestError, host: ArgumentsHost) {
     const ctx = host.switchToHttp();
     const response = ctx.getResponse<Response>();
-    const request = ctx.getRequest<Request>();
+    const request = ctx.getRequest<AuthenticatedRequest>();
 
     // Detailed internal log: Request ID, Path, Prisma Code, etc.
     // In a real app we might extract an X-Request-ID here
-    type RequestWithIdentity = Request & { identity?: { accountId: string } };
-    const identity = (request as RequestWithIdentity).identity?.accountId || 'unauthenticated';
+    const identity =
+      request.whoami?.identity?.accountId || request.identity?.accountId || 'unauthenticated';
     this.logger.error(
       `Prisma Exception [${exception.code}] on ${request.method} ${request.url} by ${identity}`,
       exception.stack,
