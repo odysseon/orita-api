@@ -1,16 +1,7 @@
 import { CanActivate, ExecutionContext, Injectable, UnauthorizedException } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service.js';
 import { JwtService } from '@nestjs/jwt';
-import { Request } from 'express';
-
-interface AuthenticatedRequest extends Request {
-  whoami?: {
-    identity?: {
-      accountId: string;
-    };
-  };
-  sessionId?: string;
-}
+import { AuthenticatedRequest } from '../../shared/identity/authenticated-request.interface.js';
 
 @Injectable()
 export class StatefulAuthGuard implements CanActivate {
