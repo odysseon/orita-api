@@ -37,9 +37,6 @@ import { PrismaService } from '../../prisma/prisma.service.js';
 import { SessionService } from '../use-cases/session.service.js';
 import type { Request } from 'express';
 import { Req } from '@nestjs/common';
-import { StatefulAuthGuard } from '../guards/stateful-auth.guard.js';
-import { UseGuards } from '@nestjs/common';
-
 import { Throttle } from '@nestjs/throttler';
 
 @ApiTags('Password Authentication')
@@ -180,8 +177,6 @@ export class PasswordAuthController {
   @ApiBody({ type: AddPasswordDto })
   @ApiOkResponse({ description: 'Password added successfully' })
   @ApiBearerAuth()
-  @UseGuards(StatefulAuthGuard)
-  @Public() // Bypass WhoamiAuthGuard
   @Post('password/add')
   @HttpCode(HttpStatus.OK)
   async addPassword(
