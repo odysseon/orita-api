@@ -1,4 +1,5 @@
 export type PlatformRole = 'USER' | 'MODERATOR' | 'ADMIN';
+export type UserStatusType = 'ACTIVE' | 'PENDING_DELETION';
 
 export interface UserEntity {
   id: string;
@@ -8,6 +9,8 @@ export interface UserEntity {
   bio: string | null;
   email: string;
   role: PlatformRole;
+  status: UserStatusType;
+  deletedAt: Date | null;
   avatarUrl: string | null;
   businessId?: string | null;
   activeExplorationLat?: number | null;
