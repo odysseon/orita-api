@@ -5,6 +5,7 @@ import { UsersService } from '../../use-cases/users.service.js';
 import { UpdateUserProfileDto } from './dto/update-user-profile.dto.js';
 import { UpdateExplorationContextDto } from './dto/update-exploration-context.dto.js';
 import { UpdateUserInterestsDto } from './dto/update-user-interest.dto.js';
+import { ConsumeAvatarUploadDto } from './dto/consume-avatar-upload.dto.js';
 
 @ApiTags('Users')
 @ApiBearerAuth()
@@ -46,7 +47,7 @@ export class UsersController {
   @Post('me/media')
   async consumeAvatarUploadIntent(
     @CurrentIdentity() identity: RequestIdentity,
-    @Body() payload: { intentId: string; publicId: string; version: string },
+    @Body() payload: ConsumeAvatarUploadDto,
   ) {
     return this.usersService.consumeAvatarUploadIntent(identity.accountId, payload);
   }

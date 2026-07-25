@@ -5,6 +5,7 @@ import {
 } from '../core/ports/user.repository.interface.js';
 import { UpdateUserProfileDto } from '../delivery/http/dto/update-user-profile.dto.js';
 import { UpdateExplorationContextDto } from '../delivery/http/dto/update-exploration-context.dto.js';
+import { ConsumeAvatarUploadDto } from '../delivery/http/dto/consume-avatar-upload.dto.js';
 import { MediaStorageService } from '../../storage/media-storage.service.js';
 import { UploadOwnerType, MediaRole, StorageProvider } from '../../../generated/prisma/client.js';
 import { PrismaService } from '../../prisma/prisma.service.js';
@@ -74,10 +75,7 @@ export class UsersService {
     };
   }
 
-  async consumeAvatarUploadIntent(
-    accountId: string,
-    payload: { intentId: string; publicId: string; version: string },
-  ) {
+  async consumeAvatarUploadIntent(accountId: string, payload: ConsumeAvatarUploadDto) {
     const user = await this.getMyProfile(accountId);
 
     const intent = await this.prisma.uploadIntent.findUnique({
@@ -88,12 +86,19 @@ export class UsersService {
       !intent ||
       intent.ownerId !== user.id ||
       intent.role !== MediaRole.AVATAR ||
-      intent.consumedAt
+      intent.consumedAt ||
+      intent.expiresAt <= new Date()
     ) {
       throw new BadRequestException('Invalid or expired upload intent.');
     }
 
-    const metadata = await this.mediaStorage.getMetadata(payload.publicId);
+    if (payload.publicId && payload.publicId !== intent.publicId) {
+      throw new BadRequestException('Provided publicId does not match upload intent.');
+    }
+
+    const publicId = intent.publicId;
+
+    const metadata = await this.mediaStorage.getMetadata(publicId);
     if (!metadata) {
       throw new BadRequestException('Media not found on storage provider.');
     }
@@ -110,9 +115,9 @@ export class UsersService {
 
       await tx.media.create({
         data: {
-          fileId: payload.publicId,
-          version: payload.version,
-          provider: StorageProvider.CLOUDINARY,
+          fileId: publicId,
+          version: payload.version ?? null,
+          provider: intent.provider,
           mimeType: metadata.mimeType || 'image/jpeg',
           mediaType: metadata.mimeType?.startsWith('video') ? 'VIDEO' : 'IMAGE',
           format: metadata.format ?? null,
@@ -121,6 +126,7 @@ export class UsersService {
           height: metadata.height ?? null,
           role: MediaRole.AVATAR,
           userId: user.id,
+          uploadIntentId: intent.id,
         },
       });
     });
