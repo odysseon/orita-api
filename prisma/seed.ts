@@ -1,4 +1,4 @@
-import { PrismaClient, PlatformRole, MediaType, MediaRole } from "../generated/prisma/client.js";
+import { PrismaClient, PlatformRole, MediaType, MediaRole, AttributeType } from "../generated/prisma/client.js";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { Argon2PasswordHasher } from "@odysseon/whoami-adapter-argon2";
 import "dotenv/config";
@@ -22,7 +22,13 @@ const taxonomy: {
   slug: string;
   description?: string;
   order: number;
-  children: { name: string; slug: string; description?: string; order: number }[];
+  children: { 
+    name: string; 
+    slug: string; 
+    description?: string; 
+    order: number;
+    attributes?: { key: string; label: string; type: AttributeType; isRequired: boolean; displayOrder: number; options?: string[] }[];
+  }[];
 }[] = [
   {
     name: "Food & Beverage",
@@ -66,8 +72,27 @@ const taxonomy: {
     description: "Shops, traders, and consumer goods vendors",
     order: 3,
     children: [
-      { name: "Fashion & Apparel", slug: "fashion-and-apparel", order: 0 },
-      { name: "Electronics", slug: "electronics", order: 1 },
+      { 
+        name: "Fashion & Apparel", 
+        slug: "fashion-and-apparel", 
+        order: 0,
+        attributes: [
+          { key: "brand", label: "Brand", type: AttributeType.STRING, isRequired: false, displayOrder: 0 },
+          { key: "size", label: "Size", type: AttributeType.STRING, isRequired: true, displayOrder: 1 },
+          { key: "color", label: "Color", type: AttributeType.STRING, isRequired: false, displayOrder: 2 },
+          { key: "condition", label: "Condition", type: AttributeType.SELECT, isRequired: true, displayOrder: 3, options: ["New", "Used - Like New", "Used - Good", "Used - Fair"] }
+        ]
+      },
+      { 
+        name: "Electronics", 
+        slug: "electronics", 
+        order: 1,
+        attributes: [
+          { key: "brand", label: "Brand", type: AttributeType.STRING, isRequired: true, displayOrder: 0 },
+          { key: "model", label: "Model", type: AttributeType.STRING, isRequired: true, displayOrder: 1 },
+          { key: "condition", label: "Condition", type: AttributeType.SELECT, isRequired: true, displayOrder: 2, options: ["New", "Used - Like New", "Refurbished", "Used - Good", "Used - Fair", "For Parts"] }
+        ]
+      },
       { name: "Building Materials", slug: "building-materials", order: 2 },
       { name: "Groceries & Supermarkets", slug: "groceries-and-supermarkets", order: 3 },
     ],
@@ -196,7 +221,7 @@ async function main() {
     console.log(`  ✅ Root: ${root.name}`);
 
     for (const leaf of root.children) {
-      await prisma.category.upsert({
+      const leafRecord = await prisma.category.upsert({
         where: { slug: leaf.slug },
         update: { name: leaf.name, description: leaf.description ?? null, order: leaf.order },
         create: {
@@ -208,6 +233,36 @@ async function main() {
         },
       });
       console.log(`    └── ${leaf.name}`);
+
+      if (leaf.attributes && leaf.attributes.length > 0) {
+        for (const attr of leaf.attributes) {
+          await prisma.categoryAttribute.upsert({
+            where: {
+              categoryId_key: {
+                categoryId: leafRecord.id,
+                key: attr.key,
+              },
+            },
+            update: {
+              label: attr.label,
+              type: attr.type,
+              isRequired: attr.isRequired,
+              displayOrder: attr.displayOrder,
+              options: attr.options ?? null,
+            },
+            create: {
+              categoryId: leafRecord.id,
+              key: attr.key,
+              label: attr.label,
+              type: attr.type,
+              isRequired: attr.isRequired,
+              displayOrder: attr.displayOrder,
+              options: attr.options ?? null,
+            },
+          });
+        }
+        console.log(`      ↳ Seeded ${leaf.attributes.length} attributes`);
+      }
     }
   }
 

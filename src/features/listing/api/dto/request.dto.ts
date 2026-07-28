@@ -12,8 +12,8 @@ import {
   IsObject,
 } from 'class-validator';
 import { Type } from 'class-transformer';
-
 import { ListingStatus } from '../../domain/types/listing-status.enum.js';
+import { ListingAvailability } from '../../domain/types/listing-availability.enum.js';
 
 export class ListingPriceDto {
   @IsOptional()
@@ -57,6 +57,10 @@ export class CreateListingDto {
   price?: ListingPriceDto;
 
   @IsOptional()
+  @IsEnum(ListingAvailability)
+  availability?: ListingAvailability;
+
+  @IsOptional()
   @IsObject()
   attributes?: Record<string, unknown>;
 }
@@ -81,6 +85,10 @@ export class UpdateListingDto {
   @ValidateNested()
   @Type(() => ListingPriceDto)
   price?: ListingPriceDto;
+
+  @IsOptional()
+  @IsEnum(ListingAvailability)
+  availability?: ListingAvailability;
 
   @IsOptional()
   @IsObject()

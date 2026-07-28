@@ -246,6 +246,7 @@ model Listing {
   categoryId          String?
   currencyCode        String?
   attributes          Json?
+  availability        ListingAvailability  @default(IN_STOCK)
   conversationAnchors ConversationAnchor[]
   businessProfile     BusinessProfile      @relation(fields: [businessProfileId], references: [id], onDelete: Cascade)
   category            Category?            @relation("ListingCategory", fields: [categoryId], references: [id], onDelete: SetNull)
@@ -791,6 +792,12 @@ enum ListingStatus {
   PUBLISHED
   PAUSED
   ARCHIVED
+}
+
+enum ListingAvailability {
+  IN_STOCK
+  OUT_OF_STOCK
+  PRE_ORDER
 }
 
 enum StorageProvider {

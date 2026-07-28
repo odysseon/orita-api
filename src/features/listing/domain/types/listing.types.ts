@@ -1,4 +1,5 @@
 import { ListingStatus } from './listing-status.enum.js';
+import { ListingAvailability } from './listing-availability.enum.js';
 
 // ---------------------------------------------------------------------------
 // Price input
@@ -26,6 +27,7 @@ export interface CreateListingInput {
   readonly categoryId: string;
   readonly description?: string;
   readonly price?: ListingPriceInput;
+  readonly availability?: ListingAvailability;
   readonly attributes?: Record<string, unknown>;
 }
 
@@ -39,6 +41,7 @@ export interface UpdateListingInput {
   readonly categoryId?: string;
   readonly description?: string;
   readonly price?: ListingPriceInput;
+  readonly availability?: ListingAvailability;
   readonly attributes?: Record<string, unknown>;
 }
 
@@ -97,6 +100,7 @@ export interface ListingSummary {
   readonly maxPrice: number | null;
   readonly currencyCode: string | null;
   readonly isNegotiable: boolean;
+  readonly availability: ListingAvailability;
   readonly categoryId: string | null;
   readonly coverUrl?: string;
   readonly attributes?: Record<string, unknown> | null;
