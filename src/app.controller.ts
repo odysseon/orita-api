@@ -1,7 +1,7 @@
 import { Controller, Get, Header } from '@nestjs/common';
-import { ApiBearerAuth } from '@nestjs/swagger';
+import { Public } from '@odysseon/whoami-adapter-nestjs';
 
-@ApiBearerAuth()
+@Public()
 @Controller()
 export class AppController {
   @Get('robots.txt')
