@@ -1,6 +1,7 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 import { ListingStatus } from '../../domain/types/listing-status.enum.js';
+import { ListingAvailability } from '../../domain/types/listing-availability.enum.js';
 import { Listing } from '../../domain/types/listing.entity.js';
 import { ListingSummary, PaginatedListingSummaries } from '../../domain/types/listing.types.js';
 
@@ -16,6 +17,7 @@ export class ListingResponseDto {
   maxPrice: string | null;
   currencyCode: string | null;
   isNegotiable: boolean;
+  @ApiProperty({ enum: ListingAvailability }) availability: ListingAvailability;
   @ApiPropertyOptional({ nullable: true }) categoryId: string | null;
   @ApiPropertyOptional() attributes: Record<string, unknown> | null;
   @ApiProperty() createdAt: string;
@@ -39,6 +41,7 @@ export class ListingResponseDto {
     this.maxPrice = listing.price.maxPrice?.toString() ?? null;
     this.currencyCode = listing.price.currencyCode;
     this.isNegotiable = listing.price.isNegotiable;
+    this.availability = listing.availability;
     this.categoryId = listing.categoryId;
     this.attributes = listing.attributes;
     this.createdAt = new Date(listing.createdAt).toISOString();
@@ -79,6 +82,7 @@ export class ListingSummaryResponseDto {
   currencyCode: string | null;
   categoryId: string | null;
   isNegotiable: boolean;
+  @ApiProperty({ enum: ListingAvailability }) availability: ListingAvailability;
   @ApiPropertyOptional() coverUrl?: string;
   @ApiPropertyOptional() attributes?: Record<string, unknown> | null;
   @ApiPropertyOptional() isSaved?: boolean;
@@ -97,6 +101,7 @@ export class ListingSummaryResponseDto {
     this.currencyCode = summary.currencyCode;
     this.categoryId = summary.categoryId;
     this.isNegotiable = summary.isNegotiable;
+    this.availability = summary.availability;
     if (summary.coverUrl !== undefined) {
       this.coverUrl = summary.coverUrl;
     }

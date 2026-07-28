@@ -10,6 +10,7 @@ import { RedisService } from '../../../shared/redis/redis.service.js';
 import { IListingRepository } from '../domain/ports/listing.repository.port.js';
 import { Listing } from '../domain/types/listing.entity.js';
 import { ListingStatus } from '../domain/types/listing-status.enum.js';
+import { ListingAvailability } from '../domain/types/listing-availability.enum.js';
 import {
   CreateListingInput,
   DiscoverListingsInput,
@@ -51,6 +52,7 @@ function toDomain(raw: PrismaListingExtended, mediaUrlService?: MediaUrlService)
     slug: raw.slug,
     description: raw.description,
     status: raw.status,
+    availability: raw.availability as ListingAvailability,
     categoryId: raw.categoryId ?? null,
     price: {
       minPrice: raw.minPrice !== null ? raw.minPrice.toNumber() : null,
@@ -142,6 +144,7 @@ export class PrismaListingRepository extends IListingRepository {
         ...(input.price?.maxPrice !== undefined && { maxPrice: input.price.maxPrice }),
         ...(input.price?.currencyCode !== undefined && { currencyCode: input.price.currencyCode }),
         ...(input.price?.isNegotiable !== undefined && { isNegotiable: input.price.isNegotiable }),
+        ...(input.availability !== undefined && { availability: input.availability }),
         ...(input.attributes !== undefined && {
           attributes: input.attributes as Prisma.InputJsonValue,
         }),
@@ -211,6 +214,7 @@ export class PrismaListingRepository extends IListingRepository {
           currencyCode: input.price.currencyCode ?? null,
           isNegotiable: input.price.isNegotiable,
         }),
+        ...(input.availability !== undefined && { availability: input.availability }),
         ...(input.attributes !== undefined && {
           attributes:
             input.attributes === null ? Prisma.DbNull : (input.attributes as Prisma.InputJsonValue),
@@ -281,6 +285,7 @@ export class PrismaListingRepository extends IListingRepository {
           maxPrice: number | null;
           currencyCode: string | null;
           isNegotiable: boolean;
+          availability: string;
           categoryId: string | null;
           attributes: Prisma.JsonValue;
           coverMedia: {
@@ -294,7 +299,7 @@ export class PrismaListingRepository extends IListingRepository {
         }[]
       >`
         SELECT l.id, l."businessProfileId", bp.slug as "businessProfileSlug", l.title, l.slug, l.description, 
-               l."minPrice", l."maxPrice", l."currencyCode", l."isNegotiable", l."categoryId", l.attributes,
+               l."minPrice", l."maxPrice", l."currencyCode", l."isNegotiable", l.availability, l."categoryId", l.attributes,
                (SELECT json_build_object('provider', m.provider, 'fileId', m."fileId", 'mimeType', m."mimeType", 'version', m.version, 'format', m.format) FROM "media" m WHERE m."listingId" = l.id AND m.role = 'COVER' LIMIT 1) as "coverMedia",
                (ST_Distance(loc.coordinates::geography, ST_SetSRID(ST_MakePoint(${input.lng}, ${input.lat}), 4326)::geography) / 1000) AS distance
         FROM listings l
@@ -359,6 +364,7 @@ export class PrismaListingRepository extends IListingRepository {
         maxPrice: r.maxPrice !== null ? Number(r.maxPrice) : null,
         currencyCode: r.currencyCode,
         isNegotiable: r.isNegotiable,
+        availability: r.availability as ListingAvailability,
         categoryId: r.categoryId,
         attributes: r.attributes as Record<string, unknown> | null,
         ...(r.coverMedia
@@ -445,6 +451,7 @@ export class PrismaListingRepository extends IListingRepository {
         maxPrice: r.maxPrice !== null ? r.maxPrice.toNumber() : null,
         currencyCode: r.currencyCode ?? null,
         isNegotiable: r.isNegotiable,
+        availability: r.availability as ListingAvailability,
         categoryId: (r as { categoryId?: string | null }).categoryId ?? null,
         attributes: r.attributes ? (r.attributes as Record<string, unknown>) : null,
         ...(coverUrl !== undefined ? { coverUrl } : {}),

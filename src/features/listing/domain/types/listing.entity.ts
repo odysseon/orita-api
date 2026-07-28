@@ -1,5 +1,6 @@
 import { ListingPrice } from './listing-price.value-object.js';
 import { ListingStatus } from './listing-status.enum.js';
+import { ListingAvailability } from './listing-availability.enum.js';
 
 /**
  * A Listing represents a public commercial offering exposed by a business profile.
@@ -53,6 +54,7 @@ export interface Listing {
   // ---------------------------------------------------------------------------
 
   readonly status: ListingStatus;
+  readonly availability: ListingAvailability;
 
   // ---------------------------------------------------------------------------
   // Category
