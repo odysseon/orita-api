@@ -240,7 +240,20 @@ export class PrismaBusinessProfileRepository extends IBusinessProfileRepository 
           },
         }),
       },
-      include: { geoEntity: true, categories: { select: { categoryId: true, isPrimary: true } } },
+      include: { 
+        geoEntity: true, 
+        categories: { select: { categoryId: true, isPrimary: true } },
+        media: {
+          select: {
+            role: true,
+            provider: true,
+            fileId: true,
+            mimeType: true,
+            version: true,
+            format: true,
+          },
+        },
+      },
     });
 
     const hydratedArray = await this.hydrate([raw]);
@@ -370,6 +383,16 @@ export class PrismaBusinessProfileRepository extends IBusinessProfileRepository 
         tags: { include: { tag: true } },
         geoEntity: true,
         categories: { select: { categoryId: true, isPrimary: true } },
+        media: {
+          select: {
+            role: true,
+            provider: true,
+            fileId: true,
+            mimeType: true,
+            version: true,
+            format: true,
+          },
+        },
       },
     });
     if (!raw) return null;
@@ -445,6 +468,16 @@ export class PrismaBusinessProfileRepository extends IBusinessProfileRepository 
         tags: { include: { tag: true } },
         geoEntity: true,
         categories: { select: { categoryId: true, isPrimary: true } },
+        media: {
+          select: {
+            role: true,
+            provider: true,
+            fileId: true,
+            mimeType: true,
+            version: true,
+            format: true,
+          },
+        },
       },
     });
 

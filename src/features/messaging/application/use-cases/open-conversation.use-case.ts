@@ -22,11 +22,27 @@ export class OpenConversationUseCase {
       throw new BadRequestException('You cannot message yourself');
     }
 
+    let targetId = input.targetId;
+    if (input.targetType === 'BUSINESS') {
+      const biz = await this.prisma.businessProfile.findFirst({
+        where: {
+          OR: [
+            { id: input.targetId },
+            { slug: input.targetId },
+          ],
+        },
+        select: { id: true },
+      });
+      if (biz) {
+        targetId = biz.id;
+      }
+    }
+
     const me = await this.participantService.ensurePersonalParticipant(input.userId);
     const target =
       input.targetType === 'USER'
-        ? await this.participantService.ensurePersonalParticipant(input.targetId)
-        : await this.participantService.ensureBusinessParticipant(input.targetId);
+        ? await this.participantService.ensurePersonalParticipant(targetId)
+        : await this.participantService.ensureBusinessParticipant(targetId);
 
     // Advisory lock to prevent race conditions when checking/creating direct conversations
     const [id1, id2] = [me.id, target.id].sort();
