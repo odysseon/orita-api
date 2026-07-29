@@ -52,7 +52,7 @@ function toDomain(raw: PrismaListingExtended, mediaUrlService?: MediaUrlService)
     slug: raw.slug,
     description: raw.description,
     status: raw.status,
-    availability: raw.availability as ListingAvailability,
+    availability: raw.availability,
     categoryId: raw.categoryId ?? null,
     price: {
       minPrice: raw.minPrice !== null ? raw.minPrice.toNumber() : null,
@@ -157,7 +157,13 @@ export class PrismaListingRepository extends IListingRepository {
 
   async findById(id: string): Promise<Listing | null> {
     const cached = await this.redisService.get<Listing>(this.getCacheKey(id));
-    if (cached) return cached;
+    if (cached) {
+      if (cached.availability === undefined) {
+        this.deleteCacheAsync(id, cached.slug);
+      } else {
+        return cached;
+      }
+    }
 
     const raw = await this.prisma.listing.findUnique({
       where: { id },
@@ -172,7 +178,13 @@ export class PrismaListingRepository extends IListingRepository {
 
   async findBySlug(slug: string): Promise<Listing | null> {
     const cached = await this.redisService.get<Listing>(this.getSlugCacheKey(slug));
-    if (cached) return cached;
+    if (cached) {
+      if (cached.availability === undefined) {
+        this.deleteCacheAsync(cached.id, slug);
+      } else {
+        return cached;
+      }
+    }
 
     const raw = await this.prisma.listing.findFirst({
       where: { slug },
@@ -451,7 +463,7 @@ export class PrismaListingRepository extends IListingRepository {
         maxPrice: r.maxPrice !== null ? r.maxPrice.toNumber() : null,
         currencyCode: r.currencyCode ?? null,
         isNegotiable: r.isNegotiable,
-        availability: r.availability as ListingAvailability,
+        availability: r.availability,
         categoryId: (r as { categoryId?: string | null }).categoryId ?? null,
         attributes: r.attributes ? (r.attributes as Record<string, unknown>) : null,
         ...(coverUrl !== undefined ? { coverUrl } : {}),
