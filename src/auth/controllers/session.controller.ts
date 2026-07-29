@@ -6,7 +6,11 @@ import { Public, CurrentIdentity } from '@odysseon/whoami-adapter-nestjs';
 import type { RequestIdentity } from '@odysseon/whoami-adapter-nestjs';
 import { Throttle } from '@nestjs/throttler';
 
+import { IsString, IsNotEmpty } from 'class-validator';
+
 class RefreshTokenDto {
+  @IsString()
+  @IsNotEmpty()
   token!: string;
 }
 
