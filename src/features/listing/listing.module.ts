@@ -22,7 +22,7 @@ import { ListingController } from './api/controllers/listing.controller.js';
 
 @Module({
   imports: [CategoryModule, RedisModule, forwardRef(() => MediaModule)],
-  controllers: [PublicListingController, ListingController],
+  controllers: [ListingController, PublicListingController],
   providers: [
     { provide: IListingRepository, useClass: PrismaListingRepository },
     { provide: IBusinessProfileRepository, useClass: PrismaBusinessProfileRepository },
