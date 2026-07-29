@@ -65,6 +65,7 @@ export class ListingController {
           isNegotiable: dto.price.isNegotiable,
         },
       }),
+      ...(dto.availability !== undefined && { availability: dto.availability }),
     });
 
     return ListingResponseDto.from(listing);
@@ -91,6 +92,7 @@ export class ListingController {
           isNegotiable: dto.price.isNegotiable,
         },
       }),
+      ...(dto.availability !== undefined && { availability: dto.availability }),
     });
 
     return ListingResponseDto.from(listing);
