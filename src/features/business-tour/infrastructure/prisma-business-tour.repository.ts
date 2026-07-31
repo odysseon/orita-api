@@ -176,8 +176,7 @@ export class PrismaBusinessTourRepository extends IBusinessTourRepository {
     const offset = (input.page - 1) * limit;
 
     // Use PostGIS if location is provided
-    if (input.lat !== undefined && input.lng !== undefined && input.radiusInKm !== undefined) {
-      const radiusMeters = input.radiusInKm * 1000;
+    if (input.lat !== undefined && input.lng !== undefined) {
 
       const searchPattern = input.search ? `%${input.search}%` : '%';
       const statusFilter = input.status
@@ -218,12 +217,7 @@ export class PrismaBusinessTourRepository extends IBusinessTourRepository {
           ) as "coverUrl"
         FROM store_tours st
         JOIN business_profiles bp ON st."businessProfileId" = bp.id
-        WHERE ST_DWithin(
-          bp.location,
-          ST_SetSRID(ST_MakePoint(${input.lng}, ${input.lat}), 4326),
-          ${radiusMeters}
-        )
-        AND (st.title ILIKE ${searchPattern} OR st.summary ILIKE ${searchPattern})
+        WHERE (st.title ILIKE ${searchPattern} OR st.summary ILIKE ${searchPattern})
         ${statusFilter}
         ORDER BY "distanceMeters" ASC
         LIMIT ${limit} OFFSET ${offset}
@@ -233,12 +227,7 @@ export class PrismaBusinessTourRepository extends IBusinessTourRepository {
         SELECT COUNT(*)::bigint as count
         FROM store_tours st
         JOIN business_profiles bp ON st."businessProfileId" = bp.id
-        WHERE ST_DWithin(
-          bp.location,
-          ST_SetSRID(ST_MakePoint(${input.lng}, ${input.lat}), 4326),
-          ${radiusMeters}
-        )
-        AND (st.title ILIKE ${searchPattern} OR st.summary ILIKE ${searchPattern})
+        WHERE (st.title ILIKE ${searchPattern} OR st.summary ILIKE ${searchPattern})
         ${statusFilter}
       `;
 

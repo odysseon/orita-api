@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import * as crypto from 'node:crypto';
 import { MediaUrlService } from '../../media/application/services/media-url.service.js';
 import {
   Prisma,
@@ -133,22 +134,50 @@ export class PrismaListingRepository extends IListingRepository {
     input: CreateListingInput,
     slug: string,
   ): Promise<Listing> {
-    const raw = await this.prisma.listing.create({
-      data: {
-        businessProfileId,
-        title: input.title,
-        categoryId: input.categoryId,
-        slug,
-        description: input.description ?? null,
-        ...(input.price?.minPrice !== undefined && { minPrice: input.price.minPrice }),
-        ...(input.price?.maxPrice !== undefined && { maxPrice: input.price.maxPrice }),
-        ...(input.price?.currencyCode !== undefined && { currencyCode: input.price.currencyCode }),
-        ...(input.price?.isNegotiable !== undefined && { isNegotiable: input.price.isNegotiable }),
-        ...(input.availability !== undefined && { availability: input.availability }),
-        ...(input.attributes !== undefined && {
-          attributes: input.attributes as Prisma.InputJsonValue,
-        }),
-      },
+    const raw = await this.prisma.$transaction(async (tx) => {
+      const listing = await tx.listing.create({
+        data: {
+          businessProfileId,
+          title: input.title,
+          categoryId: input.categoryId,
+          slug,
+          description: input.description ?? null,
+          ...(input.price?.minPrice !== undefined && { minPrice: input.price.minPrice }),
+          ...(input.price?.maxPrice !== undefined && { maxPrice: input.price.maxPrice }),
+          ...(input.price?.currencyCode !== undefined && { currencyCode: input.price.currencyCode }),
+          ...(input.price?.isNegotiable !== undefined && { isNegotiable: input.price.isNegotiable }),
+          ...(input.availability !== undefined && { availability: input.availability }),
+          ...(input.attributes !== undefined && {
+            attributes: input.attributes as Prisma.InputJsonValue,
+          }),
+        },
+      });
+
+      if (input.serviceAreas && input.serviceAreas.length > 0) {
+        for (const area of input.serviceAreas) {
+          const areaId = crypto.randomUUID();
+          if (area.type === 'RADIUS') {
+            await tx.$executeRaw`
+              INSERT INTO "listing_service_areas" (id, "listingId", name, type, "radiusKm", "centerGeography", enabled, "displayOrder", "createdAt", "updatedAt")
+              VALUES (${areaId}, ${listing.id}, ${area.name ?? null}, ${area.type}::"ServiceAreaType", ${area.radiusKm}, ST_SetSRID(ST_MakePoint(${area.longitude}, ${area.latitude}), 4326)::geography, ${area.enabled ?? true}, ${area.displayOrder ?? 0}, NOW(), NOW())
+            `;
+          } else if (area.type === 'POLYGON') {
+            const coords = area.polygon!.map((p) => `${p[1]} ${p[0]}`).join(', ');
+            const wkt = `POLYGON((${coords}))`;
+            await tx.$executeRaw`
+              INSERT INTO "listing_service_areas" (id, "listingId", name, type, "polygonGeometry", enabled, "displayOrder", "createdAt", "updatedAt")
+              VALUES (${areaId}, ${listing.id}, ${area.name ?? null}, ${area.type}::"ServiceAreaType", ST_GeomFromText(${wkt}, 4326)::geometry, ${area.enabled ?? true}, ${area.displayOrder ?? 0}, NOW(), NOW())
+            `;
+          } else {
+            await tx.$executeRaw`
+              INSERT INTO "listing_service_areas" (id, "listingId", name, type, "administrativeRegionId", enabled, "displayOrder", "createdAt", "updatedAt")
+              VALUES (${areaId}, ${listing.id}, ${area.name ?? null}, ${area.type}::"ServiceAreaType", ${area.administrativeRegionId ?? null}, ${area.enabled ?? true}, ${area.displayOrder ?? 0}, NOW(), NOW())
+            `;
+          }
+        }
+      }
+
+      return listing;
     });
     const domain = toDomain(raw);
     this.updateCacheAsync(domain);
@@ -214,25 +243,53 @@ export class PrismaListingRepository extends IListingRepository {
   }
 
   async update(id: string, input: UpdateListingInput): Promise<Listing> {
-    const raw = await this.prisma.listing.update({
-      where: { id },
-      data: {
-        ...(input.title !== undefined && { title: input.title }),
-        ...(input.description !== undefined && { description: input.description }),
-        ...(input.categoryId !== undefined && { categoryId: input.categoryId }),
-        ...(input.price !== undefined && {
-          minPrice: input.price.minPrice ?? null,
-          maxPrice: input.price.maxPrice ?? null,
-          currencyCode: input.price.currencyCode ?? null,
-          isNegotiable: input.price.isNegotiable,
-        }),
-        ...(input.availability !== undefined && { availability: input.availability }),
-        ...(input.attributes !== undefined && {
-          attributes:
-            input.attributes === null ? Prisma.DbNull : (input.attributes as Prisma.InputJsonValue),
-        }),
-      },
-      include: { media: true },
+    const raw = await this.prisma.$transaction(async (tx) => {
+      const listing = await tx.listing.update({
+        where: { id },
+        data: {
+          ...(input.title !== undefined && { title: input.title }),
+          ...(input.description !== undefined && { description: input.description }),
+          ...(input.categoryId !== undefined && { categoryId: input.categoryId }),
+          ...(input.price !== undefined && {
+            minPrice: input.price.minPrice ?? null,
+            maxPrice: input.price.maxPrice ?? null,
+            currencyCode: input.price.currencyCode ?? null,
+            isNegotiable: input.price.isNegotiable,
+          }),
+          ...(input.availability !== undefined && { availability: input.availability }),
+          ...(input.attributes !== undefined && {
+            attributes:
+              input.attributes === null ? Prisma.DbNull : (input.attributes as Prisma.InputJsonValue),
+          }),
+        },
+        include: { media: true },
+      });
+
+      if (input.serviceAreas) {
+        await tx.listingServiceArea.deleteMany({ where: { listingId: id } });
+        for (const area of input.serviceAreas) {
+          const areaId = crypto.randomUUID();
+          if (area.type === 'RADIUS') {
+            await tx.$executeRaw`
+              INSERT INTO "listing_service_areas" (id, "listingId", name, type, "radiusKm", "centerGeography", enabled, "displayOrder", "createdAt", "updatedAt")
+              VALUES (${areaId}, ${id}, ${area.name ?? null}, ${area.type}::"ServiceAreaType", ${area.radiusKm}, ST_SetSRID(ST_MakePoint(${area.longitude}, ${area.latitude}), 4326)::geography, ${area.enabled ?? true}, ${area.displayOrder ?? 0}, NOW(), NOW())
+            `;
+          } else if (area.type === 'POLYGON') {
+            const coords = area.polygon!.map((p) => `${p[1]} ${p[0]}`).join(', ');
+            const wkt = `POLYGON((${coords}))`;
+            await tx.$executeRaw`
+              INSERT INTO "listing_service_areas" (id, "listingId", name, type, "polygonGeometry", enabled, "displayOrder", "createdAt", "updatedAt")
+              VALUES (${areaId}, ${id}, ${area.name ?? null}, ${area.type}::"ServiceAreaType", ST_GeomFromText(${wkt}, 4326)::geometry, ${area.enabled ?? true}, ${area.displayOrder ?? 0}, NOW(), NOW())
+            `;
+          } else {
+            await tx.$executeRaw`
+              INSERT INTO "listing_service_areas" (id, "listingId", name, type, "administrativeRegionId", enabled, "displayOrder", "createdAt", "updatedAt")
+              VALUES (${areaId}, ${id}, ${area.name ?? null}, ${area.type}::"ServiceAreaType", ${area.administrativeRegionId ?? null}, ${area.enabled ?? true}, ${area.displayOrder ?? 0}, NOW(), NOW())
+            `;
+          }
+        }
+      }
+      return listing;
     });
     const domain = toDomain(raw, this.mediaUrlService);
     this.updateCacheAsync(domain);
@@ -283,7 +340,6 @@ export class PrismaListingRepository extends IListingRepository {
     const skip = (input.page - 1) * input.limit;
 
     if (input.lat !== undefined && input.lng !== undefined) {
-      const radiusMeters = (input.radiusInKm ?? 10) * 1000;
 
       const rawItems = await this.prisma.$queryRaw<
         {
@@ -319,7 +375,7 @@ export class PrismaListingRepository extends IListingRepository {
         JOIN "locations" loc ON bp."locationId" = loc.id
         WHERE l.status = ${input.status ?? ListingStatus.PUBLISHED}::"ListingStatus"
           AND bp."isPublic" = true
-          AND ST_DWithin(loc.coordinates::geography, ST_SetSRID(ST_MakePoint(${input.lng}, ${input.lat}), 4326)::geography, ${radiusMeters})
+
           ${input.businessProfileId ? Prisma.sql`AND l."businessProfileId" = ${input.businessProfileId}` : Prisma.empty}
           ${input.currencyCode ? Prisma.sql`AND l."currencyCode" = ${input.currencyCode}` : Prisma.empty}
           ${input.isNegotiable !== undefined ? Prisma.sql`AND l."isNegotiable" = ${input.isNegotiable}` : Prisma.empty}
@@ -347,7 +403,7 @@ export class PrismaListingRepository extends IListingRepository {
         JOIN "locations" loc ON bp."locationId" = loc.id
         WHERE l.status = ${input.status ?? ListingStatus.PUBLISHED}::"ListingStatus"
           AND bp."isPublic" = true
-          AND ST_DWithin(loc.coordinates::geography, ST_SetSRID(ST_MakePoint(${input.lng}, ${input.lat}), 4326)::geography, ${radiusMeters})
+
           ${input.businessProfileId ? Prisma.sql`AND l."businessProfileId" = ${input.businessProfileId}` : Prisma.empty}
           ${input.currencyCode ? Prisma.sql`AND l."currencyCode" = ${input.currencyCode}` : Prisma.empty}
           ${input.isNegotiable !== undefined ? Prisma.sql`AND l."isNegotiable" = ${input.isNegotiable}` : Prisma.empty}

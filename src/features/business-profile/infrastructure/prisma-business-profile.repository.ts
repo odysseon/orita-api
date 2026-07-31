@@ -630,7 +630,6 @@ export class PrismaBusinessProfileRepository extends IBusinessProfileRepository 
     const skip = (input.page - 1) * input.limit;
 
     if (input.lat !== undefined && input.lng !== undefined) {
-      const radiusMeters = (input.radiusInKm ?? 10) * 1000;
 
       const rawItems = await this.prisma.$queryRaw<
         {
@@ -657,7 +656,7 @@ export class PrismaBusinessProfileRepository extends IBusinessProfileRepository 
         FROM "business_profiles" bp
         JOIN "locations" loc ON bp."locationId" = loc.id
         WHERE bp."isPublic" = true
-          AND ST_DWithin(loc.coordinates::geography, ST_SetSRID(ST_MakePoint(${input.lng}, ${input.lat}), 4326)::geography, ${radiusMeters})
+
           ${input.categoryId ? Prisma.sql`AND EXISTS (SELECT 1 FROM "business_categories" bc WHERE bc."businessId" = bp.id AND bc."categoryId" = ${input.categoryId})` : Prisma.empty}
           ${
             input.search
@@ -678,7 +677,7 @@ export class PrismaBusinessProfileRepository extends IBusinessProfileRepository 
         FROM "business_profiles" bp
         JOIN "locations" loc ON bp."locationId" = loc.id
         WHERE bp."isPublic" = true
-          AND ST_DWithin(loc.coordinates::geography, ST_SetSRID(ST_MakePoint(${input.lng}, ${input.lat}), 4326)::geography, ${radiusMeters})
+
           ${input.categoryId ? Prisma.sql`AND EXISTS (SELECT 1 FROM "business_categories" bc WHERE bc."businessId" = bp.id AND bc."categoryId" = ${input.categoryId})` : Prisma.empty}
           ${
             input.search

@@ -41,7 +41,7 @@ export class BusinessSearchService {
           (bsa.id IS NULL AND loc.coordinates IS NOT NULL AND ST_DWithin(
             loc.coordinates::geography,
             ST_SetSRID(ST_MakePoint(${dto.lng}, ${dto.lat}), 4326)::geography,
-            ${dto.radius || 15000}
+            15000
           ))
       `;
       businessProfileIds = locations.map((l) => l.id);
