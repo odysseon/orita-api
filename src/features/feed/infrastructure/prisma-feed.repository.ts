@@ -195,7 +195,7 @@ export class PrismaFeedRepository {
     const listingIds = results.filter((r) => r.itemType === 'LISTING').map((r) => r.referenceId);
     const tourIds = results.filter((r) => r.itemType === 'TOUR').map((r) => r.referenceId);
 
-    const [businesses, listings, tours] = await Promise.all([
+    const [businesses, listings, tours, saves] = await Promise.all([
       this.prisma.businessProfile.findMany({
         where: { id: { in: businessIds } },
         select: {
@@ -218,7 +218,18 @@ export class PrismaFeedRepository {
             include: { media: true },
           })
         : [],
+      params.userId && listingIds.length > 0
+        ? this.prisma.savedListing.findMany({
+            where: {
+              userId: params.userId,
+              listingId: { in: listingIds },
+            },
+            select: { listingId: true },
+          })
+        : Promise.resolve([]),
     ]);
+
+    const savedListingIds = new Set((saves as { listingId: string }[]).map((s) => s.listingId));
 
     const businessMap = new Map(
       businesses.map((b) => {
@@ -255,7 +266,10 @@ export class PrismaFeedRepository {
 
       let mappedListing: Record<string, unknown> | undefined = undefined;
       if (listingRaw) {
-        mappedListing = { ...listingRaw };
+        mappedListing = {
+          ...listingRaw,
+          isSaved: savedListingIds.has(listingRaw.id),
+        };
         if (listingRaw.media) {
           mappedListing['media'] = listingRaw.media.map((m: Media) => ({
             ...m,
