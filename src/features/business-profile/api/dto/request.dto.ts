@@ -7,8 +7,11 @@ import {
   MaxLength,
   MinLength,
   ArrayMaxSize,
+  ValidateNested,
 } from 'class-validator';
-import { BusinessType } from '../../../../../generated/prisma/client.js';
+import { Type } from 'class-transformer';
+import { BusinessType, ServiceMode } from '../../../../../generated/prisma/client.js';
+import { BaseServiceAreaDto } from './service-area.dto.js';
 import { IsE164Phone } from './is-e164-phone.validator.js';
 
 export class CreateBusinessProfileDto {
@@ -125,6 +128,17 @@ export class UpdateBusinessProfileDto {
   @ArrayMaxSize(5)
   @IsString({ each: true })
   secondaryCategoryIds?: string[];
+
+  @IsOptional()
+  @IsArray()
+  @IsEnum(ServiceMode, { each: true })
+  serviceModes?: ServiceMode[];
+
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => BaseServiceAreaDto)
+  serviceAreas?: BaseServiceAreaDto[];
 }
 
 export class GetBusinessesQueryDto {
