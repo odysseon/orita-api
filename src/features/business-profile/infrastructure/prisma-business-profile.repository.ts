@@ -256,6 +256,14 @@ export class PrismaBusinessProfileRepository extends IBusinessProfileRepository 
       },
     });
 
+    if (input.latitude !== undefined && input.longitude !== undefined) {
+      const serviceAreaId = crypto.randomUUID();
+      await this.prisma.$executeRaw`
+        INSERT INTO "business_service_areas" (id, "businessProfileId", type, "radiusKm", "centerGeography", "createdAt", "updatedAt")
+        VALUES (${serviceAreaId}, ${raw.id}, 'RADIUS'::"ServiceAreaType", 10, ST_SetSRID(ST_MakePoint(${input.longitude}, ${input.latitude}), 4326)::geography, NOW(), NOW())
+      `;
+    }
+
     const hydratedArray = await this.hydrate([raw]);
     const domain = toDomain(hydratedArray[0]!);
     this.updateCacheAsync(domain);
