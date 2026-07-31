@@ -16,15 +16,23 @@ export class BusinessSearchService {
 
     // Step 1: Geospatial pre-filter
     if (dto.lat !== undefined && dto.lng !== undefined) {
-      const radius = Math.min(Math.max(100, dto.radius ?? 15000), 50000);
       const locations = await this.prisma.$queryRaw<{ id: string }[]>`
-        SELECT bp.id
+        SELECT DISTINCT bp.id
         FROM "business_profiles" bp
-        JOIN "locations" loc ON bp."locationId" = loc.id
-        WHERE ST_DWithin(
-          loc.coordinates::geography,
-          ST_SetSRID(ST_MakePoint(${dto.lng}, ${dto.lat}), 4326)::geography,
-          ${radius}
+        JOIN "business_service_areas" bsa ON bp.id = bsa."businessProfileId"
+        WHERE bsa.enabled = true
+        AND (
+          bsa.type = 'NATIONWIDE'::"ServiceAreaType"
+          OR bsa.type = 'REMOTE'::"ServiceAreaType"
+          OR (bsa.type = 'RADIUS'::"ServiceAreaType" AND ST_DWithin(
+            bsa."centerGeography",
+            ST_SetSRID(ST_MakePoint(${dto.lng}, ${dto.lat}), 4326)::geography,
+            bsa."radiusKm" * 1000
+          ))
+          OR (bsa.type = 'POLYGON'::"ServiceAreaType" AND ST_Contains(
+            bsa."polygonGeometry"::geometry,
+            ST_SetSRID(ST_MakePoint(${dto.lng}, ${dto.lat}), 4326)::geometry
+          ))
         )
       `;
       businessProfileIds = locations.map((l) => l.id);
