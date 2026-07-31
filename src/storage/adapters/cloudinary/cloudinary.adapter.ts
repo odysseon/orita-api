@@ -10,7 +10,6 @@ import {
   UploadResult,
   DeleteResult,
   UploadSignatureResult,
-  SignatureConstraints,
 } from '../../ports/provider.port.js';
 import { StorageProvider as ProviderEnum } from '../../../../generated/prisma/client.js';
 
@@ -153,7 +152,6 @@ export class CloudinaryStorageProvider implements StorageProvider {
     folder: string,
     publicId: string,
     timestamp: number,
-    _constraints?: SignatureConstraints,
   ): Promise<UploadSignatureResult> {
     const apiSecret = this.cloudinary.config().api_secret;
     const apiKey = this.cloudinary.config().api_key;

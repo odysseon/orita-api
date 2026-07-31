@@ -19,21 +19,30 @@ export class BusinessSearchService {
       const locations = await this.prisma.$queryRaw<{ id: string }[]>`
         SELECT DISTINCT bp.id
         FROM "business_profiles" bp
-        JOIN "business_service_areas" bsa ON bp.id = bsa."businessProfileId"
-        WHERE bsa.enabled = true
-        AND (
-          bsa.type = 'NATIONWIDE'::"ServiceAreaType"
-          OR bsa.type = 'REMOTE'::"ServiceAreaType"
-          OR (bsa.type = 'RADIUS'::"ServiceAreaType" AND ST_DWithin(
-            bsa."centerGeography",
+        LEFT JOIN "business_service_areas" bsa ON bp.id = bsa."businessProfileId" AND bsa.enabled = true
+        LEFT JOIN "locations" loc ON bp."locationId" = loc.id
+        WHERE 
+          -- Has matching service area
+          (bsa.id IS NOT NULL AND (
+            bsa.type = 'NATIONWIDE'::"ServiceAreaType"
+            OR bsa.type = 'REMOTE'::"ServiceAreaType"
+            OR (bsa.type = 'RADIUS'::"ServiceAreaType" AND ST_DWithin(
+              bsa."centerGeography",
+              ST_SetSRID(ST_MakePoint(${dto.lng}, ${dto.lat}), 4326)::geography,
+              bsa."radiusKm" * 1000
+            ))
+            OR (bsa.type = 'POLYGON'::"ServiceAreaType" AND ST_Contains(
+              bsa."polygonGeometry"::geometry,
+              ST_SetSRID(ST_MakePoint(${dto.lng}, ${dto.lat}), 4326)::geometry
+            ))
+          ))
+          OR
+          -- Fallback for legacy profiles without any active service areas
+          (bsa.id IS NULL AND loc.coordinates IS NOT NULL AND ST_DWithin(
+            loc.coordinates::geography,
             ST_SetSRID(ST_MakePoint(${dto.lng}, ${dto.lat}), 4326)::geography,
-            bsa."radiusKm" * 1000
+            ${dto.radius || 15000}
           ))
-          OR (bsa.type = 'POLYGON'::"ServiceAreaType" AND ST_Contains(
-            bsa."polygonGeometry"::geometry,
-            ST_SetSRID(ST_MakePoint(${dto.lng}, ${dto.lat}), 4326)::geometry
-          ))
-        )
       `;
       businessProfileIds = locations.map((l) => l.id);
 

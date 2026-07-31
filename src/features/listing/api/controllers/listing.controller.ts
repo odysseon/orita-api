@@ -66,6 +66,7 @@ export class ListingController {
         },
       }),
       ...(dto.availability !== undefined && { availability: dto.availability }),
+      ...(dto.serviceAreas !== undefined && { serviceAreas: dto.serviceAreas }),
     });
 
     return ListingResponseDto.from(listing);
@@ -93,6 +94,7 @@ export class ListingController {
         },
       }),
       ...(dto.availability !== undefined && { availability: dto.availability }),
+      ...(dto.serviceAreas !== undefined && { serviceAreas: dto.serviceAreas }),
     });
 
     return ListingResponseDto.from(listing);
