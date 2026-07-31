@@ -37,12 +37,6 @@ export class SearchListingsDto {
   @IsNumber()
   lng?: number;
 
-  @IsOptional()
-  @Type(() => Number)
-  @IsNumber()
-  @Min(100)
-  @Max(50000)
-  radius?: number = 15000;
 
   @IsOptional()
   @IsString()
@@ -98,12 +92,6 @@ export class SearchBusinessesDto {
   @IsNumber()
   lng?: number;
 
-  @IsOptional()
-  @Type(() => Number)
-  @IsNumber()
-  @Min(100)
-  @Max(50000)
-  radius?: number = 15000;
 
   @IsOptional()
   @IsString()
@@ -169,12 +157,6 @@ export class SearchToursDto {
   @IsNumber()
   lng?: number;
 
-  @IsOptional()
-  @Type(() => Number)
-  @IsNumber()
-  @Min(100)
-  @Max(50000)
-  radius?: number = 15000;
 
   @IsOptional()
   @IsEnum(TourSortOption)
