@@ -202,6 +202,8 @@ model BusinessProfile {
   hours               OperatingHours[]
   participant         Participant?
   opportunityPosts    OpportunityPost[]
+  serviceModes        BusinessServiceMode[]
+  serviceAreas        BusinessServiceArea[]
 
   @@index([slug])
   @@index([isPublic])
@@ -253,6 +255,7 @@ model Listing {
   media               Media[]
   reviews             Review[]
   savedByUsers        SavedListing[]       @relation("SavedByUsers")
+  serviceAreas        ListingServiceArea[]
 
   @@unique([businessProfileId, slug])
   @@index([businessProfileId])
@@ -960,4 +963,88 @@ enum OpportunityStatus {
   COMPLETED
   EXPIRED
   DELETED
+}
+
+enum ServiceAreaType {
+  INHERIT
+  RADIUS
+  POLYGON
+  ADMIN_REGION
+  NATIONWIDE
+  REMOTE
+}
+
+enum ServiceMode {
+  AT_LOCATION
+  MOBILE
+  REMOTE
+  DELIVERY
+  PICKUP
+}
+
+model AdministrativeRegion {
+  id                   String                 @id @default(cuid())
+  code                 String                 @unique
+  name                 String
+  type                 String
+  level                Int
+  countryCode          String
+  parentId             String?
+  parent               AdministrativeRegion?  @relation("RegionHierarchy", fields: [parentId], references: [id])
+  children             AdministrativeRegion[] @relation("RegionHierarchy")
+  businessServiceAreas BusinessServiceArea[]
+  listingServiceAreas  ListingServiceArea[]
+
+  @@map("administrative_regions")
+}
+
+model BusinessServiceMode {
+  id                String          @id @default(cuid())
+  businessProfileId String
+  mode              ServiceMode
+  createdAt         DateTime        @default(now())
+  businessProfile   BusinessProfile @relation(fields: [businessProfileId], references: [id], onDelete: Cascade)
+
+  @@unique([businessProfileId, mode])
+  @@map("business_service_modes")
+}
+
+model BusinessServiceArea {
+  id                     String                                      @id @default(cuid())
+  businessProfileId      String
+  name                   String?
+  type                   ServiceAreaType
+  administrativeRegionId String?
+  administrativeRegion   AdministrativeRegion?                       @relation(fields: [administrativeRegionId], references: [id])
+  radiusKm               Int?
+  centerGeography        Unsupported("geography(Point,4326)")?
+  polygonGeometry        Unsupported("geometry(MultiPolygon,4326)")?
+  displayOrder           Int                                         @default(0)
+  enabled                Boolean                                     @default(true)
+  createdAt              DateTime                                    @default(now())
+  updatedAt              DateTime                                    @updatedAt
+  businessProfile        BusinessProfile                             @relation(fields: [businessProfileId], references: [id], onDelete: Cascade)
+
+  @@index([businessProfileId])
+  @@map("business_service_areas")
+}
+
+model ListingServiceArea {
+  id                     String                                      @id @default(cuid())
+  listingId              String
+  name                   String?
+  type                   ServiceAreaType                             @default(INHERIT)
+  administrativeRegionId String?
+  administrativeRegion   AdministrativeRegion?                       @relation(fields: [administrativeRegionId], references: [id])
+  radiusKm               Int?
+  centerGeography        Unsupported("geography(Point,4326)")?
+  polygonGeometry        Unsupported("geometry(MultiPolygon,4326)")?
+  displayOrder           Int                                         @default(0)
+  enabled                Boolean                                     @default(true)
+  createdAt              DateTime                                    @default(now())
+  updatedAt              DateTime                                    @updatedAt
+  listing                Listing                                     @relation(fields: [listingId], references: [id], onDelete: Cascade)
+
+  @@index([listingId])
+  @@map("listing_service_areas")
 }
