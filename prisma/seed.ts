@@ -36,7 +36,16 @@ const taxonomy: {
     description: "Restaurants, caterers, food producers, and drink vendors",
     order: 0,
     children: [
-      { name: "Restaurants", slug: "restaurants", order: 0 },
+      { 
+        name: "Restaurants", 
+        slug: "restaurants", 
+        order: 0,
+        attributes: [
+          { key: "cuisine", label: "Cuisine", type: AttributeType.SELECT, isRequired: true, displayOrder: 0, options: ["Nigerian", "Chinese", "Italian", "Indian", "Fast Food", "Continental", "Other"] },
+          { key: "diningType", label: "Dining Type", type: AttributeType.SELECT, isRequired: true, displayOrder: 1, options: ["Restaurant", "Café", "Bakery", "Bar", "Food Truck"] },
+          { key: "appointmentRequired", label: "Appointment Required", type: AttributeType.BOOLEAN, isRequired: false, displayOrder: 2 }
+        ]
+      },
       { name: "Bakeries & Pastries", slug: "bakeries-and-pastries", order: 1 },
       { name: "Catering Services", slug: "catering-services", order: 2 },
       { name: "Beverages & Drinks", slug: "beverages-and-drinks", order: 3 },
@@ -60,10 +69,37 @@ const taxonomy: {
     description: "Freight, delivery, warehousing, and courier services",
     order: 2,
     children: [
-      { name: "Freight & Haulage", slug: "freight-and-haulage", order: 0 },
-      { name: "Last-Mile Delivery", slug: "last-mile-delivery", order: 1 },
+      { 
+        name: "Freight & Haulage", 
+        slug: "freight-and-haulage", 
+        order: 0,
+        attributes: [
+          { key: "serviceType", label: "Service Type", type: AttributeType.SELECT, isRequired: true, displayOrder: 0, options: ["Delivery", "Courier", "Moving", "Freight"] },
+          { key: "vehicleType", label: "Vehicle Type", type: AttributeType.SELECT, isRequired: true, displayOrder: 1, options: ["Van", "Pickup", "Truck", "Heavy Truck"] },
+          { key: "maxLoadKg", label: "Maximum Load (kg)", type: AttributeType.NUMBER, isRequired: false, displayOrder: 2 }
+        ]
+      },
+      { 
+        name: "Last-Mile Delivery", 
+        slug: "last-mile-delivery", 
+        order: 1,
+        attributes: [
+          { key: "serviceType", label: "Service Type", type: AttributeType.SELECT, isRequired: true, displayOrder: 0, options: ["Delivery", "Courier", "Moving"] },
+          { key: "vehicleType", label: "Vehicle Type", type: AttributeType.SELECT, isRequired: true, displayOrder: 1, options: ["Motorcycle", "Car", "Van", "Bicycle"] },
+          { key: "sameDay", label: "Same-day Delivery", type: AttributeType.BOOLEAN, isRequired: false, displayOrder: 2 }
+        ]
+      },
       { name: "Warehousing", slug: "warehousing", order: 2 },
-      { name: "Courier Services", slug: "courier-services", order: 3 },
+      { 
+        name: "Courier Services", 
+        slug: "courier-services", 
+        order: 3,
+        attributes: [
+          { key: "serviceType", label: "Service Type", type: AttributeType.SELECT, isRequired: true, displayOrder: 0, options: ["Delivery", "Courier"] },
+          { key: "vehicleType", label: "Vehicle Type", type: AttributeType.SELECT, isRequired: true, displayOrder: 1, options: ["Motorcycle", "Car", "Van"] },
+          { key: "sameDay", label: "Same-day Delivery", type: AttributeType.BOOLEAN, isRequired: false, displayOrder: 2 }
+        ]
+      },
     ],
   },
   {
@@ -127,7 +163,17 @@ const taxonomy: {
     description: "Schools, tutors, vocational training, and online courses",
     order: 6,
     children: [
-      { name: "Schools & Tutoring", slug: "schools-and-tutoring", order: 0 },
+      { 
+        name: "Schools & Tutoring", 
+        slug: "schools-and-tutoring", 
+        order: 0,
+        attributes: [
+          { key: "educationLevel", label: "Education Level", type: AttributeType.SELECT, isRequired: true, displayOrder: 0, options: ["Preschool", "Primary", "Secondary", "University", "Adult Education"] },
+          { key: "deliveryMode", label: "Delivery Mode", type: AttributeType.SELECT, isRequired: true, displayOrder: 1, options: ["Physical", "Online", "Hybrid"] },
+          { key: "subject", label: "Subject", type: AttributeType.STRING, isRequired: false, displayOrder: 2 },
+          { key: "appointmentRequired", label: "Appointment Required", type: AttributeType.BOOLEAN, isRequired: false, displayOrder: 3 }
+        ]
+      },
       { name: "Vocational Training", slug: "vocational-training", order: 1 },
       { name: "Online Courses", slug: "online-courses", order: 2 },
     ],
@@ -138,9 +184,37 @@ const taxonomy: {
     description: "Residential, commercial, and land property",
     order: 7,
     children: [
-      { name: "Residential Property", slug: "residential-property", order: 0 },
-      { name: "Commercial Property", slug: "commercial-property", order: 1 },
-      { name: "Land & Property", slug: "land-and-property", order: 2 },
+      { 
+        name: "Residential Property", 
+        slug: "residential-property", 
+        order: 0,
+        attributes: [
+          { key: "propertyType", label: "Property Type", type: AttributeType.SELECT, isRequired: true, displayOrder: 0, options: ["Apartment", "House", "Villa", "Bungalow", "Duplex", "Self-Contain"] },
+          { key: "bedrooms", label: "Bedrooms", type: AttributeType.NUMBER, isRequired: true, displayOrder: 1 },
+          { key: "bathrooms", label: "Bathrooms", type: AttributeType.NUMBER, isRequired: true, displayOrder: 2 },
+          { key: "furnished", label: "Furnished", type: AttributeType.BOOLEAN, isRequired: false, displayOrder: 3 },
+          { key: "parkingSpaces", label: "Parking Spaces", type: AttributeType.NUMBER, isRequired: false, displayOrder: 4 }
+        ]
+      },
+      { 
+        name: "Commercial Property", 
+        slug: "commercial-property", 
+        order: 1,
+        attributes: [
+          { key: "propertyType", label: "Property Type", type: AttributeType.SELECT, isRequired: true, displayOrder: 0, options: ["Office Space", "Shop", "Warehouse", "Factory", "Hotel/Guest House"] },
+          { key: "sizeSqm", label: "Size (sqm)", type: AttributeType.NUMBER, isRequired: true, displayOrder: 1 },
+          { key: "parkingSpaces", label: "Parking Spaces", type: AttributeType.NUMBER, isRequired: false, displayOrder: 2 }
+        ]
+      },
+      { 
+        name: "Land & Property", 
+        slug: "land-and-property", 
+        order: 2,
+        attributes: [
+          { key: "landType", label: "Land Type", type: AttributeType.SELECT, isRequired: true, displayOrder: 0, options: ["Residential", "Commercial", "Agricultural", "Industrial", "Mixed-Use"] },
+          { key: "sizeSqm", label: "Size (sqm)", type: AttributeType.NUMBER, isRequired: true, displayOrder: 1 }
+        ]
+      },
     ],
   },
   {
@@ -150,7 +224,16 @@ const taxonomy: {
     order: 8,
     children: [
       { name: "Event Planning", slug: "event-planning", order: 0 },
-      { name: "Hotels & Lodging", slug: "hotels-and-lodging", order: 1 },
+      { 
+        name: "Hotels & Lodging", 
+        slug: "hotels-and-lodging", 
+        order: 1,
+        attributes: [
+          { key: "accommodationType", label: "Accommodation Type", type: AttributeType.SELECT, isRequired: true, displayOrder: 0, options: ["Hotel", "Guest House", "Apartment", "Hostel", "Resort"] },
+          { key: "roomsAvailable", label: "Rooms Available", type: AttributeType.NUMBER, isRequired: false, displayOrder: 1 },
+          { key: "breakfastIncluded", label: "Breakfast Included", type: AttributeType.BOOLEAN, isRequired: false, displayOrder: 2 }
+        ]
+      },
       { name: "Entertainment & Venues", slug: "entertainment-and-venues", order: 2 },
     ],
   },
@@ -171,10 +254,46 @@ const taxonomy: {
     description: "Hair salons, barbershops, makeup artists, and spas",
     order: 10,
     children: [
-      { name: "Hair Stylists & Salons", slug: "hair-stylists-and-salons", order: 0 },
-      { name: "Barbershops", slug: "barbershops", order: 1 },
-      { name: "Makeup Artists & Studios", slug: "makeup-artists-and-studios", order: 2 },
-      { name: "Spas & Wellness", slug: "spas-and-wellness", order: 3 },
+      { 
+        name: "Hair Stylists & Salons", 
+        slug: "hair-stylists-and-salons", 
+        order: 0,
+        attributes: [
+          { key: "serviceType", label: "Service Type", type: AttributeType.SELECT, isRequired: true, displayOrder: 0, options: ["Hair", "Nails", "Other"] },
+          { key: "gender", label: "Gender", type: AttributeType.SELECT, isRequired: true, displayOrder: 1, options: ["Men", "Women", "Unisex"] },
+          { key: "appointmentRequired", label: "Appointment Required", type: AttributeType.BOOLEAN, isRequired: false, displayOrder: 2 }
+        ]
+      },
+      { 
+        name: "Barbershops", 
+        slug: "barbershops", 
+        order: 1,
+        attributes: [
+          { key: "serviceType", label: "Service Type", type: AttributeType.SELECT, isRequired: true, displayOrder: 0, options: ["Barber", "Other"] },
+          { key: "gender", label: "Gender", type: AttributeType.SELECT, isRequired: true, displayOrder: 1, options: ["Men", "Women", "Unisex"] },
+          { key: "appointmentRequired", label: "Appointment Required", type: AttributeType.BOOLEAN, isRequired: false, displayOrder: 2 }
+        ]
+      },
+      { 
+        name: "Makeup Artists & Studios", 
+        slug: "makeup-artists-and-studios", 
+        order: 2,
+        attributes: [
+          { key: "serviceType", label: "Service Type", type: AttributeType.SELECT, isRequired: true, displayOrder: 0, options: ["Makeup", "Other"] },
+          { key: "gender", label: "Gender", type: AttributeType.SELECT, isRequired: true, displayOrder: 1, options: ["Men", "Women", "Unisex"] },
+          { key: "appointmentRequired", label: "Appointment Required", type: AttributeType.BOOLEAN, isRequired: false, displayOrder: 2 }
+        ]
+      },
+      { 
+        name: "Spas & Wellness", 
+        slug: "spas-and-wellness", 
+        order: 3,
+        attributes: [
+          { key: "serviceType", label: "Service Type", type: AttributeType.SELECT, isRequired: true, displayOrder: 0, options: ["Spa", "Wellness", "Other"] },
+          { key: "gender", label: "Gender", type: AttributeType.SELECT, isRequired: true, displayOrder: 1, options: ["Men", "Women", "Unisex"] },
+          { key: "appointmentRequired", label: "Appointment Required", type: AttributeType.BOOLEAN, isRequired: false, displayOrder: 2 }
+        ]
+      },
     ],
   },
   {
@@ -186,7 +305,15 @@ const taxonomy: {
       { name: "Plumbing & Electrical", slug: "plumbing-and-electrical", order: 0 },
       { name: "Cleaning & Janitorial", slug: "cleaning-and-janitorial", order: 1 },
       { name: "Carpentry & Furniture", slug: "carpentry-and-furniture", order: 2 },
-      { name: "Auto Repair & Mechanics", slug: "auto-repair-and-mechanics", order: 3 },
+      { 
+        name: "Auto Repair & Mechanics", 
+        slug: "auto-repair-and-mechanics", 
+        order: 3,
+        attributes: [
+          { key: "vehicleType", label: "Vehicle Type", type: AttributeType.SELECT, isRequired: true, displayOrder: 0, options: ["Cars", "Trucks", "Motorcycles", "Heavy Duty", "All"] },
+          { key: "serviceType", label: "Service Type", type: AttributeType.SELECT, isRequired: true, displayOrder: 1, options: ["General Repair", "Electrical", "Body Work", "Tire Service", "AC Repair"] }
+        ]
+      },
     ],
   },
   {
