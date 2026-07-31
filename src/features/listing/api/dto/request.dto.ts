@@ -10,8 +10,10 @@ import {
   ValidateIf,
   ValidateNested,
   IsObject,
+  IsArray,
 } from 'class-validator';
 import { Type } from 'class-transformer';
+import { BaseServiceAreaDto } from '../../../../features/business-profile/api/dto/service-area.dto.js';
 import { ListingStatus } from '../../domain/types/listing-status.enum.js';
 import { ListingAvailability } from '../../domain/types/listing-availability.enum.js';
 
@@ -63,6 +65,12 @@ export class CreateListingDto {
   @IsOptional()
   @IsObject()
   attributes?: Record<string, unknown>;
+
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => BaseServiceAreaDto)
+  serviceAreas?: BaseServiceAreaDto[];
 }
 
 export class UpdateListingDto {
@@ -93,6 +101,12 @@ export class UpdateListingDto {
   @IsOptional()
   @IsObject()
   attributes?: Record<string, unknown>;
+
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => BaseServiceAreaDto)
+  serviceAreas?: BaseServiceAreaDto[];
 }
 
 export class TransitionListingStatusDto {
