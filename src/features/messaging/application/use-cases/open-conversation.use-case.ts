@@ -26,10 +26,7 @@ export class OpenConversationUseCase {
     if (input.targetType === 'BUSINESS') {
       const biz = await this.prisma.businessProfile.findFirst({
         where: {
-          OR: [
-            { id: input.targetId },
-            { slug: input.targetId },
-          ],
+          OR: [{ id: input.targetId }, { slug: input.targetId }],
         },
         select: { id: true },
       });

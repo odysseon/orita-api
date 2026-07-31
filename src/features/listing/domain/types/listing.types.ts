@@ -1,5 +1,6 @@
 import { ListingStatus } from './listing-status.enum.js';
 import { ListingAvailability } from './listing-availability.enum.js';
+import { ServiceAreaInput } from '../../../business-profile/domain/types/business-profile.types.js';
 
 // ---------------------------------------------------------------------------
 // Price input
@@ -29,6 +30,7 @@ export interface CreateListingInput {
   readonly price?: ListingPriceInput;
   readonly availability?: ListingAvailability;
   readonly attributes?: Record<string, unknown>;
+  readonly serviceAreas?: ServiceAreaInput[];
 }
 
 /**
@@ -43,6 +45,7 @@ export interface UpdateListingInput {
   readonly price?: ListingPriceInput;
   readonly availability?: ListingAvailability;
   readonly attributes?: Record<string, unknown>;
+  readonly serviceAreas?: ServiceAreaInput[];
 }
 
 /**

@@ -199,70 +199,75 @@ export class PrismaBusinessProfileRepository extends IBusinessProfileRepository 
   }
 
   async create(input: CreateBusinessProfileInput, slug: string): Promise<BusinessProfileView> {
-    let locationId: string | undefined = undefined;
+    const raw = await this.prisma.$transaction(async (tx) => {
+      let locationId: string | undefined = undefined;
 
-    if (input.latitude !== undefined && input.longitude !== undefined) {
-      const newLocId = crypto.randomUUID();
-      await this.prisma.$executeRaw`
-        INSERT INTO "locations" (id, provider, name, "formattedAddress", coordinates, latitude, longitude, "createdAt", "updatedAt")
-        VALUES (${newLocId}, 'CUSTOM', ${input.location ?? 'Business Location'}, ${input.location ?? 'Business Location'}, ST_SetSRID(ST_MakePoint(${input.longitude}, ${input.latitude}), 4326), ${input.latitude}, ${input.longitude}, NOW(), NOW())
-      `;
-      locationId = newLocId;
-    } else if (input.location !== undefined && input.location !== null) {
-      const newLocId = crypto.randomUUID();
-      await this.prisma.$executeRaw`
-        INSERT INTO "locations" (id, provider, name, "formattedAddress", coordinates, latitude, longitude, "createdAt", "updatedAt")
-        VALUES (${newLocId}, 'CUSTOM', ${input.location}, ${input.location}, ST_SetSRID(ST_MakePoint(0, 0), 4326), 0, 0, NOW(), NOW())
-      `;
-      locationId = newLocId;
-    }
+      if (input.latitude !== undefined && input.longitude !== undefined) {
+        const newLocId = crypto.randomUUID();
+        await tx.$executeRaw`
+          INSERT INTO "locations" (id, provider, name, "formattedAddress", coordinates, latitude, longitude, "createdAt", "updatedAt")
+          VALUES (${newLocId}, 'CUSTOM', ${input.location ?? 'Business Location'}, ${input.location ?? 'Business Location'}, ST_SetSRID(ST_MakePoint(${input.longitude}, ${input.latitude}), 4326), ${input.latitude}, ${input.longitude}, NOW(), NOW())
+        `;
+        locationId = newLocId;
+      } else if (input.location !== undefined && input.location !== null) {
+        const newLocId = crypto.randomUUID();
+        await tx.$executeRaw`
+          INSERT INTO "locations" (id, provider, name, "formattedAddress", coordinates, latitude, longitude, "createdAt", "updatedAt")
+          VALUES (${newLocId}, 'CUSTOM', ${input.location}, ${input.location}, ST_SetSRID(ST_MakePoint(0, 0), 4326), 0, 0, NOW(), NOW())
+        `;
+        locationId = newLocId;
+      }
 
-    const raw = await this.prisma.businessProfile.create({
-      data: {
-        ownerId: input.ownerId,
-        name: input.name,
-        slug,
-        ...(input.businessType !== undefined && { businessType: input.businessType }),
-        ...(input.description !== undefined && { description: input.description }),
-        ...(input.websiteUrl !== undefined && { websiteUrl: input.websiteUrl }),
-        ...(input.contactPhone !== undefined && { contactPhone: input.contactPhone }),
-        ...(input.whatsapp !== undefined && { whatsapp: input.whatsapp }),
-        ...(input.contactEmail !== undefined && { contactEmail: input.contactEmail }),
-        ...(locationId !== undefined && { locationId }),
-        ...(input.isPublic !== undefined && { isPublic: input.isPublic }),
-        ...(input.primaryCategoryId && {
-          categories: {
-            create: [
-              { categoryId: input.primaryCategoryId, isPrimary: true },
-              ...(input.secondaryCategoryIds?.map((id) => ({ categoryId: id, isPrimary: false })) ??
-                []),
-            ],
-          },
-        }),
-      },
-      include: { 
-        geoEntity: true, 
-        categories: { select: { categoryId: true, isPrimary: true } },
-        media: {
-          select: {
-            role: true,
-            provider: true,
-            fileId: true,
-            mimeType: true,
-            version: true,
-            format: true,
+      const profile = await tx.businessProfile.create({
+        data: {
+          ownerId: input.ownerId,
+          name: input.name,
+          slug,
+          ...(input.businessType !== undefined && { businessType: input.businessType }),
+          ...(input.description !== undefined && { description: input.description }),
+          ...(input.websiteUrl !== undefined && { websiteUrl: input.websiteUrl }),
+          ...(input.contactPhone !== undefined && { contactPhone: input.contactPhone }),
+          ...(input.whatsapp !== undefined && { whatsapp: input.whatsapp }),
+          ...(input.contactEmail !== undefined && { contactEmail: input.contactEmail }),
+          ...(locationId !== undefined && { locationId }),
+          ...(input.isPublic !== undefined && { isPublic: input.isPublic }),
+          ...(input.primaryCategoryId && {
+            categories: {
+              create: [
+                { categoryId: input.primaryCategoryId, isPrimary: true },
+                ...(input.secondaryCategoryIds?.map((id) => ({
+                  categoryId: id,
+                  isPrimary: false,
+                })) ?? []),
+              ],
+            },
+          }),
+        },
+        include: {
+          geoEntity: true,
+          categories: { select: { categoryId: true, isPrimary: true } },
+          media: {
+            select: {
+              role: true,
+              provider: true,
+              fileId: true,
+              mimeType: true,
+              version: true,
+              format: true,
+            },
           },
         },
-      },
-    });
+      });
 
-    if (input.latitude !== undefined && input.longitude !== undefined) {
-      const serviceAreaId = crypto.randomUUID();
-      await this.prisma.$executeRaw`
-        INSERT INTO "business_service_areas" (id, "businessProfileId", type, "radiusKm", "centerGeography", "createdAt", "updatedAt")
-        VALUES (${serviceAreaId}, ${raw.id}, 'RADIUS'::"ServiceAreaType", 10, ST_SetSRID(ST_MakePoint(${input.longitude}, ${input.latitude}), 4326)::geography, NOW(), NOW())
-      `;
-    }
+      if (input.latitude !== undefined && input.longitude !== undefined) {
+        const serviceAreaId = crypto.randomUUID();
+        await tx.$executeRaw`
+          INSERT INTO "business_service_areas" (id, "businessProfileId", type, "radiusKm", "centerGeography", "createdAt", "updatedAt")
+          VALUES (${serviceAreaId}, ${profile.id}, 'RADIUS'::"ServiceAreaType", 10, ST_SetSRID(ST_MakePoint(${input.longitude}, ${input.latitude}), 4326)::geography, NOW(), NOW())
+        `;
+      }
+      return profile;
+    });
 
     const hydratedArray = await this.hydrate([raw]);
     const domain = toDomain(hydratedArray[0]!);
@@ -409,84 +414,129 @@ export class PrismaBusinessProfileRepository extends IBusinessProfileRepository 
   }
 
   async update(id: string, input: UpdateBusinessProfileInput): Promise<BusinessProfileView> {
-    const existing = await this.prisma.businessProfile.findUnique({ where: { id } });
-    if (!existing) throw new Error('BusinessProfile not found');
+    const raw = await this.prisma.$transaction(async (tx) => {
+      const existing = await tx.businessProfile.findUnique({ where: { id } });
+      if (!existing) throw new Error('BusinessProfile not found');
 
-    let locationId = existing.locationId;
+      let locationId = existing.locationId;
 
-    if (input.latitude !== undefined && input.longitude !== undefined) {
-      if (locationId) {
-        await this.prisma.$executeRaw`
-          UPDATE "locations"
-          SET coordinates = ST_SetSRID(ST_MakePoint(${input.longitude}, ${input.latitude}), 4326),
-              latitude = ${input.latitude},
-              longitude = ${input.longitude},
-              "updatedAt" = NOW(),
-              name = COALESCE(${input.location ?? null}, name),
-              "formattedAddress" = COALESCE(${input.location ?? null}, "formattedAddress")
-          WHERE id = ${locationId}
-        `;
-      } else {
-        const newLocId = crypto.randomUUID();
-        await this.prisma.$executeRaw`
-          INSERT INTO "locations" (id, provider, name, "formattedAddress", coordinates, latitude, longitude, "createdAt", "updatedAt")
-          VALUES (${newLocId}, 'CUSTOM', ${input.location ?? 'Business Location'}, ${input.location ?? 'Business Location'}, ST_SetSRID(ST_MakePoint(${input.longitude}, ${input.latitude}), 4326), ${input.latitude}, ${input.longitude}, NOW(), NOW())
-        `;
-        locationId = newLocId;
+      if (input.latitude !== undefined && input.longitude !== undefined) {
+        if (locationId) {
+          await tx.$executeRaw`
+            UPDATE "locations"
+            SET coordinates = ST_SetSRID(ST_MakePoint(${input.longitude}, ${input.latitude}), 4326),
+                latitude = ${input.latitude},
+                longitude = ${input.longitude},
+                "updatedAt" = NOW(),
+                name = COALESCE(${input.location ?? null}, name),
+                "formattedAddress" = COALESCE(${input.location ?? null}, "formattedAddress")
+            WHERE id = ${locationId}
+          `;
+        } else {
+          const newLocId = crypto.randomUUID();
+          await tx.$executeRaw`
+            INSERT INTO "locations" (id, provider, name, "formattedAddress", coordinates, latitude, longitude, "createdAt", "updatedAt")
+            VALUES (${newLocId}, 'CUSTOM', ${input.location ?? 'Business Location'}, ${input.location ?? 'Business Location'}, ST_SetSRID(ST_MakePoint(${input.longitude}, ${input.latitude}), 4326), ${input.latitude}, ${input.longitude}, NOW(), NOW())
+          `;
+          locationId = newLocId;
+        }
+      } else if (input.location !== undefined && input.location !== null) {
+        if (locationId) {
+          await tx.$executeRaw`
+            UPDATE "locations" SET name = ${input.location}, "formattedAddress" = ${input.location}, "updatedAt" = NOW() WHERE id = ${locationId}
+          `;
+        } else {
+          const newLocId = crypto.randomUUID();
+          await tx.$executeRaw`
+            INSERT INTO "locations" (id, provider, name, "formattedAddress", coordinates, latitude, longitude, "createdAt", "updatedAt")
+            VALUES (${newLocId}, 'CUSTOM', ${input.location}, ${input.location}, ST_SetSRID(ST_MakePoint(0, 0), 4326), 0, 0, NOW(), NOW())
+          `;
+          locationId = newLocId;
+        }
       }
-    } else if (input.location !== undefined && input.location !== null) {
-      if (locationId) {
-        await this.prisma.$executeRaw`
-          UPDATE "locations" SET name = ${input.location}, "formattedAddress" = ${input.location}, "updatedAt" = NOW() WHERE id = ${locationId}
-        `;
-      } else {
-        const newLocId = crypto.randomUUID();
-        await this.prisma.$executeRaw`
-          INSERT INTO "locations" (id, provider, name, "formattedAddress", coordinates, latitude, longitude, "createdAt", "updatedAt")
-          VALUES (${newLocId}, 'CUSTOM', ${input.location}, ${input.location}, ST_SetSRID(ST_MakePoint(0, 0), 4326), 0, 0, NOW(), NOW())
-        `;
-        locationId = newLocId;
-      }
-    }
 
-    const raw = await this.prisma.businessProfile.update({
-      where: { id },
-      data: {
-        ...(input.name !== undefined && { name: input.name }),
-        ...(input.businessType !== undefined && { businessType: input.businessType }),
-        ...(input.description !== undefined && { description: input.description }),
-        ...(input.websiteUrl !== undefined && { websiteUrl: input.websiteUrl }),
-        ...(input.contactPhone !== undefined && { contactPhone: input.contactPhone }),
-        ...(input.whatsapp !== undefined && { whatsapp: input.whatsapp }),
-        ...(input.contactEmail !== undefined && { contactEmail: input.contactEmail }),
-        ...(locationId !== undefined && { locationId }),
-        ...(input.primaryCategoryId !== undefined && {
-          categories: {
-            deleteMany: {},
-            create: [
-              { categoryId: input.primaryCategoryId, isPrimary: true },
-              ...(input.secondaryCategoryIds?.map((id) => ({ categoryId: id, isPrimary: false })) ??
-                []),
-            ],
-          },
-        }),
-      },
-      include: {
-        hours: true,
-        tags: { include: { tag: true } },
-        geoEntity: true,
-        categories: { select: { categoryId: true, isPrimary: true } },
-        media: {
-          select: {
-            role: true,
-            provider: true,
-            fileId: true,
-            mimeType: true,
-            version: true,
-            format: true,
+      let serviceModesData = undefined;
+      if (input.serviceModes) {
+        serviceModesData = {
+          deleteMany: {},
+          create: input.serviceModes.map((mode) => ({ mode })),
+        };
+      }
+
+      const profile = await tx.businessProfile.update({
+        where: { id },
+        data: {
+          ...(input.name !== undefined && { name: input.name }),
+          ...(input.businessType !== undefined && { businessType: input.businessType }),
+          ...(input.description !== undefined && { description: input.description }),
+          ...(input.websiteUrl !== undefined && { websiteUrl: input.websiteUrl }),
+          ...(input.contactPhone !== undefined && { contactPhone: input.contactPhone }),
+          ...(input.whatsapp !== undefined && { whatsapp: input.whatsapp }),
+          ...(input.contactEmail !== undefined && { contactEmail: input.contactEmail }),
+          ...(locationId !== undefined && { locationId }),
+          ...(serviceModesData && { serviceModes: serviceModesData }),
+          ...(input.primaryCategoryId !== undefined && {
+            categories: {
+              deleteMany: {},
+              create: [
+                { categoryId: input.primaryCategoryId, isPrimary: true },
+                ...(input.secondaryCategoryIds?.map((id) => ({
+                  categoryId: id,
+                  isPrimary: false,
+                })) ?? []),
+              ],
+            },
+          }),
+        },
+        include: {
+          hours: true,
+          tags: { include: { tag: true } },
+          geoEntity: true,
+          categories: { select: { categoryId: true, isPrimary: true } },
+          media: {
+            select: {
+              role: true,
+              provider: true,
+              fileId: true,
+              mimeType: true,
+              version: true,
+              format: true,
+            },
           },
         },
-      },
+      });
+
+      if (input.serviceAreas) {
+        await tx.businessServiceArea.deleteMany({ where: { businessProfileId: id } });
+        for (const area of input.serviceAreas) {
+          const areaId = crypto.randomUUID();
+          if (area.type === 'RADIUS') {
+            await tx.$executeRaw`
+              INSERT INTO "business_service_areas" (id, "businessProfileId", name, type, "radiusKm", "centerGeography", enabled, "displayOrder", "createdAt", "updatedAt")
+              VALUES (${areaId}, ${id}, ${area.name ?? null}, ${area.type}::"ServiceAreaType", ${area.radiusKm}, ST_SetSRID(ST_MakePoint(${area.longitude}, ${area.latitude}), 4326)::geography, ${area.enabled ?? true}, ${area.displayOrder ?? 0}, NOW(), NOW())
+            `;
+          } else if (area.type === 'POLYGON') {
+            const coords = area.polygon!.map((p) => `${p[1]} ${p[0]}`).join(', ');
+            const wkt = `POLYGON((${coords}))`;
+            await tx.$executeRaw`
+              INSERT INTO "business_service_areas" (id, "businessProfileId", name, type, "polygonGeometry", enabled, "displayOrder", "createdAt", "updatedAt")
+              VALUES (${areaId}, ${id}, ${area.name ?? null}, ${area.type}::"ServiceAreaType", ST_GeomFromText(${wkt}, 4326)::geometry, ${area.enabled ?? true}, ${area.displayOrder ?? 0}, NOW(), NOW())
+            `;
+          } else if (area.type === 'ADMIN_REGION') {
+            await tx.$executeRaw`
+              INSERT INTO "business_service_areas" (id, "businessProfileId", name, type, "administrativeRegionId", enabled, "displayOrder", "createdAt", "updatedAt")
+              VALUES (${areaId}, ${id}, ${area.name ?? null}, ${area.type}::"ServiceAreaType", ${area.administrativeRegionId}, ${area.enabled ?? true}, ${area.displayOrder ?? 0}, NOW(), NOW())
+            `;
+          } else {
+            await tx.$executeRaw`
+              INSERT INTO "business_service_areas" (id, "businessProfileId", name, type, enabled, "displayOrder", "createdAt", "updatedAt")
+              VALUES (${areaId}, ${id}, ${area.name ?? null}, ${area.type}::"ServiceAreaType", ${area.enabled ?? true}, ${area.displayOrder ?? 0}, NOW(), NOW())
+            `;
+          }
+        }
+      }
+
+      return profile;
     });
 
     const hydratedArray = await this.hydrate([raw]);

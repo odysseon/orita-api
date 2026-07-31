@@ -1,6 +1,22 @@
 import { OperatingHours } from './operating-hours.types.js';
 import { Tag } from './tag.types.js';
-import { BusinessType } from '../../../../../generated/prisma/client.js';
+import {
+  BusinessType,
+  ServiceMode,
+  ServiceAreaType,
+} from '../../../../../generated/prisma/client.js';
+
+export interface ServiceAreaInput {
+  readonly name?: string;
+  readonly type: ServiceAreaType;
+  readonly administrativeRegionId?: string;
+  readonly radiusKm?: number;
+  readonly latitude?: number;
+  readonly longitude?: number;
+  readonly polygon?: Array<[number, number]>;
+  readonly displayOrder?: number;
+  readonly enabled?: boolean;
+}
 
 export interface CreateBusinessProfileInput {
   readonly ownerId: string;
@@ -17,6 +33,8 @@ export interface CreateBusinessProfileInput {
   readonly isPublic?: boolean;
   readonly primaryCategoryId?: string;
   readonly secondaryCategoryIds?: string[];
+  readonly serviceModes?: ServiceMode[];
+  readonly serviceAreas?: ServiceAreaInput[];
 }
 
 export interface UpdateBusinessProfileInput {
@@ -32,6 +50,8 @@ export interface UpdateBusinessProfileInput {
   readonly longitude?: number;
   readonly primaryCategoryId?: string;
   readonly secondaryCategoryIds?: string[];
+  readonly serviceModes?: ServiceMode[];
+  readonly serviceAreas?: ServiceAreaInput[];
 }
 
 export interface BusinessProfileView {
