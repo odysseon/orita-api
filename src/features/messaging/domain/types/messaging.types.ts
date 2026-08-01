@@ -1,5 +1,12 @@
 import { MessageEmbedType } from '../../../../../generated/prisma/client.js';
 
+export type AnchorType = 'BUSINESS' | 'LISTING' | 'TOUR' | 'LOCATION' | 'OPPORTUNITY';
+
+export interface AnchorReference {
+  type: AnchorType;
+  id: string;
+}
+
 export type ConversationType = 'DIRECT' | 'GROUP';
 export type ConversationStatus = 'ACTIVE' | 'CLOSED';
 export type ConversationParticipantRole = 'OWNER' | 'MEMBER';

@@ -39,4 +39,5 @@ export const ROLES_BY_FK_NAME: Record<string, ReadonlySet<MediaRole>> = {
   userId: new Set([MediaRole.AVATAR]),
   conversationId: new Set([MediaRole.MESSAGE]),
   messageId: new Set([MediaRole.MESSAGE]),
+  opportunityPostId: new Set([MediaRole.GALLERY]),
 };
