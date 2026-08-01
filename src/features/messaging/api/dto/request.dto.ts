@@ -25,7 +25,7 @@ export class AnchorDto {
 }
 
 export class MessageEmbedDto {
-  @ApiProperty({ enum: ['BUSINESS', 'LISTING', 'TOUR', 'LOCATION'] })
+  @ApiProperty({ enum: ['BUSINESS', 'LISTING', 'TOUR', 'LOCATION', 'OPPORTUNITY'] })
   @IsEnum(MessageEmbedType)
   embedType!: MessageEmbedType;
 
@@ -91,9 +91,9 @@ export class MarkMessagesReadDto {
 }
 
 export class OpenConversationDto {
-  @ApiProperty({ enum: ['USER', 'BUSINESS'] })
-  @IsEnum(['USER', 'BUSINESS'])
-  targetType!: 'USER' | 'BUSINESS';
+  @ApiProperty({ enum: ['USER', 'BUSINESS', 'OPPORTUNITY'] })
+  @IsEnum(['USER', 'BUSINESS', 'OPPORTUNITY'])
+  targetType!: 'USER' | 'BUSINESS' | 'OPPORTUNITY';
 
   @ApiProperty()
   @IsString()

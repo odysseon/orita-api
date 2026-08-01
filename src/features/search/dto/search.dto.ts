@@ -37,7 +37,6 @@ export class SearchListingsDto {
   @IsNumber()
   lng?: number;
 
-
   @IsOptional()
   @IsString()
   categoryId?: string;
@@ -91,7 +90,6 @@ export class SearchBusinessesDto {
   @Type(() => Number)
   @IsNumber()
   lng?: number;
-
 
   @IsOptional()
   @IsString()
@@ -156,7 +154,6 @@ export class SearchToursDto {
   @Type(() => Number)
   @IsNumber()
   lng?: number;
-
 
   @IsOptional()
   @IsEnum(TourSortOption)

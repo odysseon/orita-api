@@ -233,6 +233,28 @@ if run_suite "store-tour"; then
 fi
 
 # ---------------------------------------------------------------------------
+# Phase 8: Opportunity Suite
+# ---------------------------------------------------------------------------
+if run_suite "opportunity"; then
+    echo ""
+    echo "── Suite: Opportunity ───────────────────────"
+    # Grab a random location ID from the database for testing
+    if [[ -f "$ROOT/.env" ]]; then
+        source "$ROOT/.env"
+    elif [[ -f "$ROOT/../.env" ]]; then
+        source "$ROOT/../.env"
+    fi
+    # Use psql with connection string to get a valid location
+    export HURL_location_id=$(psql "$DATABASE_URL" -t -c "SELECT id FROM locations LIMIT 1" | xargs)
+    if [[ -z "$HURL_location_id" || "$HURL_location_id" == "null" ]]; then
+        echo "⚠️ No location found in DB. Test might fail."
+        export HURL_location_id="loc_test_1"
+    fi
+    
+    run_test "OPP 00 Lifecycle"  "$ROOT/opportunity/00-lifecycle.hurl"
+fi
+
+# ---------------------------------------------------------------------------
 # Done
 # ---------------------------------------------------------------------------
 echo ""
