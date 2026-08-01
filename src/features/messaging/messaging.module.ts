@@ -22,6 +22,7 @@ import { BusinessEmbedBuilder } from './application/services/embed-builders/busi
 import { ListingEmbedBuilder } from './application/services/embed-builders/listing.embed-builder.js';
 import { TourEmbedBuilder } from './application/services/embed-builders/tour.embed-builder.js';
 import { LocationEmbedBuilder } from './application/services/embed-builders/location.embed-builder.js';
+import { OpportunityEmbedBuilder } from './application/services/embed-builders/opportunity.embed-builder.js';
 import { WsAuthGuard } from './api/gateways/ws-auth.guard.js';
 import { MessagingGateway } from './api/gateways/messaging.gateway.js';
 import { ConversationsController } from './api/controllers/conversations.controller.js';
@@ -58,6 +59,7 @@ import { AuthModule } from '../../auth/auth.module.js';
     ListingEmbedBuilder,
     TourEmbedBuilder,
     LocationEmbedBuilder,
+    OpportunityEmbedBuilder,
     // Use cases
     CreateConversationUseCase,
     SendMessageUseCase,

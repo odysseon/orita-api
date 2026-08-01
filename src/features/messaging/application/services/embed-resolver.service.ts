@@ -6,6 +6,7 @@ import { BusinessEmbedBuilder } from './embed-builders/business.embed-builder.js
 import { ListingEmbedBuilder } from './embed-builders/listing.embed-builder.js';
 import { TourEmbedBuilder } from './embed-builders/tour.embed-builder.js';
 import { LocationEmbedBuilder } from './embed-builders/location.embed-builder.js';
+import { OpportunityEmbedBuilder } from './embed-builders/opportunity.embed-builder.js';
 
 @Injectable()
 export class EmbedResolverService {
@@ -16,8 +17,15 @@ export class EmbedResolverService {
     listingBuilder: ListingEmbedBuilder,
     tourBuilder: TourEmbedBuilder,
     locationBuilder: LocationEmbedBuilder,
+    opportunityBuilder: OpportunityEmbedBuilder,
   ) {
-    this.builders = [businessBuilder, listingBuilder, tourBuilder, locationBuilder];
+    this.builders = [
+      businessBuilder,
+      listingBuilder,
+      tourBuilder,
+      locationBuilder,
+      opportunityBuilder,
+    ];
   }
 
   async resolve(type: MessageEmbedType, targetId: string): Promise<EmbedSnapshot> {
