@@ -630,7 +630,6 @@ export class PrismaBusinessProfileRepository extends IBusinessProfileRepository 
     const skip = (input.page - 1) * input.limit;
 
     if (input.lat !== undefined && input.lng !== undefined) {
-
       const rawItems = await this.prisma.$queryRaw<
         {
           id: string;

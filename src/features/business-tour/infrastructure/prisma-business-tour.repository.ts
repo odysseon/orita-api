@@ -177,7 +177,6 @@ export class PrismaBusinessTourRepository extends IBusinessTourRepository {
 
     // Use PostGIS if location is provided
     if (input.lat !== undefined && input.lng !== undefined) {
-
       const searchPattern = input.search ? `%${input.search}%` : '%';
       const statusFilter = input.status
         ? Prisma.sql`AND st.status = ${input.status}::"BusinessTourStatus"`

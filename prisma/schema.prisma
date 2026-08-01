@@ -281,6 +281,7 @@ model Media {
   reviewId          String?
   userId            String?
   messageId         String?
+  opportunityPostId String?
   uploadIntentId    String?
   bytes             Int?
   duration          Float?
@@ -296,11 +297,13 @@ model Media {
   review            Review?          @relation(fields: [reviewId], references: [id], onDelete: Cascade)
   user              User?            @relation(fields: [userId], references: [id], onDelete: Cascade)
   message           Message?         @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  opportunityPost   OpportunityPost? @relation(fields: [opportunityPostId], references: [id], onDelete: Cascade)
   uploadIntent      UploadIntent?    @relation(fields: [uploadIntentId], references: [id], onDelete: SetNull)
 
   @@index([businessProfileId])
   @@index([listingId])
   @@index([businessTourId])
+  @@index([opportunityPostId])
   @@map("media")
 }
 
@@ -500,16 +503,18 @@ model ConversationAnchor {
   id           String           @id @default(cuid())
   businessId   String?
   listingId    String?
-  tourId       String?
-  locationId   String?
-  title        String
-  subtitle     String?
-  imageUrl     String?
-  business     BusinessProfile? @relation(fields: [businessId], references: [id], onDelete: SetNull)
-  listing      Listing?         @relation(fields: [listingId], references: [id], onDelete: SetNull)
-  location     Location?        @relation(fields: [locationId], references: [id], onDelete: SetNull)
-  tour         BusinessTour?    @relation(fields: [tourId], references: [id], onDelete: SetNull)
-  conversation Conversation?
+  tourId        String?
+  locationId    String?
+  opportunityId String?
+  title         String
+  subtitle      String?
+  imageUrl      String?
+  business      BusinessProfile? @relation(fields: [businessId], references: [id], onDelete: SetNull)
+  listing       Listing?         @relation(fields: [listingId], references: [id], onDelete: SetNull)
+  location      Location?        @relation(fields: [locationId], references: [id], onDelete: SetNull)
+  tour          BusinessTour?    @relation(fields: [tourId], references: [id], onDelete: SetNull)
+  opportunity   OpportunityPost? @relation(fields: [opportunityId], references: [id], onDelete: SetNull)
+  conversation  Conversation?
 
   @@map("conversation_anchors")
 }
@@ -918,35 +923,19 @@ model OpportunityPost {
   status            OpportunityStatus @default(ACTIVE)
   createdAt         DateTime          @default(now())
   updatedAt         DateTime          @updatedAt
+  deletedAt         DateTime?
+  deletedBy         String?
 
-  author          User               @relation(fields: [authorId], references: [id], onDelete: Cascade)
-  businessProfile BusinessProfile?   @relation(fields: [businessProfileId], references: [id], onDelete: SetNull)
-  location        Location           @relation(fields: [locationId], references: [id], onDelete: Restrict)
-  media           OpportunityMedia[]
+  author              User                 @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  businessProfile     BusinessProfile?     @relation(fields: [businessProfileId], references: [id], onDelete: SetNull)
+  location            Location             @relation(fields: [locationId], references: [id], onDelete: Restrict)
+  media               Media[]
+  conversationAnchors ConversationAnchor[]
 
   @@index([status, expiresAt])
   @@index([authorId])
   @@index([locationId])
   @@map("opportunity_posts")
-}
-
-model OpportunityMedia {
-  id        String          @id @default(cuid())
-  postId    String
-  fileId    String          @unique
-  provider  StorageProvider
-  mimeType  String
-  format    String?
-  version   String?
-  width     Int?
-  height    Int?
-  bytes     Int?
-  createdAt DateTime        @default(now())
-
-  post OpportunityPost @relation(fields: [postId], references: [id], onDelete: Cascade)
-
-  @@index([postId])
-  @@map("opportunity_media")
 }
 
 enum OpportunityType {

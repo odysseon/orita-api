@@ -144,8 +144,12 @@ export class PrismaListingRepository extends IListingRepository {
           description: input.description ?? null,
           ...(input.price?.minPrice !== undefined && { minPrice: input.price.minPrice }),
           ...(input.price?.maxPrice !== undefined && { maxPrice: input.price.maxPrice }),
-          ...(input.price?.currencyCode !== undefined && { currencyCode: input.price.currencyCode }),
-          ...(input.price?.isNegotiable !== undefined && { isNegotiable: input.price.isNegotiable }),
+          ...(input.price?.currencyCode !== undefined && {
+            currencyCode: input.price.currencyCode,
+          }),
+          ...(input.price?.isNegotiable !== undefined && {
+            isNegotiable: input.price.isNegotiable,
+          }),
           ...(input.availability !== undefined && { availability: input.availability }),
           ...(input.attributes !== undefined && {
             attributes: input.attributes as Prisma.InputJsonValue,
@@ -259,7 +263,9 @@ export class PrismaListingRepository extends IListingRepository {
           ...(input.availability !== undefined && { availability: input.availability }),
           ...(input.attributes !== undefined && {
             attributes:
-              input.attributes === null ? Prisma.DbNull : (input.attributes as Prisma.InputJsonValue),
+              input.attributes === null
+                ? Prisma.DbNull
+                : (input.attributes as Prisma.InputJsonValue),
           }),
         },
         include: { media: true },
@@ -340,7 +346,6 @@ export class PrismaListingRepository extends IListingRepository {
     const skip = (input.page - 1) * input.limit;
 
     if (input.lat !== undefined && input.lng !== undefined) {
-
       const rawItems = await this.prisma.$queryRaw<
         {
           id: string;
