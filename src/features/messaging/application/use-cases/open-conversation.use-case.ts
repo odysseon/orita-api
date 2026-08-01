@@ -2,10 +2,11 @@ import { Injectable, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../../../../prisma/prisma.service.js';
 import { ParticipantService } from '../services/participant.service.js';
 import { IConversationRepository } from '../../domain/ports/conversation.repository.port.js';
+import { EventBusService } from '../../../../shared/events/event-bus.service.js';
 
 export interface OpenConversationInput {
   userId: string;
-  targetType: 'USER' | 'BUSINESS';
+  targetType: 'USER' | 'BUSINESS' | 'OPPORTUNITY';
   targetId: string;
 }
 
@@ -15,14 +16,14 @@ export class OpenConversationUseCase {
     private readonly prisma: PrismaService,
     private readonly participantService: ParticipantService,
     private readonly repo: IConversationRepository,
+    private readonly eventBus: EventBusService,
   ) {}
 
   async execute(input: OpenConversationInput) {
-    if (input.targetType === 'USER' && input.userId === input.targetId) {
-      throw new BadRequestException('You cannot message yourself');
-    }
-
     let targetId = input.targetId;
+    let anchorInput: { type: string; targetId: string } | undefined;
+    let targetParticipantType: 'USER' | 'BUSINESS' = 'USER';
+
     if (input.targetType === 'BUSINESS') {
       const biz = await this.prisma.businessProfile.findFirst({
         where: {
@@ -30,22 +31,35 @@ export class OpenConversationUseCase {
         },
         select: { id: true },
       });
-      if (biz) {
-        targetId = biz.id;
-      }
+      if (!biz) throw new BadRequestException('Business not found');
+      targetId = biz.id;
+      targetParticipantType = 'BUSINESS';
+    } else if (input.targetType === 'OPPORTUNITY') {
+      const opp = await this.prisma.opportunityPost.findUnique({
+        where: { id: input.targetId },
+        select: { authorId: true },
+      });
+      if (!opp) throw new BadRequestException('Opportunity not found');
+      targetId = opp.authorId;
+      targetParticipantType = 'USER';
+      anchorInput = { type: 'OPPORTUNITY', targetId: input.targetId };
+    }
+
+    if (targetParticipantType === 'USER' && input.userId === targetId) {
+      throw new BadRequestException('You cannot message yourself');
     }
 
     const me = await this.participantService.ensurePersonalParticipant(input.userId);
     const target =
-      input.targetType === 'USER'
+      targetParticipantType === 'USER'
         ? await this.participantService.ensurePersonalParticipant(targetId)
         : await this.participantService.ensureBusinessParticipant(targetId);
 
     // Advisory lock to prevent race conditions when checking/creating direct conversations
     const [id1, id2] = [me.id, target.id].sort();
-    // Compute a 32-bit integer lock ID from the IDs
+    // Compute a 32-bit integer lock ID from the IDs and anchor
     let hash = 0;
-    const str = `${id1}:${id2}`;
+    const str = `${id1}:${id2}:${anchorInput ? anchorInput.targetId : 'none'}`;
     for (let i = 0; i < str.length; i++) {
       hash = (hash << 5) - hash + str.charCodeAt(i);
       hash |= 0;
@@ -60,6 +74,11 @@ export class OpenConversationUseCase {
         const existing = await tx.conversation.findFirst({
           where: {
             type: 'DIRECT',
+            ...(anchorInput?.type === 'OPPORTUNITY'
+              ? { anchor: { opportunityId: anchorInput.targetId } }
+              : anchorInput?.type === 'BUSINESS'
+                ? { anchor: { businessId: anchorInput.targetId } }
+                : { anchorId: null }),
             participants: {
               every: {
                 participantId: { in: [me.id, target.id] },
@@ -77,11 +96,23 @@ export class OpenConversationUseCase {
         }
 
         // Create new conversation
-        return await this.repo.create({
+        const conversation = await this.repo.create({
           type: 'DIRECT',
           participantId: me.id,
           invitedParticipantIds: [target.id],
+          ...(anchorInput ? { anchor: anchorInput } : {}),
         });
+
+        if (anchorInput?.type === 'OPPORTUNITY') {
+          await this.eventBus.publish('opportunity.conversation.started', {
+            conversationId: conversation.id,
+            opportunityId: anchorInput.targetId,
+            initiatorId: me.id,
+            authorId: target.id,
+          });
+        }
+
+        return conversation;
       },
       { timeout: 10000 },
     );
