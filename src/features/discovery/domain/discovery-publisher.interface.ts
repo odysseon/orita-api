@@ -34,6 +34,14 @@ export interface NearbyItemDto {
   expiresAt?: Date | undefined;
   createdAt: Date;
 
+  capabilities: {
+    canReply: boolean;
+    canEdit: boolean;
+    canComplete: boolean;
+    canDelete: boolean;
+  };
+  editableUntil?: string | undefined; // ISO Date String
+
   _score?: number | undefined;
   _rankingVersion?: string | undefined;
 }
@@ -46,6 +54,7 @@ export interface NearbyParams {
   cursorScore?: number;
   cursorId?: string;
   types?: string[];
+  viewerId?: string;
 }
 
 export interface DiscoveryPublisher {
