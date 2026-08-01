@@ -66,7 +66,7 @@ export class OpportunityService {
         },
       });
 
-      return this.mapToDto(post);
+      return this.mapToDto(post, authorId);
     } catch (error: unknown) {
       if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2003') {
         throw new UnprocessableEntityException('The provided location does not exist.');
@@ -77,20 +77,20 @@ export class OpportunityService {
 
   async getMyPosts(authorId: string): Promise<NearbyItemDto[]> {
     const posts = await this.prisma.opportunityPost.findMany({
-      where: { authorId },
+      where: { authorId, status: { not: 'DELETED' } },
       include: { location: true, author: true, businessProfile: true, media: true },
       orderBy: { createdAt: 'desc' },
     });
-    return posts.map((p) => this.mapToDto(p));
+    return posts.map((p) => this.mapToDto(p, authorId));
   }
 
-  async getById(id: string): Promise<NearbyItemDto> {
+  async getById(id: string, viewerId?: string): Promise<NearbyItemDto> {
     const post = await this.prisma.opportunityPost.findUnique({
       where: { id },
       include: { location: true, author: true, businessProfile: true, media: true },
     });
     if (!post) throw new NotFoundException();
-    return this.mapToDto(post);
+    return this.mapToDto(post, viewerId);
   }
 
   async update(authorId: string, id: string, dto: UpdateOpportunityDto): Promise<NearbyItemDto> {
@@ -120,7 +120,7 @@ export class OpportunityService {
       include: { location: true, author: true, businessProfile: true, media: true },
     });
 
-    return this.mapToDto(updated);
+    return this.mapToDto(updated, authorId);
   }
 
   async complete(authorId: string, id: string): Promise<void> {
@@ -141,11 +141,54 @@ export class OpportunityService {
 
     await this.prisma.opportunityPost.update({
       where: { id },
-      data: { status: 'DELETED' },
+      data: {
+        status: 'DELETED',
+        deletedAt: new Date(),
+        deletedBy: authorId,
+      },
     });
   }
 
-  private mapToDto(post: PostWithRelations): NearbyItemDto {
+  private mapToDto(post: PostWithRelations, viewerId?: string): NearbyItemDto {
+    const isAuthor = viewerId === post.authorId;
+    const isEditingOpen =
+      new Date().getTime() - post.createdAt.getTime() <=
+      OPPORTUNITY_TYPE_POLICIES[post.type].editWindowHours * 60 * 60 * 1000;
+
+    const editableUntil = new Date(
+      post.createdAt.getTime() +
+        OPPORTUNITY_TYPE_POLICIES[post.type].editWindowHours * 60 * 60 * 1000,
+    ).toISOString();
+
+    let capabilities = {
+      canReply: false,
+      canEdit: false,
+      canComplete: false,
+      canDelete: false,
+    };
+
+    if (post.status === 'ACTIVE') {
+      if (isAuthor) {
+        capabilities = {
+          canReply: false,
+          canEdit: isEditingOpen,
+          canComplete: true,
+          canDelete: true,
+        };
+      } else {
+        capabilities = {
+          canReply: true,
+          canEdit: false,
+          canComplete: false,
+          canDelete: false,
+        };
+      }
+    } else if (post.status === 'COMPLETED' || post.status === 'EXPIRED') {
+      if (isAuthor) {
+        capabilities.canDelete = true;
+      }
+    }
+
     return {
       id: post.id,
       kind: NearbyItemKind.OPPORTUNITY_POST,
@@ -181,6 +224,8 @@ export class OpportunityService {
       })),
       expiresAt: post.expiresAt ?? undefined,
       createdAt: post.createdAt,
+      capabilities,
+      editableUntil,
     };
   }
 }

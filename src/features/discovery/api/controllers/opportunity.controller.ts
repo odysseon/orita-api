@@ -37,8 +37,13 @@ export class OpportunityController {
   }
 
   @Get(':id')
-  async getById(@Param('id') id: string) {
-    return this.opportunityService.getById(id);
+  async getById(@Param('id') id: string, @CurrentIdentity() identity: RequestIdentity) {
+    let viewerId: string | undefined;
+    if (identity) {
+      const user = await this.identityService.resolveUserOrThrow(identity.accountId);
+      viewerId = user.id;
+    }
+    return this.opportunityService.getById(id, viewerId);
   }
 
   @Patch(':id')

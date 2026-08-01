@@ -146,8 +146,8 @@ export class PrismaNearbyRepository {
 
     const postIds = results.map((r) => r.id);
 
-    const media = await this.prisma.opportunityMedia.findMany({
-      where: { postId: { in: postIds } },
+    const media = await this.prisma.media.findMany({
+      where: { opportunityPostId: { in: postIds } },
     });
 
     const authorIds = [...new Set(results.map((r) => r.author_id))];
@@ -166,7 +166,7 @@ export class PrismaNearbyRepository {
 
     return results.map((r) => {
       const postMedia = media
-        .filter((m) => m.postId === r.id)
+        .filter((m) => m.opportunityPostId === r.id)
         .map((m) => ({
           url: this.mediaUrlService.getMediaUrl(
             m.provider,
@@ -234,6 +234,12 @@ export class PrismaNearbyRepository {
         media: postMedia,
         expiresAt: r.expires_at ?? undefined,
         createdAt: r.created_at,
+        capabilities: {
+          canReply: params.viewerId ? params.viewerId !== r.author_id : false,
+          canEdit: false, // In feed, we just default these to false for now, since My Opportunities gets it from OpportunityService
+          canComplete: false,
+          canDelete: false,
+        },
         _score: Number(r.score),
         _rankingVersion: this.config.version,
       };
