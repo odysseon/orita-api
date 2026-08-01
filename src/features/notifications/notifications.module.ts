@@ -9,6 +9,7 @@ import { ListingPublishedPolicy } from './application/policies/listing-published
 import { BusinessPublishedPolicy } from './application/policies/business-published.policy.js';
 import { BusinessPublishedOwnerPolicy } from './application/policies/business-published-owner.policy.js';
 import { MessageReceivedPolicy } from './application/policies/message-received.policy.js';
+import { OpportunityConversationStartedPolicy } from './application/policies/opportunity-conversation-started.policy.js';
 import { EmailWorker } from './infrastructure/workers/email.worker.js';
 import { PushWorker } from './infrastructure/workers/push.worker.js';
 import { InAppWorker } from './infrastructure/workers/in-app.worker.js';
@@ -58,6 +59,7 @@ import { AuthModule } from '../../auth/auth.module.js';
     BusinessPublishedPolicy,
     BusinessPublishedOwnerPolicy,
     MessageReceivedPolicy,
+    OpportunityConversationStartedPolicy,
 
     // Workers
     EmailWorker,
