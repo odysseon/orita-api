@@ -19,6 +19,7 @@ export class AnchorService {
     let listingId: string | null = null;
     let tourId: string | null = null;
     let locationId: string | null = null;
+    let opportunityId: string | null = null;
     let title: string;
     let subtitle: string | null;
     let imageUrl: string | null = null;
@@ -94,6 +95,26 @@ export class AnchorService {
         subtitle = loc.formattedAddress ?? null;
         break;
       }
+      case 'OPPORTUNITY': {
+        const opp = await this.prisma.opportunityPost.findUnique({
+          where: { id: input.targetId },
+          include: { media: { take: 1, orderBy: { createdAt: 'asc' } } },
+        });
+        if (!opp) throw new BadRequestException('Opportunity not found for anchor');
+        opportunityId = opp.id;
+        title = opp.title;
+        subtitle = opp.body ?? null;
+        imageUrl = opp.media[0]
+          ? this.mediaUrlService.getMediaUrl(
+              opp.media[0].provider,
+              opp.media[0].fileId,
+              opp.media[0].mimeType,
+              opp.media[0].version,
+              opp.media[0].format,
+            )
+          : null;
+        break;
+      }
       default:
         throw new BadRequestException(`Unsupported anchor type: ${input.type}`);
     }
@@ -104,6 +125,7 @@ export class AnchorService {
         listingId,
         tourId,
         locationId,
+        opportunityId,
         title,
         subtitle,
         imageUrl,
@@ -124,6 +146,7 @@ export class AnchorService {
       listingId: anchor.listingId,
       tourId: anchor.tourId,
       locationId: anchor.locationId,
-    };
+      opportunityId: anchor.opportunityId,
+    } as ConversationAnchorView & { opportunityId?: string | null };
   }
 }
