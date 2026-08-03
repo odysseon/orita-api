@@ -239,16 +239,16 @@ if run_suite "opportunity"; then
     echo ""
     echo "── Suite: Opportunity ───────────────────────"
     # Grab a random location ID from the database for testing
-    if [[ -f "$ROOT/.env" ]]; then
-        source "$ROOT/.env"
-    elif [[ -f "$ROOT/../.env" ]]; then
-        source "$ROOT/../.env"
+    if [[ -n "${DATABASE_URL:-}" ]] && command -v psql &>/dev/null; then
+        export HURL_location_id=$(psql "$DATABASE_URL" -t -c "SELECT id FROM locations LIMIT 1" | xargs)
+        export HURL_lat=$(psql "$DATABASE_URL" -t -c "SELECT ST_Y(coordinates::geometry) FROM locations WHERE id='$HURL_location_id'" | xargs)
+        export HURL_lng=$(psql "$DATABASE_URL" -t -c "SELECT ST_X(coordinates::geometry) FROM locations WHERE id='$HURL_location_id'" | xargs)
     fi
-    # Use psql with connection string to get a valid location
-    export HURL_location_id=$(psql "$DATABASE_URL" -t -c "SELECT id FROM locations LIMIT 1" | xargs)
-    if [[ -z "$HURL_location_id" || "$HURL_location_id" == "null" ]]; then
+    if [[ -z "${HURL_location_id:-}" || "$HURL_location_id" == "null" ]]; then
         echo "⚠️ No location found in DB. Test might fail."
         export HURL_location_id="loc_test_1"
+        export HURL_lat="0"
+        export HURL_lng="0"
     fi
     
     run_test "OPP 00 Lifecycle"  "$ROOT/opportunity/00-lifecycle.hurl"
