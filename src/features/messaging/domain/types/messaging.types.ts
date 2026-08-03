@@ -31,6 +31,7 @@ export interface ConversationAnchorView {
   listingId: string | null;
   tourId: string | null;
   locationId: string | null;
+  opportunityId: string | null;
 }
 
 export interface ConversationView {

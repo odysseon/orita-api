@@ -98,6 +98,7 @@ export class PrismaConversationRepository implements IConversationRepository {
         listingId: c.anchor.listingId,
         tourId: c.anchor.tourId,
         locationId: c.anchor.locationId,
+        opportunityId: c.anchor.opportunityId,
       };
     }
 

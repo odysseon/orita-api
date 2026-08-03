@@ -107,6 +107,7 @@ export class ConversationAnchorResponseDto {
   @ApiPropertyOptional() listingId!: string | null;
   @ApiPropertyOptional() tourId!: string | null;
   @ApiPropertyOptional() locationId!: string | null;
+  @ApiPropertyOptional() opportunityId!: string | null;
 
   static from(a: ConversationAnchorView): ConversationAnchorResponseDto {
     const dto = new ConversationAnchorResponseDto();
@@ -118,6 +119,7 @@ export class ConversationAnchorResponseDto {
     dto.listingId = a.listingId;
     dto.tourId = a.tourId;
     dto.locationId = a.locationId;
+    dto.opportunityId = a.opportunityId;
     return dto;
   }
 }
