@@ -23,7 +23,7 @@ export class OpportunityConversationStartedPolicy extends BaseNotificationPolicy
   }
 
   resolveAudience(event: EventType): Promise<string[]> {
-    return Promise.resolve([event.data.authorId]);
+    return Promise.resolve([event.data.authorUserId]);
   }
 
   getUrgency(): NotificationUrgency {
@@ -37,7 +37,7 @@ export class OpportunityConversationStartedPolicy extends BaseNotificationPolicy
   getPayload(event: EventType): NotificationPayload {
     return {
       type: 'OPPORTUNITY_CONVERSATION_STARTED',
-      actorId: event.data.initiatorId,
+      actorId: event.data.initiatorUserId,
       referenceType: 'CONVERSATION',
       referenceId: event.data.conversationId,
       payload: {
