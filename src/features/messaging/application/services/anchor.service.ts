@@ -101,6 +101,9 @@ export class AnchorService {
           include: { media: { take: 1, orderBy: { createdAt: 'asc' } } },
         });
         if (!opp) throw new BadRequestException('Opportunity not found for anchor');
+        if (opp.status !== 'ACTIVE' || (opp.expiresAt && opp.expiresAt <= new Date())) {
+          throw new BadRequestException('Opportunity is no longer active');
+        }
         opportunityId = opp.id;
         title = opp.title;
         subtitle = opp.body ?? null;
@@ -147,6 +150,6 @@ export class AnchorService {
       tourId: anchor.tourId,
       locationId: anchor.locationId,
       opportunityId: anchor.opportunityId,
-    } as ConversationAnchorView & { opportunityId?: string | null };
+    };
   }
 }

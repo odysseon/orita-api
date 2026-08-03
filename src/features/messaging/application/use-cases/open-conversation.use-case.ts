@@ -3,6 +3,7 @@ import { PrismaService } from '../../../../prisma/prisma.service.js';
 import { ParticipantService } from '../services/participant.service.js';
 import { IConversationRepository } from '../../domain/ports/conversation.repository.port.js';
 import { EventBusService } from '../../../../shared/events/event-bus.service.js';
+import { CreateConversationUseCase } from './create-conversation.use-case.js';
 
 export interface OpenConversationInput {
   userId: string;
@@ -17,6 +18,7 @@ export class OpenConversationUseCase {
     private readonly participantService: ParticipantService,
     private readonly repo: IConversationRepository,
     private readonly eventBus: EventBusService,
+    private readonly createConversation: CreateConversationUseCase,
   ) {}
 
   async execute(input: OpenConversationInput) {
@@ -37,9 +39,12 @@ export class OpenConversationUseCase {
     } else if (input.targetType === 'OPPORTUNITY') {
       const opp = await this.prisma.opportunityPost.findUnique({
         where: { id: input.targetId },
-        select: { authorId: true },
+        select: { authorId: true, status: true, expiresAt: true },
       });
       if (!opp) throw new BadRequestException('Opportunity not found');
+      if (opp.status !== 'ACTIVE' || (opp.expiresAt && opp.expiresAt <= new Date())) {
+        throw new BadRequestException('Opportunity is no longer active');
+      }
       targetId = opp.authorId;
       targetParticipantType = 'USER';
       anchorInput = { type: 'OPPORTUNITY', targetId: input.targetId };
@@ -96,7 +101,7 @@ export class OpenConversationUseCase {
         }
 
         // Create new conversation
-        const conversation = await this.repo.create({
+        const conversation = await this.createConversation.execute({
           type: 'DIRECT',
           participantId: me.id,
           invitedParticipantIds: [target.id],
@@ -107,8 +112,8 @@ export class OpenConversationUseCase {
           await this.eventBus.publish('opportunity.conversation.started', {
             conversationId: conversation.id,
             opportunityId: anchorInput.targetId,
-            initiatorId: me.id,
-            authorId: target.id,
+            initiatorUserId: input.userId,
+            authorUserId: targetId,
           });
         }
 
