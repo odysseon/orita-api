@@ -177,7 +177,7 @@ export class OpportunityService {
         };
       } else {
         capabilities = {
-          canReply: true,
+          canReply: Boolean(viewerId),
           canEdit: false,
           canComplete: false,
           canDelete: false,
