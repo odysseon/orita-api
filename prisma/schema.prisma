@@ -220,7 +220,7 @@ model Location {
   countryCode         String?
   latitude            Float
   longitude           Float
-  coordinates         Unsupported("geometry")
+  coordinates         Unsupported("geography(Point,4326)")
   createdAt           DateTime                @default(now())
   updatedAt           DateTime                @updatedAt
   businessProfiles    BusinessProfile[]
