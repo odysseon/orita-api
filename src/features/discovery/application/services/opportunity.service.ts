@@ -16,7 +16,7 @@ import { MediaUrlService } from '../../../media/application/services/media-url.s
 import { Prisma } from '../../../../../generated/prisma/client.js';
 
 type PostWithRelations = Prisma.OpportunityPostGetPayload<{
-  include: { location: true; author: true; businessProfile: true; media: true };
+  include: { location: true; author: true; category: true; media: true };
 }>;
 
 @Injectable()
@@ -31,8 +31,8 @@ export class OpportunityService {
       where: { authorId, status: 'ACTIVE' },
     });
 
-    if (activeCount >= 3) {
-      throw new ConflictException('You can only have a maximum of 3 active opportunity posts.');
+    if (activeCount >= 5) {
+      throw new ConflictException('You can only have a maximum of 5 active opportunity posts.');
     }
 
     const policy = OPPORTUNITY_TYPE_POLICIES[dto.type];
@@ -51,9 +51,10 @@ export class OpportunityService {
       const post = await this.prisma.opportunityPost.create({
         data: {
           authorId,
-          businessProfileId: dto.businessProfileId ?? null,
+          categoryId: dto.categoryId,
           title: dto.title,
-          body: dto.body ?? null,
+          description: dto.description ?? null,
+          price: dto.price ?? null,
           type: dto.type,
           locationId: dto.locationId,
           expiresAt,
@@ -61,7 +62,7 @@ export class OpportunityService {
         include: {
           location: true,
           author: true,
-          businessProfile: true,
+          category: true,
           media: true,
         },
       });
@@ -77,8 +78,8 @@ export class OpportunityService {
 
   async getMyPosts(authorId: string): Promise<NearbyItemDto[]> {
     const posts = await this.prisma.opportunityPost.findMany({
-      where: { authorId, status: { not: 'DELETED' } },
-      include: { location: true, author: true, businessProfile: true, media: true },
+      where: { authorId, status: { not: 'REMOVED' } },
+      include: { location: true, author: true, category: true, media: true },
       orderBy: { createdAt: 'desc' },
     });
     return posts.map((p) => this.mapToDto(p, authorId));
@@ -87,7 +88,7 @@ export class OpportunityService {
   async getById(id: string, viewerId?: string): Promise<NearbyItemDto> {
     const post = await this.prisma.opportunityPost.findUnique({
       where: { id },
-      include: { location: true, author: true, businessProfile: true, media: true },
+      include: { location: true, author: true, category: true, media: true },
     });
     if (!post) throw new NotFoundException();
     return this.mapToDto(post, viewerId);
@@ -114,10 +115,10 @@ export class OpportunityService {
       where: { id },
       data: {
         title: dto.title ?? post.title,
-        body: dto.body ?? post.body,
+        description: dto.description ?? post.description,
         expiresAt: updatedExpiresAt,
       },
-      include: { location: true, author: true, businessProfile: true, media: true },
+      include: { location: true, author: true, category: true, media: true },
     });
 
     return this.mapToDto(updated, authorId);
@@ -130,7 +131,7 @@ export class OpportunityService {
 
     await this.prisma.opportunityPost.update({
       where: { id },
-      data: { status: 'COMPLETED' },
+      data: { status: 'FULFILLED' },
     });
   }
 
@@ -142,7 +143,7 @@ export class OpportunityService {
     await this.prisma.opportunityPost.update({
       where: { id },
       data: {
-        status: 'DELETED',
+        status: 'REMOVED',
         deletedAt: new Date(),
         deletedBy: authorId,
       },
@@ -183,7 +184,7 @@ export class OpportunityService {
           canDelete: false,
         };
       }
-    } else if (post.status === 'COMPLETED' || post.status === 'EXPIRED') {
+    } else if (post.status === 'FULFILLED' || post.status === 'EXPIRED') {
       if (isAuthor) {
         capabilities.canDelete = true;
       }
@@ -193,7 +194,9 @@ export class OpportunityService {
       id: post.id,
       kind: NearbyItemKind.OPPORTUNITY_POST,
       title: post.title,
-      body: post.body ?? undefined,
+      description: post.description ?? undefined,
+      price: post.price ? Number(post.price) : undefined,
+      categoryId: post.categoryId,
       subtype: post.type,
       status: post.status,
       location: {
@@ -206,12 +209,6 @@ export class OpportunityService {
         username: post.author.username,
         displayName: post.author.displayName ?? undefined,
       },
-      postedAs: post.businessProfile
-        ? {
-            id: post.businessProfile.id,
-            name: post.businessProfile.name,
-          }
-        : undefined,
       media: (post.media || []).map((m) => ({
         url: this.mediaUrlService.getMediaUrl(
           m.provider,
