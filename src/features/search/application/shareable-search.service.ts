@@ -31,14 +31,14 @@ export class ShareableSearchService {
       },
       include: {
         media: { where: { role: 'LOGO' } },
-        geoEntity: true,
+        locations: { include: { location: true }, where: { isPrimary: true } },
       },
       take: 5,
     });
 
     for (const b of businesses) {
       const imageUrl = this.getMediaUrl(b.media?.[0]);
-      const subtitle = b.geoEntity?.formattedAddress || 'Business';
+      const subtitle = b.locations?.[0]?.location?.formattedAddress || 'Business';
       results.push({
         type: 'BUSINESS',
         targetId: b.id,

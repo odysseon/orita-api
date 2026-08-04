@@ -29,8 +29,12 @@ type PrismaBusinessProfileExtended = {
   contactPhone: string | null;
   whatsapp: string | null;
   contactEmail: string | null;
-  locationId: string | null;
   categories?: { categoryId: string; isPrimary: boolean }[];
+  locations?: {
+    locationId: string;
+    isPrimary: boolean;
+    location: { name: string };
+  }[];
   createdAt: Date;
   updatedAt: Date;
   hours?: {
@@ -48,10 +52,7 @@ type PrismaBusinessProfileExtended = {
       slug: string;
     };
   }[];
-  geoEntity?: {
-    id: string;
-    name: string;
-  } | null;
+
   media?: {
     role: 'LOGO' | 'BANNER' | 'COVER' | 'GALLERY' | 'AVATAR' | 'MESSAGE';
     provider: StorageProvider;
@@ -66,6 +67,7 @@ type HydratedProfile = Omit<PrismaBusinessProfileExtended, 'media'> & {
   media?: { role: string; url: string }[];
   latitude: number | null;
   longitude: number | null;
+  locationId: string | null;
   locationName: string | null;
 };
 
@@ -155,7 +157,10 @@ export class PrismaBusinessProfileRepository extends IBusinessProfileRepository 
   private async hydrate(profiles: PrismaBusinessProfileExtended[]): Promise<HydratedProfile[]> {
     if (profiles.length === 0) return [];
 
-    const locationIds = profiles.map((p) => p.locationId).filter((id): id is string => id !== null);
+    const getPrimaryLoc = (p: any) => p.locations?.find((l: any) => l.isPrimary);
+    const locationIds = profiles
+      .map((p) => getPrimaryLoc(p)?.locationId)
+      .filter((id): id is string => id !== undefined);
     const locationMap = new Map<string, { lat: number; lng: number }>();
 
     if (locationIds.length > 0) {
@@ -170,13 +175,15 @@ export class PrismaBusinessProfileRepository extends IBusinessProfileRepository 
     }
 
     return profiles.map((p) => {
-      const coords = p.locationId ? locationMap.get(p.locationId) : undefined;
+      const primaryLoc = getPrimaryLoc(p);
+      const coords = primaryLoc ? locationMap.get(primaryLoc.locationId) : undefined;
 
       const result: Record<string, unknown> = {
         ...p,
         latitude: coords?.lat ?? null,
         longitude: coords?.lng ?? null,
-        locationName: p.geoEntity?.name ?? null,
+        locationId: primaryLoc?.locationId ?? null,
+        locationName: primaryLoc?.location?.name ?? null,
       };
 
       if (p.media) {
@@ -229,7 +236,7 @@ export class PrismaBusinessProfileRepository extends IBusinessProfileRepository 
           ...(input.contactPhone !== undefined && { contactPhone: input.contactPhone }),
           ...(input.whatsapp !== undefined && { whatsapp: input.whatsapp }),
           ...(input.contactEmail !== undefined && { contactEmail: input.contactEmail }),
-          ...(locationId !== undefined && { locationId }),
+          ...(locationId !== undefined && { locations: { create: { locationId, isPrimary: true } } }),
           ...(input.isPublic !== undefined && { isPublic: input.isPublic }),
           ...(input.primaryCategoryId && {
             categories: {
@@ -244,7 +251,7 @@ export class PrismaBusinessProfileRepository extends IBusinessProfileRepository 
           }),
         },
         include: {
-          geoEntity: true,
+          locations: { include: { location: true }, where: { isPrimary: true } },
           categories: { select: { categoryId: true, isPrimary: true } },
           media: {
             select: {
@@ -299,7 +306,7 @@ export class PrismaBusinessProfileRepository extends IBusinessProfileRepository 
       include: {
         hours: true,
         tags: { include: { tag: true } },
-        geoEntity: true,
+        locations: { include: { location: true }, where: { isPrimary: true } },
         categories: { select: { categoryId: true, isPrimary: true } },
         media: {
           select: {
@@ -326,7 +333,7 @@ export class PrismaBusinessProfileRepository extends IBusinessProfileRepository 
       include: {
         hours: true,
         tags: { include: { tag: true } },
-        geoEntity: true,
+        locations: { include: { location: true }, where: { isPrimary: true } },
         categories: { select: { categoryId: true, isPrimary: true } },
         media: {
           select: {
@@ -362,7 +369,7 @@ export class PrismaBusinessProfileRepository extends IBusinessProfileRepository 
       include: {
         hours: true,
         tags: { include: { tag: true } },
-        geoEntity: true,
+        locations: { include: { location: true }, where: { isPrimary: true } },
         categories: { select: { categoryId: true, isPrimary: true } },
         media: {
           select: {
@@ -394,7 +401,7 @@ export class PrismaBusinessProfileRepository extends IBusinessProfileRepository 
       include: {
         hours: true,
         tags: { include: { tag: true } },
-        geoEntity: true,
+        locations: { include: { location: true }, where: { isPrimary: true } },
         categories: { select: { categoryId: true, isPrimary: true } },
         media: {
           select: {
@@ -415,10 +422,10 @@ export class PrismaBusinessProfileRepository extends IBusinessProfileRepository 
 
   async update(id: string, input: UpdateBusinessProfileInput): Promise<BusinessProfileView> {
     const raw = await this.prisma.$transaction(async (tx) => {
-      const existing = await tx.businessProfile.findUnique({ where: { id } });
+      const existing = await tx.businessProfile.findUnique({ where: { id }, include: { locations: { where: { isPrimary: true } } } });
       if (!existing) throw new Error('BusinessProfile not found');
 
-      let locationId = existing.locationId;
+      let locationId = (existing as any).locations?.[0]?.locationId;
 
       if (input.latitude !== undefined && input.longitude !== undefined) {
         if (locationId) {
@@ -473,7 +480,12 @@ export class PrismaBusinessProfileRepository extends IBusinessProfileRepository 
           ...(input.contactPhone !== undefined && { contactPhone: input.contactPhone }),
           ...(input.whatsapp !== undefined && { whatsapp: input.whatsapp }),
           ...(input.contactEmail !== undefined && { contactEmail: input.contactEmail }),
-          ...(locationId !== undefined && { locationId }),
+          ...(locationId !== undefined && (existing as any).locations?.[0]?.locationId !== locationId && {
+            locations: {
+              deleteMany: { isPrimary: true },
+              create: { locationId, isPrimary: true },
+            }
+          }),
           ...(serviceModesData && { serviceModes: serviceModesData }),
           ...(input.primaryCategoryId !== undefined && {
             categories: {
@@ -491,7 +503,7 @@ export class PrismaBusinessProfileRepository extends IBusinessProfileRepository 
         include: {
           hours: true,
           tags: { include: { tag: true } },
-          geoEntity: true,
+          locations: { include: { location: true }, where: { isPrimary: true } },
           categories: { select: { categoryId: true, isPrimary: true } },
           media: {
             select: {
@@ -622,7 +634,7 @@ export class PrismaBusinessProfileRepository extends IBusinessProfileRepository 
         OR: [
           { name: { contains: input.search, mode: 'insensitive' } },
           { description: { contains: input.search, mode: 'insensitive' } },
-          { geoEntity: { name: { contains: input.search, mode: 'insensitive' } } },
+          { locations: { some: { isPrimary: true, location: { name: { contains: input.search, mode: 'insensitive' } } } } },
         ],
       }),
     };
@@ -653,7 +665,8 @@ export class PrismaBusinessProfileRepository extends IBusinessProfileRepository 
                ), '[]'::json) as categories_json,
                (ST_Distance(loc.coordinates::geography, ST_SetSRID(ST_MakePoint(${input.lng}, ${input.lat}), 4326)::geography) / 1000) AS distance
         FROM "business_profiles" bp
-        JOIN "locations" loc ON bp."locationId" = loc.id
+        JOIN "business_locations" bl ON bp.id = bl."businessProfileId" AND bl."isPrimary" = true
+        JOIN "locations" loc ON bl."locationId" = loc.id
         WHERE bp."isPublic" = true
 
           ${input.categoryId ? Prisma.sql`AND EXISTS (SELECT 1 FROM "business_categories" bc WHERE bc."businessId" = bp.id AND bc."categoryId" = ${input.categoryId})` : Prisma.empty}
@@ -674,7 +687,8 @@ export class PrismaBusinessProfileRepository extends IBusinessProfileRepository 
       const countResult = await this.prisma.$queryRaw<{ total: bigint }[]>`
         SELECT COUNT(*) as total 
         FROM "business_profiles" bp
-        JOIN "locations" loc ON bp."locationId" = loc.id
+        JOIN "business_locations" bl ON bp.id = bl."businessProfileId" AND bl."isPrimary" = true
+        JOIN "locations" loc ON bl."locationId" = loc.id
         WHERE bp."isPublic" = true
 
           ${input.categoryId ? Prisma.sql`AND EXISTS (SELECT 1 FROM "business_categories" bc WHERE bc."businessId" = bp.id AND bc."categoryId" = ${input.categoryId})` : Prisma.empty}
@@ -732,9 +746,9 @@ export class PrismaBusinessProfileRepository extends IBusinessProfileRepository 
           slug: true,
           businessType: true,
           description: true,
-          locationId: true,
+          
           categories: { select: { categoryId: true, isPrimary: true } },
-          geoEntity: true,
+          locations: { include: { location: true }, where: { isPrimary: true } },
         },
       }),
       this.prisma.businessProfile.count({ where }),

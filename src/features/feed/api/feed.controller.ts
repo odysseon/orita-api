@@ -57,9 +57,9 @@ export class FeedController {
         const user = await this.identityService.resolveUser(identity.accountId);
         if (user) {
           userId = user.id;
-          if (user.activeExplorationLat != null && user.activeExplorationLng != null) {
-            reqLat = user.activeExplorationLat;
-            reqLng = user.activeExplorationLng;
+          if (user.explorationLat != null && user.explorationLng != null) {
+            reqLat = user.explorationLat;
+            reqLng = user.explorationLng;
           } else {
             throw new BadRequestException('Exploration context is required to load the feed.');
           }
