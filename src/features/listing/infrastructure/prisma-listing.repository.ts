@@ -546,7 +546,7 @@ export class PrismaListingRepository extends IListingRepository {
     }
 
     const listingIds = items.map((i) => i.id);
-    const saves = await this.prisma.savedListing.findMany({
+    const saves = await this.prisma.favorite.findMany({
       where: {
         userId: currentUserId,
         listingId: { in: listingIds },

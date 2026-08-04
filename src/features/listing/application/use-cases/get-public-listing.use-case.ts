@@ -42,7 +42,7 @@ export class GetPublicListingUseCase {
 
     let isSaved = false;
     if (currentUserId) {
-      const saveCount = await this.prisma.savedListing.count({
+      const saveCount = await this.prisma.favorite.count({
         where: { userId: currentUserId, listingId: listing.id },
       });
       isSaved = saveCount > 0;

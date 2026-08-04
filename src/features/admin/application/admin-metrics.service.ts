@@ -23,7 +23,7 @@ export class AdminMetricsService {
       archivedListings,
       newListingsLast30Days,
       totalInquiries,
-      totalSavedListings,
+      totalFavorites,
       totalSavedBusinesses,
       totalAnalyticsEvents,
       profileViewsLast30Days,
@@ -51,7 +51,7 @@ export class AdminMetricsService {
 
       // Engagement
       this.prisma.conversation.count(),
-      this.prisma.savedListing.count(),
+      this.prisma.favorite.count(),
       this.prisma.businessFollow.count(),
 
       // Analytics
@@ -97,8 +97,8 @@ export class AdminMetricsService {
       },
       engagement: {
         totalInquiries,
-        totalSaves: totalSavedListings + totalSavedBusinesses,
-        savedListings: totalSavedListings,
+        totalSaves: totalFavorites + totalSavedBusinesses,
+        favorites: totalFavorites,
         savedBusinesses: totalSavedBusinesses,
       },
       analytics: {

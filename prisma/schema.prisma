@@ -121,7 +121,7 @@ model User {
   locationFollows         LocationFollow[]         @relation("LocationFollows")
   participant             Participant?
   reviewsGiven            Review[]                 @relation("ReviewsGiven")
-  savedListings           SavedListing[]           @relation("SavedListings")
+  favorites               Favorite[]               @relation("Favorites")
   uploadIntents           UploadIntent[]
   pushSubscriptions       PushSubscription[]
   media                   Media[]
@@ -254,7 +254,7 @@ model Listing {
   category            Category?            @relation("ListingCategory", fields: [categoryId], references: [id], onDelete: SetNull)
   media               Media[]
   reviews             Review[]
-  savedByUsers        SavedListing[]       @relation("SavedByUsers")
+  favoritedByUsers    Favorite[]           @relation("FavoritedByUsers")
   serviceAreas        ListingServiceArea[]
 
   @@unique([businessProfileId, slug])
@@ -601,18 +601,18 @@ model MessageReadReceipt {
   @@map("message_read_receipts")
 }
 
-model SavedListing {
+model Favorite {
   id        String   @id @default(cuid())
   userId    String
   listingId String
   createdAt DateTime @default(now())
-  listing   Listing  @relation("SavedByUsers", fields: [listingId], references: [id], onDelete: Cascade)
-  user      User     @relation("SavedListings", fields: [userId], references: [id], onDelete: Cascade)
+  listing   Listing  @relation("FavoritedByUsers", fields: [listingId], references: [id], onDelete: Cascade)
+  user      User     @relation("Favorites", fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, listingId])
   @@index([userId])
   @@index([listingId])
-  @@map("saved_listings")
+  @@map("favorites")
 }
 
 model BusinessFollow {
