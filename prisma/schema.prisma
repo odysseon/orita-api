@@ -201,7 +201,6 @@ model BusinessProfile {
   media               Media[]
   hours               OperatingHours[]
   participant         Participant?
-  opportunityPosts    OpportunityPost[]
   serviceModes        BusinessServiceMode[]
   serviceAreas        BusinessServiceArea[]
 
@@ -357,6 +356,7 @@ model Category {
   discoveryPolicy  CategoryDiscoveryPolicy?
   listings         Listing[]                @relation("ListingCategory")
   interestedUsers  UserInterestedCategory[]
+  opportunityPosts OpportunityPost[]        @relation("OpportunityCategory")
 
   @@index([parentId])
   @@index([slug])
@@ -500,9 +500,9 @@ model Participant {
 }
 
 model ConversationAnchor {
-  id           String           @id @default(cuid())
-  businessId   String?
-  listingId    String?
+  id            String           @id @default(cuid())
+  businessId    String?
+  listingId     String?
   tourId        String?
   locationId    String?
   opportunityId String?
@@ -912,46 +912,46 @@ enum NotificationCategory {
 }
 
 model OpportunityPost {
-  id                String            @id @default(cuid())
-  authorId          String
-  businessProfileId String?
-  title             String
-  body              String?
-  type              OpportunityType
-  locationId        String
-  expiresAt         DateTime?
-  status            OpportunityStatus @default(ACTIVE)
-  createdAt         DateTime          @default(now())
-  updatedAt         DateTime          @updatedAt
-  deletedAt         DateTime?
-  deletedBy         String?
+  id            String            @id @default(cuid())
+  authorId      String
+  categoryId    String
+  title         String
+  description   String?
+  price         Decimal?          @db.Decimal(18, 2)
+  type          OpportunityType
+  locationId    String
+  expiresAt     DateTime?
+  lastBoostedAt DateTime          @default(now())
+  decayRate     Float             @default(0.01155)
+  status        OpportunityStatus @default(ACTIVE)
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
+  deletedAt     DateTime?
+  deletedBy     String?
 
   author              User                 @relation(fields: [authorId], references: [id], onDelete: Cascade)
-  businessProfile     BusinessProfile?     @relation(fields: [businessProfileId], references: [id], onDelete: SetNull)
+  category            Category             @relation("OpportunityCategory", fields: [categoryId], references: [id], onDelete: Restrict)
   location            Location             @relation(fields: [locationId], references: [id], onDelete: Restrict)
   media               Media[]
   conversationAnchors ConversationAnchor[]
 
   @@index([status, expiresAt])
   @@index([authorId])
+  @@index([categoryId])
   @@index([locationId])
   @@map("opportunity_posts")
 }
 
 enum OpportunityType {
-  FOR_SALE
-  FREE
-  WANTED
-  BORROW_LEND
-  TEMP_SERVICE
-  LOST_FOUND
+  NEED
+  OFFER
 }
 
 enum OpportunityStatus {
   ACTIVE
-  COMPLETED
+  FULFILLED
   EXPIRED
-  DELETED
+  REMOVED
 }
 
 enum ServiceAreaType {
