@@ -109,9 +109,9 @@ model User {
   createdAt               DateTime                 @default(now())
   updatedAt               DateTime                 @updatedAt
   deletedAt               DateTime?
-  activeExplorationLat    Float?
-  activeExplorationLng    Float?
-  activeExplorationName   String?
+  homeLocationId          String?
+  explorationLat          Float?
+  explorationLng          Float?
   inAppNotifications      InAppNotification[]
   notificationPreferences NotificationPreference?
   businessFollows         BusinessFollow[]         @relation("BusinessFollows")
@@ -131,6 +131,7 @@ model User {
   sharesSent              ItemShare[]              @relation("SentShares")
   sharesReceived          ItemShare[]              @relation("ReceivedShares")
   opportunityPosts        OpportunityPost[]
+  homeLocation            Location?                @relation("UserHomeLocation", fields: [homeLocationId], references: [id])
   account                 Account                  @relation(fields: [accountId], references: [id], onDelete: Cascade)
 
   @@index([accountId])
@@ -182,7 +183,6 @@ model BusinessProfile {
   whatsapp            String?
   createdAt           DateTime              @default(now())
   updatedAt           DateTime              @updatedAt
-  locationId          String?
   businessType        BusinessType          @default(ONLINE)
   websiteUrl          String?
   contactEmail        String?
@@ -191,7 +191,7 @@ model BusinessProfile {
   categories          BusinessCategory[]    @relation("BusinessCategories")
   followers           BusinessFollow[]
   tags                BusinessProfileTag[]
-  geoEntity           Location?             @relation(fields: [locationId], references: [id])
+  locations           BusinessLocation[]
   owner               User                  @relation(fields: [ownerId], references: [id], onDelete: Cascade)
   businessTours       BusinessTour[]
   verification        BusinessVerification?
@@ -206,7 +206,6 @@ model BusinessProfile {
 
   @@index([slug])
   @@index([isPublic])
-  @@index([locationId])
   @@map("business_profiles")
 }
 
@@ -223,7 +222,8 @@ model Location {
   coordinates         Unsupported("geography(Point,4326)")
   createdAt           DateTime                @default(now())
   updatedAt           DateTime                @updatedAt
-  businessProfiles    BusinessProfile[]
+  businessLocations   BusinessLocation[]
+  usersHome           User[]                  @relation("UserHomeLocation")
   conversationAnchors ConversationAnchor[]
   followers           LocationFollow[]
   opportunityPosts    OpportunityPost[]
@@ -853,6 +853,22 @@ enum AttributeType {
 enum BusinessTourStatus {
   DRAFT
   PUBLISHED
+}
+
+model BusinessLocation {
+  id                String          @id @default(cuid())
+  businessProfileId String
+  locationId        String
+  branchName        String?
+  isPrimary         Boolean         @default(false)
+  createdAt         DateTime        @default(now())
+  businessProfile   BusinessProfile @relation(fields: [businessProfileId], references: [id], onDelete: Cascade)
+  location          Location        @relation(fields: [locationId], references: [id], onDelete: Restrict)
+
+  @@unique([businessProfileId, locationId])
+  @@index([businessProfileId])
+  @@index([locationId])
+  @@map("business_locations")
 }
 
 enum DayOfWeek {
