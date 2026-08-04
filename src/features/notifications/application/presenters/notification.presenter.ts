@@ -64,7 +64,7 @@ export class NotificationPresenter {
 
     const result: NotificationViewDto = {
       id: entity.id,
-      category: entity.category,
+      category: entity.preferenceCategory,
       title,
       isRead: entity.readAt !== null,
       createdAt: entity.createdAt,
