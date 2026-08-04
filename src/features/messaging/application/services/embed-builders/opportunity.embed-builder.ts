@@ -31,7 +31,7 @@ export class OpportunityEmbedBuilder implements IEmbedBuilder {
       throw new BadRequestException('Opportunity not found');
     }
 
-    if (opp.status === 'DELETED') {
+    if (opp.status === 'REMOVED') {
       throw new ForbiddenException('Cannot share a deleted opportunity');
     }
 
@@ -50,10 +50,10 @@ export class OpportunityEmbedBuilder implements IEmbedBuilder {
     }
 
     // Determine subtitle based on status or type
-    let subtitle = opp.body ?? 'Opportunity Post';
+    let subtitle = opp.description ?? 'Opportunity Post';
     if (opp.status === 'EXPIRED') {
       subtitle = 'This opportunity has expired';
-    } else if (opp.status === 'COMPLETED') {
+    } else if (opp.status === 'FULFILLED') {
       subtitle = 'This opportunity has been completed';
     }
 
