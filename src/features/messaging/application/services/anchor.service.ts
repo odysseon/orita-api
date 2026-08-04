@@ -106,7 +106,7 @@ export class AnchorService {
         }
         opportunityId = opp.id;
         title = opp.title;
-        subtitle = opp.body ?? null;
+        subtitle = opp.description ?? null;
         imageUrl = opp.media[0]
           ? this.mediaUrlService.getMediaUrl(
               opp.media[0].provider,
