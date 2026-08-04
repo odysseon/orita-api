@@ -9,7 +9,9 @@ export interface NearbyItemDto {
   id: string;
   kind: NearbyItemKind;
   title: string;
-  body?: string | undefined;
+  description?: string | undefined;
+  price?: number | undefined;
+  categoryId?: string | undefined;
   subtype: string;
   status: string;
   location: {
