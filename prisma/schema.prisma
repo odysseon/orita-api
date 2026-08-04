@@ -203,6 +203,7 @@ model BusinessProfile {
   participant         Participant?
   serviceModes        BusinessServiceMode[]
   serviceAreas        BusinessServiceArea[]
+  stats               BusinessStats?
 
   @@index([slug])
   @@index([isPublic])
@@ -210,7 +211,7 @@ model BusinessProfile {
 }
 
 model Location {
-  id                  String                  @id @default(cuid())
+  id                  String                               @id @default(cuid())
   externalId          String?
   provider            String
   name                String
@@ -220,10 +221,10 @@ model Location {
   latitude            Float
   longitude           Float
   coordinates         Unsupported("geography(Point,4326)")
-  createdAt           DateTime                @default(now())
-  updatedAt           DateTime                @updatedAt
+  createdAt           DateTime                             @default(now())
+  updatedAt           DateTime                             @updatedAt
   businessLocations   BusinessLocation[]
-  usersHome           User[]                  @relation("UserHomeLocation")
+  usersHome           User[]                               @relation("UserHomeLocation")
   conversationAnchors ConversationAnchor[]
   followers           LocationFollow[]
   opportunityPosts    OpportunityPost[]
@@ -1052,4 +1053,16 @@ model ListingServiceArea {
 
   @@index([listingId])
   @@map("listing_service_areas")
+}
+
+model BusinessStats {
+  businessId       String          @id
+  business         BusinessProfile @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  aggregateRating  Decimal         @default(0) @db.Decimal(3, 2)
+  reviewCount      Int             @default(0)
+  followerCount    Int             @default(0)
+  lastReconciledAt DateTime?
+  updatedAt        DateTime        @updatedAt
+
+  @@map("business_stats")
 }
