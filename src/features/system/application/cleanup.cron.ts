@@ -52,6 +52,29 @@ export class CleanupCronService {
       }
     }
 
+    // 4. Delete old notifications in batches to prevent lock escalation
+    try {
+      let deletedCount = 0;
+      while (true) {
+        const result = await this.prisma.$executeRaw`
+          DELETE FROM "InAppNotification"
+          WHERE id IN (
+            SELECT id FROM "InAppNotification"
+            WHERE "createdAt" < ${thirtyDaysAgo}
+            LIMIT 1000
+          )
+        `;
+        if (result === 0) break;
+        deletedCount += result;
+        await new Promise(resolve => setTimeout(resolve, 50));
+      }
+      if (deletedCount > 0) {
+        this.logger.log(`Cleaned up ${deletedCount} old notifications.`);
+      }
+    } catch (err) {
+      this.logger.error('Failed to cleanup old notifications:', err);
+    }
+
     this.logger.log('Daily cleanup job completed.');
   }
 }

@@ -48,16 +48,25 @@ export class NotificationEngine {
 
     for (const userId of finalAudience) {
       // 6a. Persist Notification Entity Centrally
-      const notification = await this.prisma.inAppNotification.create({
-        data: {
-          userId,
-          type: payload.type,
-          actorId: payload.actorId || null,
-          referenceType: payload.referenceType || null,
-          referenceId: payload.referenceId || null,
-          payload: payload.payload as unknown as Prisma.InputJsonValue,
-        },
-      });
+      let notification;
+      try {
+        notification = await this.prisma.inAppNotification.create({
+          data: {
+            userId,
+            type: payload.type,
+            actorId: payload.actorId || null,
+            referenceType: payload.referenceType || null,
+            referenceId: payload.referenceId || null,
+            payload: payload.payload as unknown as Prisma.InputJsonValue,
+          },
+        });
+      } catch (error: any) {
+        if (error.code === 'P2002') {
+          // Deduplication constraint hit (e.g. user follows business AND is nearby)
+          continue;
+        }
+        throw error;
+      }
 
       const jobData = { userId, notificationId: notification.id };
 
