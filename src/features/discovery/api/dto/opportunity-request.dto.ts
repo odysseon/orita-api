@@ -1,4 +1,4 @@
-import { IsEnum, IsNotEmpty, IsOptional, IsString, IsDate, IsArray } from 'class-validator';
+import { IsEnum, IsNotEmpty, IsOptional, IsString, IsDate, IsArray, IsNumber } from 'class-validator';
 import { OpportunityType } from '../../../../../generated/prisma/client.js';
 import { Type } from 'class-transformer';
 
@@ -10,9 +10,17 @@ export class CreateOpportunityDto {
   @IsNotEmpty()
   title!: string;
 
+  @IsString()
+  @IsNotEmpty()
+  categoryId!: string;
+
   @IsOptional()
   @IsString()
-  body?: string;
+  description?: string;
+
+  @IsOptional()
+  @IsNumber()
+  price?: number;
 
   @IsString()
   @IsNotEmpty()
@@ -22,10 +30,6 @@ export class CreateOpportunityDto {
   @IsDate()
   @Type(() => Date)
   expiresAt?: Date;
-
-  @IsOptional()
-  @IsString()
-  businessProfileId?: string;
 
   @IsOptional()
   @IsArray()
@@ -41,7 +45,15 @@ export class UpdateOpportunityDto {
 
   @IsOptional()
   @IsString()
-  body?: string;
+  categoryId?: string;
+
+  @IsOptional()
+  @IsString()
+  description?: string;
+
+  @IsOptional()
+  @IsNumber()
+  price?: number;
 
   @IsOptional()
   @IsDate()
