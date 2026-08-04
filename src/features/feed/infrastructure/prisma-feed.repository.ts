@@ -219,7 +219,7 @@ export class PrismaFeedRepository {
           })
         : [],
       params.userId && listingIds.length > 0
-        ? this.prisma.savedListing.findMany({
+        ? this.prisma.favorite.findMany({
             where: {
               userId: params.userId,
               listingId: { in: listingIds },
@@ -229,7 +229,7 @@ export class PrismaFeedRepository {
         : Promise.resolve([]),
     ]);
 
-    const savedListingIds = new Set((saves as { listingId: string }[]).map((s) => s.listingId));
+    const favoriteIds = new Set((saves as { listingId: string }[]).map((s) => s.listingId));
 
     const businessMap = new Map(
       businesses.map((b) => {
@@ -268,7 +268,7 @@ export class PrismaFeedRepository {
       if (listingRaw) {
         mappedListing = {
           ...listingRaw,
-          isSaved: savedListingIds.has(listingRaw.id),
+          isSaved: favoriteIds.has(listingRaw.id),
         };
         if (listingRaw.media) {
           mappedListing['media'] = listingRaw.media.map((m: Media) => ({

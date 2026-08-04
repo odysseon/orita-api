@@ -1,4 +1,4 @@
-export interface SavedListingView {
+export interface FavoriteView {
   id: string;
   userId: string;
   listingId: string;
@@ -6,15 +6,15 @@ export interface SavedListingView {
   listing: Record<string, unknown>; // We'll refine this later
 }
 
-export abstract class ISavesRepository {
+export abstract class IFavoritesRepository {
   abstract saveListing(userId: string, listingId: string): Promise<void>;
   abstract unsaveListing(userId: string, listingId: string): Promise<void>;
 
   abstract isListingSaved(userId: string, listingId: string): Promise<boolean>;
 
-  abstract getSavedListings(
+  abstract getFavorites(
     userId: string,
     skip: number,
     take: number,
-  ): Promise<{ items: SavedListingView[]; total: number }>;
+  ): Promise<{ items: FavoriteView[]; total: number }>;
 }

@@ -52,7 +52,7 @@ export class AnalyticsService {
     });
 
     // Also include listings saves
-    const listingsSaves = await this.prisma.savedListing.count({
+    const listingsSaves = await this.prisma.favorite.count({
       where: { listing: { businessProfileId: businessId } },
     });
 

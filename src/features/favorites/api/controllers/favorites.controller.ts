@@ -16,17 +16,17 @@ import { PrismaService } from '../../../../prisma/prisma.service.js';
 
 import { SaveListingUseCase } from '../../application/use-cases/save-listing.use-case.js';
 import { UnsaveListingUseCase } from '../../application/use-cases/unsave-listing.use-case.js';
-import { GetSavedListingsUseCase } from '../../application/use-cases/get-saved-listings.use-case.js';
+import { GetFavoritesUseCase } from '../../application/use-cases/get-favorites.use-case.js';
 
-@ApiTags('Saves')
+@ApiTags('Favorites')
 @ApiBearerAuth()
 @Controller()
-export class SavesController {
+export class FavoritesController {
   constructor(
     private readonly prisma: PrismaService,
     private readonly saveListing: SaveListingUseCase,
     private readonly unsaveListing: UnsaveListingUseCase,
-    private readonly getSavedListings: GetSavedListingsUseCase,
+    private readonly getFavorites: GetFavoritesUseCase,
   ) {}
 
   private async resolveUser(accountId: string): Promise<string> {
@@ -55,7 +55,7 @@ export class SavesController {
   }
 
   @Get('users/me/saved-listings')
-  async listSavedListings(
+  async listFavorites(
     @CurrentIdentity() identity: RequestIdentity,
     @Query('page') page?: string,
     @Query('limit') limit?: string,
@@ -63,7 +63,7 @@ export class SavesController {
     const userId = await this.resolveUser(identity.accountId);
     const pageNum = parseInt(page ?? '1', 10);
     const limitNum = parseInt(limit ?? '20', 10);
-    return this.getSavedListings.execute(
+    return this.getFavorites.execute(
       userId,
       isNaN(pageNum) ? 1 : pageNum,
       isNaN(limitNum) ? 20 : limitNum,

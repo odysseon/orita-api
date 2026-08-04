@@ -1,17 +1,17 @@
 import { Injectable } from '@nestjs/common';
 import { MediaUrlService } from '../../media/application/services/media-url.service.js';
 import { PrismaService } from '../../../prisma/prisma.service.js';
-import { ISavesRepository, SavedListingView } from '../domain/ports/saves.repository.port.js';
+import { IFavoritesRepository, FavoriteView } from '../domain/ports/favorites.repository.port.js';
 
 @Injectable()
-export class PrismaSavesRepository implements ISavesRepository {
+export class PrismaFavoritesRepository implements IFavoritesRepository {
   constructor(
     private readonly prisma: PrismaService,
     private readonly mediaUrlService: MediaUrlService,
   ) {}
 
   async saveListing(userId: string, listingId: string): Promise<void> {
-    await this.prisma.savedListing.upsert({
+    await this.prisma.favorite.upsert({
       where: {
         userId_listingId: {
           userId,
@@ -27,7 +27,7 @@ export class PrismaSavesRepository implements ISavesRepository {
   }
 
   async unsaveListing(userId: string, listingId: string): Promise<void> {
-    await this.prisma.savedListing
+    await this.prisma.favorite
       .delete({
         where: {
           userId_listingId: {
@@ -42,19 +42,19 @@ export class PrismaSavesRepository implements ISavesRepository {
   }
 
   async isListingSaved(userId: string, listingId: string): Promise<boolean> {
-    const count = await this.prisma.savedListing.count({
+    const count = await this.prisma.favorite.count({
       where: { userId, listingId },
     });
     return count > 0;
   }
 
-  async getSavedListings(
+  async getFavorites(
     userId: string,
     skip: number,
     take: number,
-  ): Promise<{ items: SavedListingView[]; total: number }> {
+  ): Promise<{ items: FavoriteView[]; total: number }> {
     const [rows, total] = await this.prisma.$transaction([
-      this.prisma.savedListing.findMany({
+      this.prisma.favorite.findMany({
         where: { userId },
         include: {
           listing: {
@@ -70,7 +70,7 @@ export class PrismaSavesRepository implements ISavesRepository {
         skip,
         take,
       }),
-      this.prisma.savedListing.count({ where: { userId } }),
+      this.prisma.favorite.count({ where: { userId } }),
     ]);
 
     const items = rows.map((r) => ({
