@@ -9,7 +9,6 @@ import {
 } from '../domain/discovery-publisher.interface.js';
 import type { NearbyRankingConfig } from '../domain/nearby-ranking.config.js';
 import { NEARBY_RANKING_CONFIG } from '../domain/nearby-ranking.config.js';
-import { OPPORTUNITY_TYPE_POLICIES } from '../domain/opportunity-type.policy.js';
 
 @Injectable()
 export class PrismaNearbyRepository {
@@ -35,21 +34,22 @@ export class PrismaNearbyRepository {
       {
         id: string;
         title: string;
-        body: string | null;
+        description: string | null;
+        price: number | null;
+        category_id: string;
         type: string;
         status: string;
         expires_at: Date | null;
         created_at: Date;
         author_id: string;
-        business_profile_id: string | null;
         location_id: string;
         location_name: string;
         formatted_address: string | null;
         author_username: string;
         author_display_name: string | null;
-        business_name: string | null;
         dist_meters: number;
-        hours_old: number;
+        age_hours: number;
+        decay_rate: number;
         hours_remaining: number | null;
         score: number;
       }[]
@@ -61,31 +61,31 @@ export class PrismaNearbyRepository {
         SELECT
           op.id,
           op.title,
-          op.body,
+          op.description,
+          op.price,
+          op."categoryId" AS category_id,
           op.type,
           op.status,
           op."expiresAt" AS expires_at,
           op."createdAt" AS created_at,
           op."authorId" AS author_id,
-          op."businessProfileId" AS business_profile_id,
           op."locationId" AS location_id,
+          op."decayRate" AS decay_rate,
           l.name              AS location_name,
           l."formattedAddress" AS formatted_address,
           u.username          AS author_username,
           u."displayName"     AS author_display_name,
-          bp.name             AS business_name,
           
           ST_Distance(
             loc.coordinates::geography,
             (SELECT pt FROM user_point)
           ) AS dist_meters,
-          EXTRACT(EPOCH FROM (NOW() - op."createdAt")) / 3600  AS hours_old,
+          EXTRACT(EPOCH FROM (NOW() - op."lastBoostedAt")) / 3600  AS age_hours,
           EXTRACT(EPOCH FROM (op."expiresAt" - NOW())) / 3600  AS hours_remaining
         FROM opportunity_posts op
         JOIN locations l ON l.id = op."locationId"
         JOIN users u ON u.id = op."authorId"
         JOIN locations loc ON loc.id = op."locationId"
-        LEFT JOIN business_profiles bp ON bp.id = op."businessProfileId"
         WHERE
           op.status = 'ACTIVE'
           AND (op."expiresAt" IS NULL OR op."expiresAt" > NOW())
@@ -101,17 +101,7 @@ export class PrismaNearbyRepository {
           *,
           EXP(-dist_meters / (${radiusMeters} / 3.0)) AS distance_score,
           
-          EXP(-0.693 * hours_old / 
-            CASE type
-              WHEN 'TEMP_SERVICE' THEN ${OPPORTUNITY_TYPE_POLICIES['TEMP_SERVICE'].freshnessHalfLifeHours}
-              WHEN 'FREE' THEN ${OPPORTUNITY_TYPE_POLICIES['FREE'].freshnessHalfLifeHours}
-              WHEN 'WANTED' THEN ${OPPORTUNITY_TYPE_POLICIES['WANTED'].freshnessHalfLifeHours}
-              WHEN 'FOR_SALE' THEN ${OPPORTUNITY_TYPE_POLICIES['FOR_SALE'].freshnessHalfLifeHours}
-              WHEN 'BORROW_LEND' THEN ${OPPORTUNITY_TYPE_POLICIES['BORROW_LEND'].freshnessHalfLifeHours}
-              WHEN 'LOST_FOUND' THEN ${OPPORTUNITY_TYPE_POLICIES['LOST_FOUND'].freshnessHalfLifeHours}
-              ELSE 24
-            END
-          ) AS freshness_score,
+          EXP(-decay_rate * age_hours) AS freshness_score,
           
           CASE
             WHEN hours_remaining <= ${this.config.urgencyWindowHours} AND hours_remaining IS NOT NULL
@@ -151,16 +141,10 @@ export class PrismaNearbyRepository {
     });
 
     const authorIds = [...new Set(results.map((r) => r.author_id))];
-    const businessIds = Array.from(
-      new Set(results.map((r) => r.business_profile_id).filter((id): id is string => id !== null)),
-    );
 
-    const [userAvatars, businessLogos] = await Promise.all([
+    const [userAvatars] = await Promise.all([
       this.prisma.media.findMany({
         where: { userId: { in: authorIds }, role: 'AVATAR' },
-      }),
-      this.prisma.media.findMany({
-        where: { businessProfileId: { in: businessIds }, role: 'LOGO' },
       }),
     ]);
 
@@ -189,34 +173,13 @@ export class PrismaNearbyRepository {
           )
         : undefined;
 
-      let postedAs: { id: string; name: string; logoUrl?: string } | undefined = undefined;
-      if (r.business_profile_id) {
-        const logo = businessLogos.find((l) => l.businessProfileId === r.business_profile_id);
-        const logoUrl = logo
-          ? this.mediaUrlService.getMediaUrl(
-              logo.provider,
-              logo.fileId,
-              logo.mimeType,
-              logo.version ?? undefined,
-              logo.format ?? undefined,
-            )
-          : undefined;
-
-        postedAs = {
-          id: r.business_profile_id,
-          name: r.business_name ?? 'Unknown Business',
-        };
-
-        if (logoUrl) {
-          postedAs.logoUrl = logoUrl;
-        }
-      }
-
       return {
         id: r.id,
         kind: NearbyItemKind.OPPORTUNITY_POST,
         title: r.title,
-        body: r.body ?? undefined,
+        description: r.description ?? undefined,
+        price: r.price ? Number(r.price) : undefined,
+        categoryId: r.category_id,
         subtype: r.type,
         status: r.status,
         location: {
@@ -230,13 +193,12 @@ export class PrismaNearbyRepository {
           displayName: r.author_display_name ?? undefined,
           avatarUrl: authorAvatarUrl,
         },
-        postedAs,
         media: postMedia,
         expiresAt: r.expires_at ?? undefined,
         createdAt: r.created_at,
         capabilities: {
           canReply: params.viewerId ? params.viewerId !== r.author_id : false,
-          canEdit: false, // In feed, we just default these to false for now, since My Opportunities gets it from OpportunityService
+          canEdit: false,
           canComplete: false,
           canDelete: false,
         },
