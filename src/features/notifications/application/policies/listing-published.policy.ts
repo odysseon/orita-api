@@ -40,14 +40,14 @@ export class ListingPublishedPolicy extends BaseNotificationPolicy<EventType> {
 
     const listing = await this.prisma.listing.findUnique({
       where: { id: listingId },
-      include: { businessProfile: { select: { locationId: true } } },
+      include: { businessProfile: { include: { locations: { where: { isPrimary: true } } } } },
     });
 
-    if (!listing || !listing.businessProfile || !listing.businessProfile.locationId) {
+    if (!listing || !listing.businessProfile || !listing.businessProfile.locations?.[0]?.locationId) {
       return [];
     }
 
-    return this.nearbyResolver.resolve(listing.businessProfile.locationId, 15);
+    return this.nearbyResolver.resolve(listing.businessProfile.locations[0].locationId, 15);
   }
 
   getUrgency(): NotificationUrgency {
