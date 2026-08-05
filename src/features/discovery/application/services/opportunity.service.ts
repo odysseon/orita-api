@@ -111,15 +111,25 @@ export class OpportunityService {
       updatedExpiresAt = dto.expiresAt;
     }
 
-    const updated = await this.prisma.opportunityPost.update({
-      where: { id },
-      data: {
-        title: dto.title ?? post.title,
-        description: dto.description ?? post.description,
-        expiresAt: updatedExpiresAt,
-      },
-      include: { location: true, author: true, category: true, media: true },
-    });
+    let updated;
+    try {
+      updated = await this.prisma.opportunityPost.update({
+        where: { id },
+        data: {
+          title: dto.title ?? post.title,
+          description: dto.description ?? post.description,
+          expiresAt: updatedExpiresAt,
+          ...(dto.categoryId !== undefined && { categoryId: dto.categoryId }),
+          ...(dto.price !== undefined && { price: dto.price }),
+        },
+        include: { location: true, author: true, category: true, media: true },
+      });
+    } catch (error: unknown) {
+      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2003') {
+        throw new UnprocessableEntityException('The provided category does not exist.');
+      }
+      throw error;
+    }
 
     return this.mapToDto(updated, authorId);
   }
