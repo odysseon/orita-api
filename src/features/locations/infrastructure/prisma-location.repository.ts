@@ -83,7 +83,7 @@ export class PrismaLocationRepository {
         ${searchText},
         ${candidate.lat},
         ${candidate.lng},
-        ST_SetSRID(ST_MakePoint(${candidate.lng}, ${candidate.lat}), 4326),
+        ST_SetSRID(ST_MakePoint(${candidate.lng}, ${candidate.lat}), 4326)::geography,
         NOW(),
         NOW()
       )
