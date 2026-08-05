@@ -205,7 +205,7 @@ export class OpportunityService {
       kind: NearbyItemKind.OPPORTUNITY_POST,
       title: post.title,
       description: post.description ?? undefined,
-      price: post.price ? Number(post.price) : undefined,
+      price: post.price != null ? Number(post.price) : undefined,
       categoryId: post.categoryId,
       subtype: post.type,
       status: post.status,

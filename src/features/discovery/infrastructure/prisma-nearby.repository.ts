@@ -178,7 +178,7 @@ export class PrismaNearbyRepository {
         kind: NearbyItemKind.OPPORTUNITY_POST,
         title: r.title,
         description: r.description ?? undefined,
-        price: r.price ? Number(r.price) : undefined,
+        price: r.price != null ? Number(r.price) : undefined,
         categoryId: r.category_id,
         subtype: r.type,
         status: r.status,
