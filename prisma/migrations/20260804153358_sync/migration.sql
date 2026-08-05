@@ -1,2 +1,1 @@
--- RenameIndex
-ALTER INDEX "in_app_notification_dedup" RENAME TO "InAppNotification_userId_type_referenceType_referenceId_key";
+-- No-op: index name kept as in_app_notification_dedup (matches schema.prisma)
