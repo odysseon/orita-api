@@ -5,19 +5,14 @@
   - The values [FOR_SALE,FREE,WANTED,BORROW_LEND,TEMP_SERVICE,LOST_FOUND] on the enum `OpportunityType` will be removed. If these variants are still used in the database, this will fail.
   - You are about to drop the column `body` on the `opportunity_posts` table. All the data in the column will be lost.
   - You are about to drop the column `businessProfileId` on the `opportunity_posts` table. All the data in the column will be lost.
-  - Added the required column `categoryId` to the `opportunity_posts` table without a default value. This is not possible if the table is not empty.
-
 */
--- Data migration: map removed status variants to their new equivalents
-UPDATE "opportunity_posts" SET "status" = 'FULFILLED' WHERE "status"::text = 'COMPLETED';
-UPDATE "opportunity_posts" SET "status" = 'REMOVED'    WHERE "status"::text = 'DELETED';
 
 -- Guard: abort if any unrecognized status values remain
 DO $$
 BEGIN
   IF EXISTS (
     SELECT 1 FROM "opportunity_posts"
-    WHERE "status"::text NOT IN ('ACTIVE','FULFILLED','EXPIRED','REMOVED')
+    WHERE "status"::text NOT IN ('ACTIVE','COMPLETED','EXPIRED','DELETED')
   ) THEN
     RAISE EXCEPTION 'Unmapped OpportunityStatus values found — migration cannot proceed safely.';
   END IF;
@@ -27,23 +22,25 @@ END $$;
 BEGIN;
 CREATE TYPE "OpportunityStatus_new" AS ENUM ('ACTIVE', 'FULFILLED', 'EXPIRED', 'REMOVED');
 ALTER TABLE "public"."opportunity_posts" ALTER COLUMN "status" DROP DEFAULT;
-ALTER TABLE "opportunity_posts" ALTER COLUMN "status" TYPE "OpportunityStatus_new" USING ("status"::text::"OpportunityStatus_new");
+ALTER TABLE "opportunity_posts" ALTER COLUMN "status" TYPE "OpportunityStatus_new" USING (
+  CASE 
+    WHEN "status"::text = 'COMPLETED' THEN 'FULFILLED'::"OpportunityStatus_new"
+    WHEN "status"::text = 'DELETED' THEN 'REMOVED'::"OpportunityStatus_new"
+    ELSE "status"::text::"OpportunityStatus_new"
+  END
+);
 ALTER TYPE "OpportunityStatus" RENAME TO "OpportunityStatus_old";
 ALTER TYPE "OpportunityStatus_new" RENAME TO "OpportunityStatus";
 DROP TYPE "public"."OpportunityStatus_old";
 ALTER TABLE "opportunity_posts" ALTER COLUMN "status" SET DEFAULT 'ACTIVE';
 COMMIT;
 
--- Data migration: map removed type variants to OFFER or NEED
-UPDATE "opportunity_posts" SET "type" = 'OFFER' WHERE "type"::text IN ('FOR_SALE','FREE','TEMP_SERVICE');
-UPDATE "opportunity_posts" SET "type" = 'NEED'  WHERE "type"::text IN ('WANTED','LOST_FOUND','BORROW_LEND');
-
 -- Guard
 DO $$
 BEGIN
   IF EXISTS (
     SELECT 1 FROM "opportunity_posts"
-    WHERE "type"::text NOT IN ('OFFER','NEED')
+    WHERE "type"::text NOT IN ('FOR_SALE','FREE','TEMP_SERVICE','WANTED','LOST_FOUND','BORROW_LEND', 'OFFER', 'NEED')
   ) THEN
     RAISE EXCEPTION 'Unmapped OpportunityType values found — migration cannot proceed safely.';
   END IF;
@@ -52,7 +49,13 @@ END $$;
 -- AlterEnum
 BEGIN;
 CREATE TYPE "OpportunityType_new" AS ENUM ('NEED', 'OFFER');
-ALTER TABLE "opportunity_posts" ALTER COLUMN "type" TYPE "OpportunityType_new" USING ("type"::text::"OpportunityType_new");
+ALTER TABLE "opportunity_posts" ALTER COLUMN "type" TYPE "OpportunityType_new" USING (
+  CASE
+    WHEN "type"::text IN ('FOR_SALE','FREE','TEMP_SERVICE') THEN 'OFFER'::"OpportunityType_new"
+    WHEN "type"::text IN ('WANTED','LOST_FOUND','BORROW_LEND') THEN 'NEED'::"OpportunityType_new"
+    ELSE "type"::text::"OpportunityType_new"
+  END
+);
 ALTER TYPE "OpportunityType" RENAME TO "OpportunityType_old";
 ALTER TYPE "OpportunityType_new" RENAME TO "OpportunityType";
 DROP TYPE "public"."OpportunityType_old";
