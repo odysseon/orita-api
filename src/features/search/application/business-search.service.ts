@@ -20,7 +20,8 @@ export class BusinessSearchService {
         SELECT DISTINCT bp.id
         FROM "business_profiles" bp
         LEFT JOIN "business_service_areas" bsa ON bp.id = bsa."businessProfileId" AND bsa.enabled = true
-        LEFT JOIN "locations" loc ON bp."locationId" = loc.id
+        LEFT JOIN "business_locations" bl ON bl."businessProfileId" = bp.id AND bl."isPrimary" = true
+        LEFT JOIN "locations" loc ON loc.id = bl."locationId"
         WHERE 
           -- Has matching service area
           (bsa.id IS NOT NULL AND (

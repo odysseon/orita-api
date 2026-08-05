@@ -103,7 +103,8 @@ export class PrismaFeedRepository {
         FROM "discovery_items" d
         JOIN "business_profiles" bp ON d."businessProfileId" = bp.id
         LEFT JOIN "business_verifications" bv ON bv."businessId" = bp.id
-        JOIN "locations" loc ON bp."locationId" = loc.id
+        JOIN "business_locations" bl ON bl."businessProfileId" = bp.id AND bl."isPrimary" = true
+        JOIN "locations" loc ON loc.id = bl."locationId"
         CROSS JOIN user_loc
         LEFT JOIN "business_follows" fb ON fb."businessId" = bp.id AND fb."userId" = ${params.userId ?? ''}
         LEFT JOIN "location_follows" fl ON fl."locationId" = loc.id AND fl."userId" = ${params.userId ?? ''}

@@ -19,7 +19,8 @@ export class ListingSearchService {
       const locations = await this.prisma.$queryRaw<{ id: string }[]>`
         SELECT bp.id
         FROM "business_profiles" bp
-        JOIN "locations" loc ON bp."locationId" = loc.id
+        JOIN "business_locations" bl ON bl."businessProfileId" = bp.id AND bl."isPrimary" = true
+        JOIN "locations" loc ON loc.id = bl."locationId"
       `;
       businessProfileIds = locations.map((l) => l.id);
 
@@ -114,7 +115,6 @@ export class ListingSearchService {
               id: true,
               name: true,
               slug: true,
-              locationId: true,
               verification: {
                 select: {
                   status: true,
