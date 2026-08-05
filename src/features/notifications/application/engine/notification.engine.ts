@@ -60,8 +60,8 @@ export class NotificationEngine {
             payload: payload.payload as unknown as Prisma.InputJsonValue,
           },
         });
-      } catch (error: any) {
-        if (error.code === 'P2002') {
+      } catch (error) {
+        if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
           // Deduplication constraint hit (e.g. user follows business AND is nearby)
           continue;
         }

@@ -43,7 +43,11 @@ export class ListingPublishedPolicy extends BaseNotificationPolicy<EventType> {
       include: { businessProfile: { include: { locations: { where: { isPrimary: true } } } } },
     });
 
-    if (!listing || !listing.businessProfile || !listing.businessProfile.locations?.[0]?.locationId) {
+    if (
+      !listing ||
+      !listing.businessProfile ||
+      !listing.businessProfile.locations?.[0]?.locationId
+    ) {
       return [];
     }
 

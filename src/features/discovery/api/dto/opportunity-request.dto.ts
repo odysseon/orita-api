@@ -1,4 +1,12 @@
-import { IsEnum, IsNotEmpty, IsOptional, IsString, IsDate, IsArray, IsNumber } from 'class-validator';
+import {
+  IsEnum,
+  IsNotEmpty,
+  IsOptional,
+  IsString,
+  IsDate,
+  IsArray,
+  IsNumber,
+} from 'class-validator';
 import { OpportunityType } from '../../../../../generated/prisma/client.js';
 import { Type } from 'class-transformer';
 

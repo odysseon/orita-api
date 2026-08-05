@@ -66,7 +66,7 @@ export class CleanupCronService {
         `;
         if (result === 0) break;
         deletedCount += result;
-        await new Promise(resolve => setTimeout(resolve, 50));
+        await new Promise((resolve) => setTimeout(resolve, 50));
       }
       if (deletedCount > 0) {
         this.logger.log(`Cleaned up ${deletedCount} old notifications.`);
