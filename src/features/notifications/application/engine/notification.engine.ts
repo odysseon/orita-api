@@ -53,6 +53,7 @@ export class NotificationEngine {
         notification = await this.prisma.inAppNotification.create({
           data: {
             userId,
+            preferenceCategory: category,
             type: payload.type,
             actorId: payload.actorId || null,
             referenceType: payload.referenceType || null,
