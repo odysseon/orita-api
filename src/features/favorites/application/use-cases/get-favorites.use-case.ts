@@ -1,5 +1,8 @@
 import { Injectable } from '@nestjs/common';
-import { IFavoritesRepository, FavoriteView } from '../../domain/ports/favorites.repository.port.js';
+import {
+  IFavoritesRepository,
+  FavoriteView,
+} from '../../domain/ports/favorites.repository.port.js';
 
 @Injectable()
 export class GetFavoritesUseCase {

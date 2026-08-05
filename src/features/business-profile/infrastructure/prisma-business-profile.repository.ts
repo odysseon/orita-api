@@ -157,7 +157,8 @@ export class PrismaBusinessProfileRepository extends IBusinessProfileRepository 
   private async hydrate(profiles: PrismaBusinessProfileExtended[]): Promise<HydratedProfile[]> {
     if (profiles.length === 0) return [];
 
-    const getPrimaryLoc = (p: any) => p.locations?.find((l: any) => l.isPrimary);
+    const getPrimaryLoc = (p: PrismaBusinessProfileExtended) =>
+      p.locations?.find((l) => l.isPrimary);
     const locationIds = profiles
       .map((p) => getPrimaryLoc(p)?.locationId)
       .filter((id): id is string => id !== undefined);
@@ -236,7 +237,9 @@ export class PrismaBusinessProfileRepository extends IBusinessProfileRepository 
           ...(input.contactPhone !== undefined && { contactPhone: input.contactPhone }),
           ...(input.whatsapp !== undefined && { whatsapp: input.whatsapp }),
           ...(input.contactEmail !== undefined && { contactEmail: input.contactEmail }),
-          ...(locationId !== undefined && { locations: { create: { locationId, isPrimary: true } } }),
+          ...(locationId !== undefined && {
+            locations: { create: { locationId, isPrimary: true } },
+          }),
           ...(input.isPublic !== undefined && { isPublic: input.isPublic }),
           ...(input.primaryCategoryId && {
             categories: {
@@ -422,10 +425,13 @@ export class PrismaBusinessProfileRepository extends IBusinessProfileRepository 
 
   async update(id: string, input: UpdateBusinessProfileInput): Promise<BusinessProfileView> {
     const raw = await this.prisma.$transaction(async (tx) => {
-      const existing = await tx.businessProfile.findUnique({ where: { id }, include: { locations: { where: { isPrimary: true } } } });
+      const existing = await tx.businessProfile.findUnique({
+        where: { id },
+        include: { locations: { where: { isPrimary: true } } },
+      });
       if (!existing) throw new Error('BusinessProfile not found');
 
-      let locationId = (existing as any).locations?.[0]?.locationId;
+      let locationId = existing.locations?.[0]?.locationId;
 
       if (input.latitude !== undefined && input.longitude !== undefined) {
         if (locationId) {
@@ -480,12 +486,13 @@ export class PrismaBusinessProfileRepository extends IBusinessProfileRepository 
           ...(input.contactPhone !== undefined && { contactPhone: input.contactPhone }),
           ...(input.whatsapp !== undefined && { whatsapp: input.whatsapp }),
           ...(input.contactEmail !== undefined && { contactEmail: input.contactEmail }),
-          ...(locationId !== undefined && (existing as any).locations?.[0]?.locationId !== locationId && {
-            locations: {
-              deleteMany: { isPrimary: true },
-              create: { locationId, isPrimary: true },
-            }
-          }),
+          ...(locationId !== undefined &&
+            existing.locations?.[0]?.locationId !== locationId && {
+              locations: {
+                deleteMany: { isPrimary: true },
+                create: { locationId, isPrimary: true },
+              },
+            }),
           ...(serviceModesData && { serviceModes: serviceModesData }),
           ...(input.primaryCategoryId !== undefined && {
             categories: {
@@ -634,7 +641,14 @@ export class PrismaBusinessProfileRepository extends IBusinessProfileRepository 
         OR: [
           { name: { contains: input.search, mode: 'insensitive' } },
           { description: { contains: input.search, mode: 'insensitive' } },
-          { locations: { some: { isPrimary: true, location: { name: { contains: input.search, mode: 'insensitive' } } } } },
+          {
+            locations: {
+              some: {
+                isPrimary: true,
+                location: { name: { contains: input.search, mode: 'insensitive' } },
+              },
+            },
+          },
         ],
       }),
     };
@@ -746,7 +760,7 @@ export class PrismaBusinessProfileRepository extends IBusinessProfileRepository 
           slug: true,
           businessType: true,
           description: true,
-          
+
           categories: { select: { categoryId: true, isPrimary: true } },
           locations: { include: { location: true }, where: { isPrimary: true } },
         },
