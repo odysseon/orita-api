@@ -46,6 +46,9 @@ export class NotificationEngine {
     // 6. Enqueue Jobs for each channel and user
     const jobs = [];
 
+    // Compute a deduplication key if possible, falling back to a unique timestamp if none exists
+    const dedupKey = `${payload.type}:${payload.referenceType || 'none'}:${payload.referenceId || 'none'}`;
+
     for (const userId of finalAudience) {
       // 6a. Persist Notification Entity Centrally
       let notification;
@@ -58,6 +61,7 @@ export class NotificationEngine {
             actorId: payload.actorId || null,
             referenceType: payload.referenceType || null,
             referenceId: payload.referenceId || null,
+            dedupKey,
             payload: payload.payload as unknown as Prisma.InputJsonValue,
           },
         });
