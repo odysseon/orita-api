@@ -27,6 +27,7 @@ export class CreateOpportunityDto {
   description?: string;
 
   @IsOptional()
+  @Type(() => Number)
   @IsNumber()
   price?: number;
 
@@ -60,6 +61,7 @@ export class UpdateOpportunityDto {
   description?: string;
 
   @IsOptional()
+  @Type(() => Number)
   @IsNumber()
   price?: number;
 
