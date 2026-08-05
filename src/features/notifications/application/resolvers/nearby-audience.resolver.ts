@@ -20,10 +20,10 @@ export class NearbyAudienceResolver {
       SELECT u.id
       FROM "users" u
       JOIN "locations" target_loc ON target_loc.id = ${locationId}
-      WHERE u."activeExplorationLat" IS NOT NULL 
-        AND u."activeExplorationLng" IS NOT NULL
+      WHERE u."explorationLat" IS NOT NULL 
+        AND u."explorationLng" IS NOT NULL
         AND ST_DWithin(
-          ST_SetSRID(ST_MakePoint(u."activeExplorationLng", u."activeExplorationLat"), 4326)::geography,
+          ST_SetSRID(ST_MakePoint(u."explorationLng", u."explorationLat"), 4326)::geography,
           target_loc.coordinates::geography,
           ${radiusMeters}
         )

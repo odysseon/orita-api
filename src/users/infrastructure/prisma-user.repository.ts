@@ -181,9 +181,8 @@ export class PrismaUserRepository implements IUserRepository {
       const updatedUser = await this.prisma.user.update({
         where: { accountId },
         data: {
-          activeExplorationLat: payload.latitude,
-          activeExplorationLng: payload.longitude,
-          activeExplorationName: payload.name,
+          explorationLat: payload.latitude,
+          explorationLng: payload.longitude,
         },
         include: {
           account: {
