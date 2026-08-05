@@ -13,9 +13,8 @@ export interface UserEntity {
   deletedAt: Date | null;
   avatarUrl: string | null;
   businessId?: string | null;
-  activeExplorationLat?: number | null;
-  activeExplorationLng?: number | null;
-  activeExplorationName?: string | null;
+  explorationLat?: number | null;
+  explorationLng?: number | null;
   interestedCategories?: string[];
   createdAt: Date;
   updatedAt: Date;

@@ -1,4 +1,4 @@
-import { IsNumber, IsString, IsNotEmpty } from 'class-validator';
+import { IsNumber, IsNotEmpty } from 'class-validator';
 
 export class UpdateExplorationContextDto {
   @IsNumber()
@@ -8,8 +8,4 @@ export class UpdateExplorationContextDto {
   @IsNumber()
   @IsNotEmpty()
   longitude!: number;
-
-  @IsString()
-  @IsNotEmpty()
-  name!: string;
 }
