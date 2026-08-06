@@ -1,4 +1,5 @@
 import { Injectable, NotFoundException, BadRequestException, Inject } from '@nestjs/common';
+import { Prisma } from '../../../../../generated/prisma/client.js';
 import type { IOrderRepository } from '../../core/domain/order.ports.js';
 import { OrderStateMachine } from '../../core/state-machine/order-state-machine.js';
 import { OrderSubjectHelper } from '../helpers/order-subject.helper.js';
@@ -30,10 +31,8 @@ export class OrderService {
       buyerId: actorId,
       buyerBusinessId: null,
       conversationId: dto.conversationId || null,
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-explicit-any
-      quantity: (dto.quantity as any) ?? 1,
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-explicit-any
-      agreedPrice: (dto.agreedPrice as any) ?? null,
+      quantity: new Prisma.Decimal(dto.quantity ?? 1),
+      agreedPrice: dto.agreedPrice != null ? new Prisma.Decimal(dto.agreedPrice) : null,
       currency: dto.currency ?? 'NGN',
       scheduledFor: dto.scheduledFor ? new Date(dto.scheduledFor) : null,
       note: dto.note || null,
@@ -74,10 +73,21 @@ export class OrderService {
     OrderStateMachine.assertTransition(order.status, newStatus, role);
 
     const timestampField = OrderStateMachine.getTimestampField(newStatus);
-    const timestamps: Partial<Order> = {};
+    type OrderTimestamps = Partial<
+      Pick<
+        Order,
+        | 'acceptedAt'
+        | 'fulfillingAt'
+        | 'completionRequestedAt'
+        | 'completedAt'
+        | 'cancelledAt'
+        | 'declinedAt'
+        | 'completionRequestedById'
+      >
+    >;
+    const timestamps: OrderTimestamps = {};
     if (timestampField) {
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-      (timestamps as any)[timestampField] = new Date();
+      Object.assign(timestamps, { [timestampField]: new Date() });
     }
     if (newStatus === 'COMPLETION_REQUESTED') {
       timestamps.completionRequestedById = actorId;

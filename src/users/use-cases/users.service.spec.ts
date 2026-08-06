@@ -5,9 +5,20 @@ import { MediaRole, StorageProvider, UploadOwnerType } from '../../../generated/
 
 describe('UsersService - Avatar Upload Intent Hardening', () => {
   let service: UsersService;
-  let mockUserRepo: any;
-  let mockMediaStorage: any;
-  let mockPrisma: any;
+  let mockUserRepo: {
+    findByAccountId: ReturnType<typeof vi.fn>;
+    clearCache: ReturnType<typeof vi.fn>;
+  };
+  let mockMediaStorage: {
+    getMetadata: ReturnType<typeof vi.fn>;
+  };
+  let mockPrisma: {
+    uploadIntent: {
+      findUnique: ReturnType<typeof vi.fn>;
+      update?: ReturnType<typeof vi.fn>;
+    };
+    $transaction: ReturnType<typeof vi.fn>;
+  };
 
   const mockUser = {
     id: 'user_123',
@@ -67,7 +78,11 @@ describe('UsersService - Avatar Upload Intent Hardening', () => {
       }),
     };
 
-    service = new UsersService(mockUserRepo, mockMediaStorage, mockPrisma);
+    service = new UsersService(
+      mockUserRepo as never,
+      mockMediaStorage as never,
+      mockPrisma as never,
+    );
   });
 
   it('rejects expired intent', async () => {
@@ -80,7 +95,7 @@ describe('UsersService - Avatar Upload Intent Hardening', () => {
       service.consumeAvatarUploadIntent('account_123', {
         intentId: 'intent_abc',
         publicId: 'media_xyz',
-      } as any),
+      }),
     ).rejects.toThrow(BadRequestException);
   });
 
@@ -89,7 +104,7 @@ describe('UsersService - Avatar Upload Intent Hardening', () => {
       service.consumeAvatarUploadIntent('account_123', {
         intentId: 'intent_abc',
         publicId: 'wrong_public_id',
-      } as any),
+      }),
     ).rejects.toThrow(BadRequestException);
   });
 
@@ -102,7 +117,7 @@ describe('UsersService - Avatar Upload Intent Hardening', () => {
     await expect(
       service.consumeAvatarUploadIntent('account_123', {
         intentId: 'intent_abc',
-      } as any),
+      }),
     ).rejects.toThrow(BadRequestException);
   });
 

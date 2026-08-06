@@ -6,7 +6,18 @@ export interface IOrderRepository {
   updateStatus(
     id: string,
     status: OrderStatus,
-    timestamps: Partial<Pick<Order, 'acceptedAt' | 'fulfillingAt' | 'completionRequestedAt' | 'completedAt' | 'cancelledAt' | 'declinedAt' | 'completionRequestedById'>>
+    timestamps: Partial<
+      Pick<
+        Order,
+        | 'acceptedAt'
+        | 'fulfillingAt'
+        | 'completionRequestedAt'
+        | 'completedAt'
+        | 'cancelledAt'
+        | 'declinedAt'
+        | 'completionRequestedById'
+      >
+    >,
   ): Promise<Order>;
   updateConversationId(orderId: string, conversationId: string): Promise<Order>;
 }

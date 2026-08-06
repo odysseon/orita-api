@@ -157,7 +157,7 @@ export class MessagingGateway
 
     const participantIds = await this.resolveParticipantIds(data.identity.accountId);
 
-    // We can't simply check one participant anymore. We must check if any of them is in the conversation.
+    // We can't simply check one participant anymore. We must check if at least one of them is in the conversation.
     const conversation = await this.conversationRepo.findById(payload.conversationId);
     if (!conversation) throw new WsException('Conversation not found');
 

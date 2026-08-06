@@ -38,7 +38,7 @@ export class BusinessSearchService {
             ))
           ))
           OR
-          -- Fallback for legacy profiles without any active service areas
+          -- Fallback for legacy profiles lacking active service areas
           (bsa.id IS NULL AND loc.coordinates IS NOT NULL AND ST_DWithin(
             loc.coordinates::geography,
             ST_SetSRID(ST_MakePoint(${dto.lng}, ${dto.lat}), 4326)::geography,

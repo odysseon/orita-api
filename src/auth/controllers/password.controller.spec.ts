@@ -5,11 +5,23 @@ import 'reflect-metadata';
 
 describe('PasswordAuthController - Consistent Auth and AddPassword', () => {
   let controller: PasswordAuthController;
-  let mockPasswordMethods: any;
-  let mockPrisma: any;
+  let mockPasswordMethods: {
+    initiateReset: ReturnType<typeof vi.fn>;
+    verifyResetCode: ReturnType<typeof vi.fn>;
+    resetPassword: ReturnType<typeof vi.fn>;
+    changePassword: ReturnType<typeof vi.fn>;
+    addPasswordToAccount?: ReturnType<typeof vi.fn>; // Optional because it might not be initialized in all tests
+  };
+  let mockPrisma: {
+    passwordHash: { findUnique: ReturnType<typeof vi.fn> };
+  };
 
   beforeEach(() => {
     mockPasswordMethods = {
+      initiateReset: vi.fn(),
+      verifyResetCode: vi.fn(),
+      resetPassword: vi.fn(),
+      changePassword: vi.fn(),
       addPasswordToAccount: vi.fn().mockResolvedValue(true),
     };
     mockPrisma = {
@@ -19,11 +31,11 @@ describe('PasswordAuthController - Consistent Auth and AddPassword', () => {
     };
 
     controller = new PasswordAuthController(
-      mockPasswordMethods,
-      {} as any,
-      {} as any,
-      mockPrisma,
-      {} as any,
+      mockPasswordMethods as never,
+      {} as never,
+      {} as never,
+      mockPrisma as never,
+      {} as never,
     );
   });
 
@@ -35,7 +47,7 @@ describe('PasswordAuthController - Consistent Auth and AddPassword', () => {
   it('succeeds for an authenticated user without password', async () => {
     const result = await controller.addPassword({ password: 'NewStrongPassword123!' }, {
       accountId: 'acc_123',
-    } as any);
+    } as unknown as never);
     expect(result).toEqual({ success: true });
     expect(mockPasswordMethods.addPasswordToAccount).toHaveBeenCalledWith({
       accountId: 'acc_123',
