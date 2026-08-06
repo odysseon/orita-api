@@ -56,7 +56,7 @@ export class OrderResponse {
       ...order,
       quantity: Number(order.quantity),
       agreedPrice: order.agreedPrice ? Number(order.agreedPrice) : null,
-      status: order.status as OrderStatus,
+      status: order.status,
     };
   }
 }

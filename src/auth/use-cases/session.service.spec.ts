@@ -5,53 +5,67 @@ import { createHash } from 'crypto';
 
 describe('SessionService - Refresh Token Rotation & Grace Cache', () => {
   let service: SessionService;
-  let mockPrisma: any;
-  let mockJwt: any;
-  let mockNotifier: any;
-  let mockRedis: any;
-  let cacheStore: Record<string, any>;
+  let mockPrisma: {
+    session: { findFirst: ReturnType<typeof vi.fn> };
+    $transaction: ReturnType<typeof vi.fn>;
+  };
+  let mockJwt: {
+    verifyAsync?: ReturnType<typeof vi.fn>;
+    signAsync?: ReturnType<typeof vi.fn>;
+    sign?: ReturnType<typeof vi.fn>;
+  };
+  let mockNotifier: {
+    notifyGlobalRevoked: ReturnType<typeof vi.fn>;
+    notifySessionRevoked: ReturnType<typeof vi.fn>;
+  };
+  let mockRedis: { get: ReturnType<typeof vi.fn>; set: ReturnType<typeof vi.fn> };
+  let cacheStore: Record<string, unknown>;
 
   beforeEach(() => {
     cacheStore = {};
     mockRedis = {
       get: vi.fn().mockImplementation(async (key: string) => cacheStore[key] ?? null),
-      set: vi.fn().mockImplementation(async (key: string, val: any) => {
+      set: vi.fn().mockImplementation(async (key: string, val: unknown) => {
         cacheStore[key] = val;
       }),
     };
 
     mockPrisma = {
+      session: { findFirst: vi.fn() },
       $transaction: vi.fn().mockImplementation(async (callback) => {
         const tx = {
           session: {
-            findFirst: vi.fn().mockImplementation(async ({ where }: any) => {
-              if (
-                where.refreshTokenHash === createHash('sha256').update('valid-token').digest('hex')
-              ) {
-                return {
-                  id: 'session_1',
-                  accountId: 'acc_1',
-                  refreshTokenHash: where.refreshTokenHash,
-                  revokedAt: null,
-                  expiresAt: new Date(Date.now() + 30 * 24 * 3600 * 1000),
-                  account: { sessionVersion: 1 },
-                };
-              }
-              if (
-                where.refreshTokenHash ===
-                createHash('sha256').update('revoked-token').digest('hex')
-              ) {
-                return {
-                  id: 'session_2',
-                  accountId: 'acc_1',
-                  refreshTokenHash: where.refreshTokenHash,
-                  revokedAt: new Date(Date.now() - 10000),
-                  expiresAt: new Date(Date.now() + 30 * 24 * 3600 * 1000),
-                  account: { sessionVersion: 1 },
-                };
-              }
-              return null;
-            }),
+            findFirst: vi
+              .fn()
+              .mockImplementation(async ({ where }: { where: { refreshTokenHash: string } }) => {
+                if (
+                  where.refreshTokenHash ===
+                  createHash('sha256').update('valid-token').digest('hex')
+                ) {
+                  return {
+                    id: 'session_1',
+                    accountId: 'acc_1',
+                    refreshTokenHash: where.refreshTokenHash,
+                    revokedAt: null,
+                    expiresAt: new Date(Date.now() + 30 * 24 * 3600 * 1000),
+                    account: { sessionVersion: 1 },
+                  };
+                }
+                if (
+                  where.refreshTokenHash ===
+                  createHash('sha256').update('revoked-token').digest('hex')
+                ) {
+                  return {
+                    id: 'session_2',
+                    accountId: 'acc_1',
+                    refreshTokenHash: where.refreshTokenHash,
+                    revokedAt: new Date(Date.now() - 10000),
+                    expiresAt: new Date(Date.now() + 30 * 24 * 3600 * 1000),
+                    account: { sessionVersion: 1 },
+                  };
+                }
+                return null;
+              }),
             update: vi.fn().mockResolvedValue(true),
             create: vi.fn().mockResolvedValue({ id: 'session_new', accountId: 'acc_1' }),
           },
@@ -72,7 +86,12 @@ describe('SessionService - Refresh Token Rotation & Grace Cache', () => {
       notifyGlobalRevoked: vi.fn(),
     };
 
-    service = new SessionService(mockPrisma, mockJwt, mockNotifier, mockRedis);
+    service = new SessionService(
+      mockPrisma as never,
+      mockJwt as never,
+      mockNotifier as never,
+      mockRedis as never,
+    );
   });
 
   it('successfully refreshes a valid session and sets grace cache in Redis', async () => {

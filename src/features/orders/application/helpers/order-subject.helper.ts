@@ -13,7 +13,10 @@ export class OrderSubjectHelper {
     }
   }
 
-  static toDatabaseFields(subject: OrderSubject): { listingId: string | null; opportunityId: string | null } {
+  static toDatabaseFields(subject: OrderSubject): {
+    listingId: string | null;
+    opportunityId: string | null;
+  } {
     return {
       listingId: subject.type === 'LISTING' ? subject.id : null,
       opportunityId: subject.type === 'OPPORTUNITY' ? subject.id : null,

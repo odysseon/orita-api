@@ -9,8 +9,20 @@ describe('User Status Enforcement (Active Constraints)', () => {
   let publicUsersService: PublicUsersService;
   let identityService: IdentityService;
   let searchService: UserSearchService;
-  let mockPrisma: any;
-  let mockUserRepo: any;
+  let mockPrisma: {
+    user: {
+      findFirst: ReturnType<typeof vi.fn>;
+      findUnique: ReturnType<typeof vi.fn>;
+      findMany: ReturnType<typeof vi.fn>;
+      count: ReturnType<typeof vi.fn>;
+    };
+    userFollow?: {
+      findUnique?: ReturnType<typeof vi.fn>;
+      upsert?: ReturnType<typeof vi.fn>;
+    };
+    $transaction?: ReturnType<typeof vi.fn>;
+  };
+  let mockUserRepo: unknown;
 
   beforeEach(() => {
     mockUserRepo = {
@@ -34,9 +46,13 @@ describe('User Status Enforcement (Active Constraints)', () => {
       }),
     };
 
-    publicUsersService = new PublicUsersService(mockPrisma, mockUserRepo, {} as any);
-    identityService = new IdentityService(mockPrisma);
-    searchService = new UserSearchService(mockPrisma, {} as any);
+    publicUsersService = new PublicUsersService(
+      mockPrisma as never,
+      mockUserRepo as never,
+      {} as never,
+    );
+    identityService = new IdentityService(mockPrisma as never);
+    searchService = new UserSearchService(mockPrisma as never, {} as never);
   });
 
   it('inactive users return 404 from public profile', async () => {

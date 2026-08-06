@@ -13,14 +13,20 @@ export class OrderRecipientHelper {
     }
   }
 
-  static toDatabaseFields(recipient: OrderRecipient): { sellerUserId: string | null; sellerBusinessId: string | null } {
+  static toDatabaseFields(recipient: OrderRecipient): {
+    sellerUserId: string | null;
+    sellerBusinessId: string | null;
+  } {
     return {
       sellerUserId: recipient.type === 'USER' ? recipient.id : null,
       sellerBusinessId: recipient.type === 'BUSINESS' ? recipient.id : null,
     };
   }
 
-  static fromDatabaseFields(sellerUserId: string | null, sellerBusinessId: string | null): OrderRecipient {
+  static fromDatabaseFields(
+    sellerUserId: string | null,
+    sellerBusinessId: string | null,
+  ): OrderRecipient {
     if (sellerUserId && sellerBusinessId) {
       throw new Error('Order cannot have both sellerUserId and sellerBusinessId');
     }
