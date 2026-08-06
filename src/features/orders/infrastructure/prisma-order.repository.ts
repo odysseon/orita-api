@@ -9,6 +9,7 @@ export class PrismaOrderRepository implements IOrderRepository {
 
   async create(orderData: Omit<Order, 'id' | 'createdAt' | 'updatedAt'>): Promise<Order> {
     return this.prisma.order.create({
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
       data: orderData as any,
     });
   }
@@ -22,7 +23,18 @@ export class PrismaOrderRepository implements IOrderRepository {
   async updateStatus(
     id: string,
     status: OrderStatus,
-    timestamps: Partial<Pick<Order, 'acceptedAt' | 'fulfillingAt' | 'completionRequestedAt' | 'completedAt' | 'cancelledAt' | 'declinedAt' | 'completionRequestedById'>>
+    timestamps: Partial<
+      Pick<
+        Order,
+        | 'acceptedAt'
+        | 'fulfillingAt'
+        | 'completionRequestedAt'
+        | 'completedAt'
+        | 'cancelledAt'
+        | 'declinedAt'
+        | 'completionRequestedById'
+      >
+    >,
   ): Promise<Order> {
     return this.prisma.order.update({
       where: { id },
