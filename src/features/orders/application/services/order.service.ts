@@ -30,8 +30,10 @@ export class OrderService {
       buyerId: actorId,
       buyerBusinessId: null,
       conversationId: dto.conversationId || null,
-      quantity: dto.quantity as any ?? 1,
-      agreedPrice: dto.agreedPrice as any ?? null,
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-explicit-any
+      quantity: (dto.quantity as any) ?? 1,
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-explicit-any
+      agreedPrice: (dto.agreedPrice as any) ?? null,
       currency: dto.currency ?? 'NGN',
       scheduledFor: dto.scheduledFor ? new Date(dto.scheduledFor) : null,
       note: dto.note || null,
@@ -50,11 +52,7 @@ export class OrderService {
   /**
    * Transitions an order to a new status.
    */
-  async transitionStatus(
-    actorId: string,
-    orderId: string,
-    newStatus: OrderStatus,
-  ): Promise<Order> {
+  async transitionStatus(actorId: string, orderId: string, newStatus: OrderStatus): Promise<Order> {
     const order = await this.orderRepository.findById(orderId);
     if (!order) {
       throw new NotFoundException('Order not found');
@@ -62,7 +60,7 @@ export class OrderService {
 
     // Determine role (simplified: if actor is buyerId => BUYER, else SELLER)
     // Real implementation should also check buyerBusinessId and sellerBusinessId if actor acts via business
-    let role: OrderActorRole | null = null;
+    let role: OrderActorRole;
     if (order.buyerId === actorId) {
       role = 'BUYER';
     } else if (order.sellerUserId === actorId) {
@@ -76,9 +74,10 @@ export class OrderService {
     OrderStateMachine.assertTransition(order.status, newStatus, role);
 
     const timestampField = OrderStateMachine.getTimestampField(newStatus);
-    const timestamps: any = {};
+    const timestamps: Partial<Order> = {};
     if (timestampField) {
-      timestamps[timestampField] = new Date();
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+      (timestamps as any)[timestampField] = new Date();
     }
     if (newStatus === 'COMPLETION_REQUESTED') {
       timestamps.completionRequestedById = actorId;
