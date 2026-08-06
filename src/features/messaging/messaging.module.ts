@@ -14,6 +14,7 @@ import { MarkMessagesReadUseCase } from './application/use-cases/mark-messages-r
 import { OpenConversationUseCase } from './application/use-cases/open-conversation.use-case.js';
 import { ParticipantService } from './application/services/participant.service.js';
 import { ConversationParticipantResolver } from './application/services/conversation-participant-resolver.service.js';
+import { ConversationService } from './application/services/conversation.service.js';
 import { ConversationAccessPolicy } from './application/policies/conversation-access.policy.js';
 import { AnchorService } from './application/services/anchor.service.js';
 import { ResourcePreviewService } from './application/services/resource-preview.service.js';
@@ -50,6 +51,7 @@ import { AuthModule } from '../../auth/auth.module.js';
     WsAuthGuard,
     // Services
     ParticipantService,
+    ConversationService,
     ConversationParticipantResolver,
     ConversationAccessPolicy,
     AnchorService,
@@ -74,6 +76,7 @@ import { AuthModule } from '../../auth/auth.module.js';
   exports: [
     IConversationRepository,
     ParticipantService,
+    ConversationService,
     ConversationAccessPolicy,
     OpenConversationUseCase,
     SendMessageUseCase,
