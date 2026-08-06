@@ -131,6 +131,8 @@ model User {
   sharesSent              ItemShare[]              @relation("SentShares")
   sharesReceived          ItemShare[]              @relation("ReceivedShares")
   opportunityPosts        OpportunityPost[]
+  buyerOrders             Order[]                  @relation("BuyerOrders")
+  sellerOrders            Order[]                  @relation("SellerOrders")
   homeLocation            Location?                @relation("UserHomeLocation", fields: [homeLocationId], references: [id])
   account                 Account                  @relation(fields: [accountId], references: [id], onDelete: Cascade)
 
@@ -204,6 +206,8 @@ model BusinessProfile {
   serviceModes        BusinessServiceMode[]
   serviceAreas        BusinessServiceArea[]
   stats               BusinessStats?
+  buyerOrders         Order[]               @relation("BuyerBusinessOrders")
+  sellerOrders        Order[]               @relation("SellerBusinessOrders")
 
   @@index([slug])
   @@index([isPublic])
@@ -254,6 +258,7 @@ model Listing {
   category            Category?            @relation("ListingCategory", fields: [categoryId], references: [id], onDelete: SetNull)
   media               Media[]
   reviews             Review[]
+  orders              Order[]
   favoritedByUsers    Favorite[]           @relation("FavoritedByUsers")
   serviceAreas        ListingServiceArea[]
 
@@ -412,9 +417,11 @@ model Review {
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
   listingId  String
+  orderId    String?  @unique
   media      Media[]
   listing    Listing  @relation(fields: [listingId], references: [id], onDelete: Cascade)
   reviewer   User     @relation("ReviewsGiven", fields: [reviewerId], references: [id], onDelete: Cascade)
+  order      Order?   @relation(fields: [orderId], references: [id], onDelete: SetNull)
 
   @@unique([listingId, reviewerId])
   @@index([reviewerId])
@@ -531,6 +538,7 @@ model Conversation {
   participants ConversationParticipant[]
   anchor       ConversationAnchor?       @relation(fields: [anchorId], references: [id])
   messages     Message[]
+  orders       Order[]
 
   @@index([status])
   @@index([type])
@@ -946,6 +954,7 @@ model OpportunityPost {
   location            Location             @relation(fields: [locationId], references: [id], onDelete: Restrict)
   media               Media[]
   conversationAnchors ConversationAnchor[]
+  orders              Order[]
 
   @@index([status, expiresAt])
   @@index([authorId])
@@ -1060,4 +1069,66 @@ model BusinessStats {
   updatedAt        DateTime        @updatedAt
 
   @@map("business_stats")
+}
+
+enum OrderStatus {
+  REQUESTED
+  ACCEPTED
+  DECLINED
+  FULFILLING
+  COMPLETION_REQUESTED
+  COMPLETED
+  CANCELLED
+}
+
+model Order {
+  id String @id @default(cuid())
+
+  listingId     String?
+  opportunityId String?
+
+  buyerId         String
+  buyerBusinessId String?
+
+  sellerUserId     String?
+  sellerBusinessId String?
+
+  conversationId String?
+
+  quantity     Decimal     @default(1) @db.Decimal(10, 3)
+  agreedPrice  Decimal?    @db.Decimal(18, 2)
+  currency     String      @default("NGN")
+  scheduledFor DateTime?
+  note         String?
+  status       OrderStatus @default(REQUESTED)
+
+  requestedAt             DateTime  @default(now())
+  acceptedAt              DateTime?
+  fulfillingAt            DateTime?
+  completionRequestedAt   DateTime?
+  completionRequestedById String?
+  completedAt             DateTime?
+  cancelledAt             DateTime?
+  declinedAt              DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  conversation   Conversation?    @relation(fields: [conversationId], references: [id], onDelete: SetNull)
+  buyer          User             @relation("BuyerOrders", fields: [buyerId], references: [id], onDelete: Cascade)
+  buyerBusiness  BusinessProfile? @relation("BuyerBusinessOrders", fields: [buyerBusinessId], references: [id], onDelete: SetNull)
+  sellerUser     User?            @relation("SellerOrders", fields: [sellerUserId], references: [id], onDelete: SetNull)
+  sellerBusiness BusinessProfile? @relation("SellerBusinessOrders", fields: [sellerBusinessId], references: [id], onDelete: SetNull)
+  listing        Listing?         @relation(fields: [listingId], references: [id], onDelete: SetNull)
+  opportunity    OpportunityPost? @relation(fields: [opportunityId], references: [id], onDelete: SetNull)
+  review         Review?
+
+  @@index([buyerId, status])
+  @@index([sellerUserId, status])
+  @@index([sellerBusinessId, status])
+  @@index([conversationId])
+  @@index([listingId])
+  @@index([opportunityId])
+  @@index([status, createdAt])
+  @@map("orders")
 }
