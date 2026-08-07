@@ -9,8 +9,7 @@ export class PrismaOrderRepository implements IOrderRepository {
 
   async create(orderData: Omit<Order, 'id' | 'createdAt' | 'updatedAt'>): Promise<Order> {
     return this.prisma.order.create({
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-      data: orderData as any,
+      data: orderData,
     });
   }
 
