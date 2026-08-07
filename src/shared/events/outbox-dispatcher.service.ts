@@ -1,24 +1,26 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, Inject } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
-import { InjectQueue } from '@nestjs/bullmq';
-import { Queue } from 'bullmq';
+import { v4 as uuidv4 } from 'uuid';
 import { OutboxRepository } from './outbox.repository.js';
-import { EnrichedDomainEvent } from './event-bus.service.js';
+import { EVENT_PUBLISHER } from './event-publisher.interface.js';
+import type { IEventPublisher } from './event-publisher.interface.js';
 
 @Injectable()
 export class OutboxDispatcherService {
   private readonly logger = new Logger(OutboxDispatcherService.name);
   private isProcessing = false;
+  private readonly dispatcherId: string;
 
   constructor(
     private readonly outboxRepository: OutboxRepository,
-    @InjectQueue('domain-events') private readonly eventQueue: Queue,
-  ) {}
+    @Inject(EVENT_PUBLISHER) private readonly eventPublisher: IEventPublisher,
+  ) {
+    this.dispatcherId = `dispatcher-${uuidv4()}`;
+  }
 
   /**
    * Polls the outbox for unpublished events every second.
-   * Uses a lock (isProcessing) to prevent overlapping cron executions
-   * within the same Node process.
+   * Uses an atomic claim to lock events for processing.
    */
   @Cron(CronExpression.EVERY_SECOND)
   async dispatchEvents() {
@@ -26,53 +28,42 @@ export class OutboxDispatcherService {
     this.isProcessing = true;
 
     try {
-      const events = await this.outboxRepository.getUnpublishedEvents(100);
+      // Lease events for 60 seconds
+      const events = await this.outboxRepository.leaseNextBatch(100, 60000, this.dispatcherId);
 
       if (events.length === 0) {
         this.isProcessing = false;
         return;
       }
 
-      this.logger.debug(`Found ${events.length} unpublished events in the outbox`);
-
-      const successfulIds: string[] = [];
+      this.logger.debug(`Found and leased ${events.length} unpublished events in the outbox`);
 
       for (const event of events) {
         try {
-          const enrichedEvent: EnrichedDomainEvent = {
-            metadata: {
-              version: event.eventVersion,
-              occurredAt: event.occurredAt.toISOString(),
-            },
-            data: event.payload,
-            ...(event.metadata ? { context: event.metadata as Record<string, unknown> } : {}),
-          };
+          // Delegate publishing entirely to the IEventPublisher interface.
+          await this.eventPublisher.publish(event);
 
-          // Dispatch to the existing BullMQ topic
-          await this.eventQueue.add(event.eventType, enrichedEvent, {
-            attempts: 3,
-            backoff: { type: 'exponential', delay: 1000 },
-            removeOnComplete: true,
-            removeOnFail: false,
-          });
-
-          successfulIds.push(event.id);
+          // Clear the lease and mark as published
+          await this.outboxRepository.markAsPublished(event.id, this.dispatcherId);
         } catch (error) {
-          this.logger.error(`Failed to dispatch event ${event.id} to BullMQ`, error);
+          this.logger.error(`Failed to publish event ${event.id}`, error);
 
-          // Exponential backoff for the outbox itself
+          // Capped exponential backoff: 1s, 2s, 4s, 8s, 16s, 30s, 60s, 2m, 5m, 10m, 15m, 30m
+          const backoffSeconds = [1, 2, 4, 8, 16, 30, 60, 120, 300, 600, 900, 1800];
+          const attemptIndex = Math.min(event.retryCount, backoffSeconds.length - 1);
+
+          const isDeadLetter = event.retryCount >= backoffSeconds.length;
+
           const nextAvailableAt = new Date();
-          nextAvailableAt.setSeconds(
-            nextAvailableAt.getSeconds() + Math.pow(2, event.retryCount + 1),
+          nextAvailableAt.setSeconds(nextAvailableAt.getSeconds() + backoffSeconds[attemptIndex]!);
+
+          await this.outboxRepository.releaseLeaseWithRetry(
+            event.id,
+            nextAvailableAt,
+            this.dispatcherId,
+            isDeadLetter,
           );
-
-          await this.outboxRepository.markAsFailed(event.id, nextAvailableAt);
         }
-      }
-
-      if (successfulIds.length > 0) {
-        await this.outboxRepository.markAsPublished(successfulIds);
-        this.logger.debug(`Successfully dispatched ${successfulIds.length} events`);
       }
     } catch (error) {
       this.logger.error('Error while dispatching outbox events', error);
