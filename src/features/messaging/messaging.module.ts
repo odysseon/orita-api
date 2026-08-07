@@ -29,6 +29,7 @@ import { MessagingGateway } from './api/gateways/messaging.gateway.js';
 import { ConversationsController } from './api/controllers/conversations.controller.js';
 import { MessagePreviewFactory } from './infrastructure/message-preview.factory.js';
 import { NotificationPreviewFactory } from './infrastructure/notification-preview.factory.js';
+import { OrderConversationListener } from './application/listeners/order-conversation.listener.js';
 
 import { AuthModule } from '../../auth/auth.module.js';
 
@@ -72,6 +73,8 @@ import { AuthModule } from '../../auth/auth.module.js';
     OpenConversationUseCase,
     MessagePreviewFactory,
     NotificationPreviewFactory,
+    // Listeners
+    OrderConversationListener,
   ],
   exports: [
     IConversationRepository,
