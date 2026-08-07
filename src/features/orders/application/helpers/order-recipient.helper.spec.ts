@@ -4,9 +4,9 @@ import { OrderRecipientHelper } from './order-recipient.helper.js';
 describe('OrderRecipientHelper', () => {
   describe('validate', () => {
     it('throws if type is invalid', () => {
-      expect(() =>
-        OrderRecipientHelper.validate({ type: 'INVALID' as any, id: '123' }),
-      ).toThrow(Error);
+      expect(() => OrderRecipientHelper.validate({ type: 'INVALID' as any, id: '123' })).toThrow(
+        Error,
+      );
     });
 
     it('throws if id is missing', () => {
@@ -18,7 +18,9 @@ describe('OrderRecipientHelper', () => {
     });
 
     it('passes for valid BUSINESS recipient', () => {
-      expect(() => OrderRecipientHelper.validate({ type: 'BUSINESS', id: 'biz_123' })).not.toThrow();
+      expect(() =>
+        OrderRecipientHelper.validate({ type: 'BUSINESS', id: 'biz_123' }),
+      ).not.toThrow();
     });
   });
 
@@ -40,4 +42,3 @@ describe('OrderRecipientHelper', () => {
     });
   });
 });
-

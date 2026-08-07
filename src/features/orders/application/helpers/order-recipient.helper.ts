@@ -1,15 +1,16 @@
 import { OrderRecipient } from '../../core/domain/order.types.js';
+import { OrderValidationError } from '../../core/errors/order.errors.js';
 
 export class OrderRecipientHelper {
   static validate(recipient: OrderRecipient): void {
     if (!recipient) {
-      throw new Error('Order recipient is required');
+      throw new OrderValidationError('Order recipient is required');
     }
     if (!recipient.type || !['USER', 'BUSINESS'].includes(recipient.type)) {
-      throw new Error('Invalid order recipient type');
+      throw new OrderValidationError('Invalid order recipient type');
     }
     if (!recipient.id) {
-      throw new Error('Order recipient ID is required');
+      throw new OrderValidationError('Order recipient ID is required');
     }
   }
 
@@ -28,7 +29,7 @@ export class OrderRecipientHelper {
     sellerBusinessId: string | null,
   ): OrderRecipient {
     if (sellerUserId && sellerBusinessId) {
-      throw new Error('Order cannot have both sellerUserId and sellerBusinessId');
+      throw new OrderValidationError('Order cannot have both sellerUserId and sellerBusinessId');
     }
     if (sellerUserId) {
       return { type: 'USER', id: sellerUserId };
@@ -36,6 +37,6 @@ export class OrderRecipientHelper {
     if (sellerBusinessId) {
       return { type: 'BUSINESS', id: sellerBusinessId };
     }
-    throw new Error('Order is missing a recipient');
+    throw new OrderValidationError('Order is missing a recipient');
   }
 }

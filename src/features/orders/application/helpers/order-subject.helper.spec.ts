@@ -4,9 +4,9 @@ import { OrderSubjectHelper } from './order-subject.helper.js';
 describe('OrderSubjectHelper', () => {
   describe('validate', () => {
     it('throws if type is invalid', () => {
-      expect(() =>
-        OrderSubjectHelper.validate({ type: 'INVALID' as any, id: '123' }),
-      ).toThrow(Error);
+      expect(() => OrderSubjectHelper.validate({ type: 'INVALID' as any, id: '123' })).toThrow(
+        Error,
+      );
     });
 
     it('throws if id is missing', () => {
@@ -18,7 +18,9 @@ describe('OrderSubjectHelper', () => {
     });
 
     it('passes for valid OPPORTUNITY subject', () => {
-      expect(() => OrderSubjectHelper.validate({ type: 'OPPORTUNITY', id: 'opp_123' })).not.toThrow();
+      expect(() =>
+        OrderSubjectHelper.validate({ type: 'OPPORTUNITY', id: 'opp_123' }),
+      ).not.toThrow();
     });
   });
 
@@ -40,4 +42,3 @@ describe('OrderSubjectHelper', () => {
     });
   });
 });
-
