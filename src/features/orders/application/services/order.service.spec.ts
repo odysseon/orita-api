@@ -2,11 +2,21 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { OrderService } from './order.service.js';
 import { NotFoundException, BadRequestException } from '@nestjs/common';
 import { OrderStatus } from '../../core/domain/order.types.js';
+import { IOrderRepository } from '../../core/domain/order.ports.js';
+import { EventBusService } from '../../../../shared/events/event-bus.service.js';
+import { TransactionManager } from '../../../../prisma/transaction-manager.service.js';
+import { PrismaService } from '../../../../prisma/prisma.service.js';
 
 describe('OrderService', () => {
   let service: OrderService;
-  let mockOrderRepository: any;
-  let mockEventBus: any;
+  let mockOrderRepository: {
+    create: ReturnType<typeof vi.fn>;
+    findById: ReturnType<typeof vi.fn>;
+    updateStatus: ReturnType<typeof vi.fn>;
+  };
+  let mockEventBus: {
+    publish: ReturnType<typeof vi.fn>;
+  };
 
   beforeEach(() => {
     mockOrderRepository = {
@@ -17,8 +27,17 @@ describe('OrderService', () => {
     mockEventBus = {
       publish: vi.fn(),
     };
+    const mockTransactionManager = {
+      execute: vi.fn((_prisma, cb) => cb()),
+    };
+    const mockPrisma = {};
 
-    service = new OrderService(mockOrderRepository, mockEventBus);
+    service = new OrderService(
+      mockOrderRepository as unknown as IOrderRepository,
+      mockEventBus as unknown as EventBusService,
+      mockTransactionManager as unknown as TransactionManager,
+      mockPrisma as unknown as PrismaService,
+    );
   });
 
   describe('createOrder', () => {
