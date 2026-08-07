@@ -7,12 +7,16 @@ import {
   CreateBusinessProfileInput,
   BusinessProfileView,
 } from '../../domain/types/business-profile.types.js';
+import { TransactionManager } from '../../../../prisma/transaction-manager.service.js';
+import { PrismaService } from '../../../../prisma/prisma.service.js';
 
 @Injectable()
 export class CreateBusinessProfileUseCase {
   constructor(
     private readonly repo: IBusinessProfileRepository,
     private readonly eventBus: EventBusService,
+    private readonly transactionManager: TransactionManager,
+    private readonly prisma: PrismaService,
   ) {}
 
   async execute(input: CreateBusinessProfileInput): Promise<BusinessProfileView> {
@@ -23,20 +27,22 @@ export class CreateBusinessProfileUseCase {
 
     const slug = await this.deriveUniqueSlug(input.name);
 
-    const profile = await this.repo.create(
-      {
-        ...input,
-        isPublic: false,
-      },
-      slug,
-    );
+    return this.transactionManager.execute(this.prisma, async () => {
+      const profile = await this.repo.create(
+        {
+          ...input,
+          isPublic: false,
+        },
+        slug,
+      );
 
-    await this.eventBus.publish(
-      'business.created',
-      new BusinessProfileCreatedEvent(profile.id, profile.ownerId),
-    );
+      await this.eventBus.publish(
+        'business.created',
+        new BusinessProfileCreatedEvent(profile.id, profile.ownerId),
+      );
 
-    return profile;
+      return profile;
+    });
   }
 
   private async deriveUniqueSlug(name: string): Promise<string> {

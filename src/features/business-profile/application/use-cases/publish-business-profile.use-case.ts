@@ -8,12 +8,16 @@ import { IBusinessProfileRepository } from '../../domain/ports/business-profile.
 import { BusinessPublicationPolicy } from '../../domain/policies/business-publication.policy.js';
 import { EventBusService } from '../../../../shared/events/event-bus.service.js';
 import { BusinessProfilePublishedEvent } from '../../../../shared/events/business-profile.events.js';
+import { TransactionManager } from '../../../../prisma/transaction-manager.service.js';
+import { PrismaService } from '../../../../prisma/prisma.service.js';
 
 @Injectable()
 export class PublishBusinessProfileUseCase {
   constructor(
     private readonly repo: IBusinessProfileRepository,
     private readonly eventBus: EventBusService,
+    private readonly transactionManager: TransactionManager,
+    private readonly prisma: PrismaService,
   ) {}
 
   async execute(id: string, requesterId: string): Promise<void> {
@@ -40,18 +44,20 @@ export class PublishBusinessProfileUseCase {
       });
     }
 
-    await this.repo.setVisibility(id, true);
+    await this.transactionManager.execute(this.prisma, async () => {
+      await this.repo.setVisibility(id, true);
 
-    await this.eventBus.publish(
-      'business.published',
-      new BusinessProfilePublishedEvent(
-        profile.id,
-        profile.name,
-        profile.slug,
-        profile.locationId!,
-        profile.ownerId,
-      ),
-      requesterId,
-    );
+      await this.eventBus.publish(
+        'business.published',
+        new BusinessProfilePublishedEvent(
+          profile.id,
+          profile.name,
+          profile.slug,
+          profile.locationId!,
+          profile.ownerId,
+        ),
+        requesterId,
+      );
+    });
   }
 }

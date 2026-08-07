@@ -5,6 +5,7 @@ import { BusinessTourCreatedEvent } from '../../../../shared/events/business-tou
 import { IBusinessTourRepository } from '../../domain/ports/business-tour.repository.port.js';
 import { BusinessTour } from '../../domain/types/business-tour.entity.js';
 import { CreateBusinessTourInput } from '../../domain/types/business-tour.types.js';
+import { TransactionManager } from '../../../../prisma/transaction-manager.service.js';
 
 @Injectable()
 export class CreateBusinessTourUseCase {
@@ -12,6 +13,7 @@ export class CreateBusinessTourUseCase {
     private readonly businessTourRepo: IBusinessTourRepository,
     private readonly prisma: PrismaService,
     private readonly eventBus: EventBusService,
+    private readonly transactionManager: TransactionManager,
   ) {}
 
   async execute(input: CreateBusinessTourInput): Promise<BusinessTour> {
@@ -24,13 +26,15 @@ export class CreateBusinessTourUseCase {
       throw new NotFoundException('Business profile not found.');
     }
 
-    const tour = await this.businessTourRepo.create(input);
+    return this.transactionManager.execute(this.prisma, async () => {
+      const tour = await this.businessTourRepo.create(input);
 
-    await this.eventBus.publish(
-      'tour.uploaded',
-      new BusinessTourCreatedEvent(tour.id, tour.businessProfileId),
-    );
+      await this.eventBus.publish(
+        'tour.uploaded',
+        new BusinessTourCreatedEvent(tour.id, tour.businessProfileId),
+      );
 
-    return tour;
+      return tour;
+    });
   }
 }

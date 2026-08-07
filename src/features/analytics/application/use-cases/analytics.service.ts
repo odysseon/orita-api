@@ -1,8 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../../../prisma/prisma.service.js';
 import { AnalyticsEventType } from '../../../../../generated/prisma/client.js';
-
 import { EventBusService } from '../../../../shared/events/event-bus.service.js';
+import { TransactionManager } from '../../../../prisma/transaction-manager.service.js';
 
 export interface TrackEventDto {
   businessProfileId: string;
@@ -16,25 +16,28 @@ export class AnalyticsService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly eventBus: EventBusService,
+    private readonly transactionManager: TransactionManager,
   ) {}
 
   async trackEvent(payload: TrackEventDto) {
-    const event = await this.prisma.analyticsEvent.create({
-      data: {
-        businessProfileId: payload.businessProfileId,
-        eventType: payload.eventType,
-        listingId: payload.listingId ?? null,
-        userId: payload.userId ?? null,
-      },
-    });
+    return this.transactionManager.execute(this.prisma, async () => {
+      const event = await this.prisma.analyticsEvent.create({
+        data: {
+          businessProfileId: payload.businessProfileId,
+          eventType: payload.eventType,
+          listingId: payload.listingId ?? null,
+          userId: payload.userId ?? null,
+        },
+      });
 
-    await this.eventBus.publish('analytics.event.created', {
-      eventType: event.eventType,
-      businessProfileId: event.businessProfileId,
-      listingId: event.listingId,
-    });
+      await this.eventBus.publish('analytics.event.created', {
+        eventType: event.eventType,
+        businessProfileId: event.businessProfileId,
+        listingId: event.listingId,
+      });
 
-    return event;
+      return event;
+    });
   }
 
   async getDashboardAnalytics(businessId: string) {

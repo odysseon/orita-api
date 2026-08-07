@@ -10,6 +10,7 @@ import { ConversationParticipantResolver } from '../services/conversation-partic
 import { MessagePreviewFactory } from '../../infrastructure/message-preview.factory.js';
 import { NotificationPreviewFactory } from '../../infrastructure/notification-preview.factory.js';
 import { FinalizeMessageAttachmentsUseCase } from '../../../media/application/use-cases/finalize-message-attachments.use-case.js';
+import { TransactionManager } from '../../../../prisma/transaction-manager.service.js';
 
 @Injectable()
 export class SendMessageUseCase {
@@ -24,6 +25,7 @@ export class SendMessageUseCase {
     private readonly previewFactory: MessagePreviewFactory,
     private readonly notificationPreviewFactory: NotificationPreviewFactory,
     private readonly finalizeMedia: FinalizeMessageAttachmentsUseCase,
+    private readonly transactionManager: TransactionManager,
   ) {}
 
   async execute(
@@ -109,75 +111,77 @@ export class SendMessageUseCase {
       embeds: resolvedEmbeds as NonNullable<SendMessageInput['embeds']>,
     };
 
-    const message = await this.repo.addMessage(fullInput, senderDisplayName, senderAvatarUrl);
+    return this.transactionManager.execute(this.prisma, async () => {
+      const message = await this.repo.addMessage(fullInput, senderDisplayName, senderAvatarUrl);
 
-    if (input.attachmentIds && input.attachmentIds.length > 0) {
-      await this.finalizeMedia.execute(input.attachmentIds, message.id);
+      if (input.attachmentIds && input.attachmentIds.length > 0) {
+        await this.finalizeMedia.execute(input.attachmentIds, message.id);
 
-      const media = await this.prisma.media.findMany({
-        where: { id: { in: input.attachmentIds } },
-        select: {
-          id: true,
-          fileId: true,
-          provider: true,
-          role: true,
-          mimeType: true,
-          version: true,
-          format: true,
-          mediaType: true,
-          bytes: true,
+        const media = await this.prisma.media.findMany({
+          where: { id: { in: input.attachmentIds } },
+          select: {
+            id: true,
+            fileId: true,
+            provider: true,
+            role: true,
+            mimeType: true,
+            version: true,
+            format: true,
+            mediaType: true,
+            bytes: true,
+          },
+        });
+        message.attachments = media.map((a) => ({
+          id: a.id,
+          url: this.mediaUrlService.getMediaUrl(
+            a.provider,
+            a.fileId,
+            a.mimeType,
+            a.version,
+            a.format,
+          ),
+          mediaType: a.mediaType,
+          mimeType: a.mimeType,
+          bytes: a.bytes,
+        }));
+      }
+
+      // Figure out the recipients (all other participants in this conversation)
+      const otherParticipants = await this.prisma.participant.findMany({
+        where: {
+          id: { in: conversation.participantIds.filter((id) => id !== participantId) },
         },
+        include: { business: true },
       });
-      message.attachments = media.map((a) => ({
-        id: a.id,
-        url: this.mediaUrlService.getMediaUrl(
-          a.provider,
-          a.fileId,
-          a.mimeType,
-          a.version,
-          a.format,
-        ),
-        mediaType: a.mediaType,
-        mimeType: a.mimeType,
-        bytes: a.bytes,
-      }));
-    }
+      const recipientUserIds = otherParticipants
+        .map((p) => p.userId || p.business?.ownerId)
+        .filter(Boolean) as string[];
 
-    // Figure out the recipients (all other participants in this conversation)
-    const otherParticipants = await this.prisma.participant.findMany({
-      where: {
-        id: { in: conversation.participantIds.filter((id) => id !== participantId) },
-      },
-      include: { business: true },
+      const previewView = this.previewFactory.create({
+        id: message.id,
+        content: message.content,
+        participantId: message.participantId,
+        senderDisplayName: message.senderDisplayName,
+        createdAt: message.createdAt,
+        mediaUrl: message.mediaUrl,
+        mediaType: message.mediaType,
+        embeds: message.embeds,
+        attachments: message.attachments,
+      });
+
+      // Event bus tracking & Notifications
+      await this.eventBus.publish('message.sent', {
+        messageId: message.id,
+        conversationId: message.conversationId,
+        senderUserId: participant.userId || participant.business?.ownerId || null,
+        senderDisplayName: message.senderDisplayName,
+        recipientUserIds,
+        preview: previewView.descriptor,
+        notificationPreview: this.notificationPreviewFactory.build(previewView.descriptor),
+        sentAt: message.createdAt,
+      });
+
+      return message;
     });
-    const recipientUserIds = otherParticipants
-      .map((p) => p.userId || p.business?.ownerId)
-      .filter(Boolean) as string[];
-
-    const previewView = this.previewFactory.create({
-      id: message.id,
-      content: message.content,
-      participantId: message.participantId,
-      senderDisplayName: message.senderDisplayName,
-      createdAt: message.createdAt,
-      mediaUrl: message.mediaUrl,
-      mediaType: message.mediaType,
-      embeds: message.embeds,
-      attachments: message.attachments,
-    });
-
-    // Event bus tracking & Notifications
-    await this.eventBus.publish('message.sent', {
-      messageId: message.id,
-      conversationId: message.conversationId,
-      senderUserId: participant.userId || participant.business?.ownerId || null,
-      senderDisplayName: message.senderDisplayName,
-      recipientUserIds,
-      preview: previewView.descriptor,
-      notificationPreview: this.notificationPreviewFactory.build(previewView.descriptor),
-      sentAt: message.createdAt,
-    });
-
-    return message;
   }
 }
