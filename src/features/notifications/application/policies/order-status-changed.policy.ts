@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { OnEvent } from '@nestjs/event-emitter';
 import { BaseNotificationPolicy, NotificationUrgency, NotificationPayload } from './base.policy.js';
 import { NotificationEngine } from '../engine/notification.engine.js';
+import { PrismaService } from '../../../../prisma/prisma.service.js';
 import { EnrichedDomainEvent } from '../../../../shared/events/event-bus.service.js';
 import type { OrderStatusChangedEvent } from '../../../../shared/events/order.events.js';
 
@@ -40,7 +41,10 @@ const STATUS_TO_NOTIFIED_PARTY: Record<string, 'BUYER' | 'SELLER' | 'BOTH'> = {
 
 @Injectable()
 export class OrderStatusChangedPolicy extends BaseNotificationPolicy<EventType> {
-  constructor(private readonly engine: NotificationEngine) {
+  constructor(
+    private readonly engine: NotificationEngine,
+    private readonly prisma: PrismaService,
+  ) {
     super();
   }
 
@@ -58,19 +62,29 @@ export class OrderStatusChangedPolicy extends BaseNotificationPolicy<EventType> 
     return STATUS_TO_NOTIFICATION_TYPE[event.data.newStatus] !== undefined;
   }
 
-  resolveAudience(event: EventType): Promise<string[]> {
-    const { buyerId, sellerUserId, newStatus } = event.data;
+  async resolveAudience(event: EventType): Promise<string[]> {
+    const { buyerId, sellerUserId, sellerBusinessId, newStatus } = event.data;
     const party = STATUS_TO_NOTIFIED_PARTY[newStatus] ?? 'BOTH';
     const audience: string[] = [];
 
     if (party === 'BUYER' || party === 'BOTH') {
       audience.push(buyerId);
     }
-    if ((party === 'SELLER' || party === 'BOTH') && sellerUserId) {
-      audience.push(sellerUserId);
+    if (party === 'SELLER' || party === 'BOTH') {
+      if (sellerUserId) {
+        audience.push(sellerUserId);
+      } else if (sellerBusinessId) {
+        const business = await this.prisma.businessProfile.findUnique({
+          where: { id: sellerBusinessId },
+          select: { ownerId: true },
+        });
+        if (business?.ownerId) {
+          audience.push(business.ownerId);
+        }
+      }
     }
 
-    return Promise.resolve([...new Set(audience)]);
+    return [...new Set(audience)];
   }
 
   getUrgency(): NotificationUrgency {
