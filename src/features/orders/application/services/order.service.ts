@@ -1,4 +1,9 @@
-import { Injectable, NotFoundException, BadRequestException, Inject } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+  Inject,
+} from '@nestjs/common';
 import { Prisma } from '../../../../../generated/prisma/client.js';
 import type { IOrderRepository } from '../../core/domain/order.ports.js';
 import { OrderStateMachine } from '../../core/state-machine/order-state-machine.js';
@@ -8,6 +13,7 @@ import { CreateOrderDto } from '../../api/dto/create-order.dto.js';
 import { Order, OrderActorRole, OrderStatus } from '../../core/domain/order.types.js';
 import { EventBusService } from '../../../../shared/events/event-bus.service.js';
 import type { OrderStatusChangedEvent } from '../../../../shared/events/order.events.js';
+import { OrderValidationError, OrderTransitionError } from '../../core/errors/order.errors.js';
 
 @Injectable()
 export class OrderService {
@@ -22,8 +28,15 @@ export class OrderService {
    * Note: The conversation is not created here. If one is needed, ConversationService.ensureConversationForOrder is called by the caller.
    */
   async createOrder(actorId: string, dto: CreateOrderDto): Promise<Order> {
-    OrderSubjectHelper.validate(dto.subject);
-    OrderRecipientHelper.validate(dto.recipient);
+    try {
+      OrderSubjectHelper.validate(dto.subject);
+      OrderRecipientHelper.validate(dto.recipient);
+    } catch (error) {
+      if (error instanceof OrderValidationError) {
+        throw new BadRequestException(error.message);
+      }
+      throw error;
+    }
 
     const subjectFields = OrderSubjectHelper.toDatabaseFields(dto.subject);
     const recipientFields = OrderRecipientHelper.toDatabaseFields(dto.recipient);
@@ -88,7 +101,14 @@ export class OrderService {
       throw new BadRequestException('Actor is not authorized to transition this order');
     }
 
-    OrderStateMachine.assertTransition(order.status, newStatus, role);
+    try {
+      OrderStateMachine.assertTransition(order.status, newStatus, role);
+    } catch (error) {
+      if (error instanceof OrderTransitionError) {
+        throw new BadRequestException(error.message);
+      }
+      throw error;
+    }
 
     const timestampField = OrderStateMachine.getTimestampField(newStatus);
     type OrderTimestamps = Partial<
@@ -111,7 +131,12 @@ export class OrderService {
       timestamps.completionRequestedById = actorId;
     }
 
-    const updatedOrder = await this.orderRepository.updateStatus(orderId, newStatus, timestamps);
+    const updatedOrder = await this.orderRepository.updateStatus(
+      orderId,
+      order.status,
+      newStatus,
+      timestamps,
+    );
 
     const event: OrderStatusChangedEvent = {
       orderId: updatedOrder.id,
@@ -129,8 +154,8 @@ export class OrderService {
     return updatedOrder;
   }
 
-  async getOrder(id: string): Promise<Order> {
-    const order = await this.orderRepository.findById(id);
+  async getOrderForActor(actorId: string, id: string): Promise<Order> {
+    const order = await this.orderRepository.findByIdAndActor(id, actorId);
     if (!order) {
       throw new NotFoundException('Order not found');
     }

@@ -39,19 +39,22 @@ describe('OrderService', () => {
 
       expect(result).toEqual(mockCreatedOrder);
       expect(mockOrderRepository.create).toHaveBeenCalled();
-      expect(mockEventBus.publish).toHaveBeenCalledWith('order.status.changed', expect.objectContaining({
-        orderId: 'ord_123',
-        newStatus: OrderStatus.REQUESTED,
-      }));
+      expect(mockEventBus.publish).toHaveBeenCalledWith(
+        'order.status.changed',
+        expect.objectContaining({
+          orderId: 'ord_123',
+          newStatus: OrderStatus.REQUESTED,
+        }),
+      );
     });
   });
 
   describe('transitionStatus', () => {
     it('throws NotFoundException if order does not exist', async () => {
       mockOrderRepository.findById.mockResolvedValue(null);
-      await expect(service.transitionStatus('user_1', 'ord_1', OrderStatus.ACCEPTED)).rejects.toThrow(
-        NotFoundException,
-      );
+      await expect(
+        service.transitionStatus('user_1', 'ord_1', OrderStatus.ACCEPTED),
+      ).rejects.toThrow(NotFoundException);
     });
 
     it('throws BadRequestException if actor is neither buyer nor seller (simplified auth)', async () => {
@@ -63,9 +66,9 @@ describe('OrderService', () => {
       });
 
       // 'user_3' is not part of the order
-      await expect(service.transitionStatus('user_3', 'ord_1', OrderStatus.ACCEPTED)).rejects.toThrow(
-        BadRequestException,
-      );
+      await expect(
+        service.transitionStatus('user_3', 'ord_1', OrderStatus.ACCEPTED),
+      ).rejects.toThrow(BadRequestException);
     });
 
     it('allows SELLER to accept and fires event', async () => {
@@ -89,9 +92,12 @@ describe('OrderService', () => {
           acceptedAt: expect.any(Date),
         }),
       );
-      expect(mockEventBus.publish).toHaveBeenCalledWith('order.status.changed', expect.objectContaining({
-        newStatus: OrderStatus.ACCEPTED,
-      }));
+      expect(mockEventBus.publish).toHaveBeenCalledWith(
+        'order.status.changed',
+        expect.objectContaining({
+          newStatus: OrderStatus.ACCEPTED,
+        }),
+      );
     });
   });
 });
