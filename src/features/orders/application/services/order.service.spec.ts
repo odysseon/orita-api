@@ -87,6 +87,7 @@ describe('OrderService', () => {
       expect(result.status).toBe(OrderStatus.ACCEPTED);
       expect(mockOrderRepository.updateStatus).toHaveBeenCalledWith(
         'ord_1',
+        OrderStatus.REQUESTED,
         OrderStatus.ACCEPTED,
         expect.objectContaining({
           acceptedAt: expect.any(Date),
