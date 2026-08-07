@@ -62,10 +62,9 @@ describe('PasswordAuthController - Consistent Auth and AddPassword', () => {
     });
 
     await expect(
-      controller.addPassword(
-        { password: 'NewStrongPassword123!' } as any,
-        { accountId: 'acc_123' } as any,
-      ),
+      controller.addPassword({ password: 'NewStrongPassword123!' }, {
+        accountId: 'acc_123',
+      } as unknown as never),
     ).rejects.toThrow(ConflictException);
   });
 });
