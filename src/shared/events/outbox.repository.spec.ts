@@ -4,7 +4,6 @@ import { PrismaService } from '../../prisma/prisma.service.js';
 
 describe('OutboxRepository', () => {
   let repository: OutboxRepository;
-  let prismaService: PrismaService;
 
   const mockPrismaService = {
     $queryRaw: vi.fn(),
@@ -26,7 +25,6 @@ describe('OutboxRepository', () => {
     }).compile();
 
     repository = module.get<OutboxRepository>(OutboxRepository);
-    prismaService = module.get<PrismaService>(PrismaService);
   });
 
   afterEach(() => {

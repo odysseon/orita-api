@@ -60,6 +60,10 @@ jobs:
         id: lint
         run: pnpm lint
 
+      - name: Test
+        id: test
+        run: pnpm test
+
   # ── ocker image build ──────────────────────────────────────────────────────
   docker-build:
     name: Docker image build
