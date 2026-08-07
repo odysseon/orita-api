@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, ConflictException } from '@nestjs/common';
 import { PrismaService } from '../../../prisma/prisma.service.js';
 import { IOrderRepository } from '../core/domain/order.ports.js';
 import { Order, OrderStatus } from '../core/domain/order.types.js';
@@ -19,8 +19,23 @@ export class PrismaOrderRepository implements IOrderRepository {
     });
   }
 
+  async findByIdAndActor(id: string, actorId: string): Promise<Order | null> {
+    return this.prisma.order.findFirst({
+      where: {
+        id,
+        OR: [
+          { buyerId: actorId },
+          { sellerUserId: actorId },
+          { buyerBusiness: { ownerId: actorId } },
+          { sellerBusiness: { ownerId: actorId } },
+        ],
+      },
+    });
+  }
+
   async updateStatus(
     id: string,
+    expectedStatus: OrderStatus,
     status: OrderStatus,
     timestamps: Partial<
       Pick<
@@ -35,12 +50,20 @@ export class PrismaOrderRepository implements IOrderRepository {
       >
     >,
   ): Promise<Order> {
-    return this.prisma.order.update({
-      where: { id },
+    const result = await this.prisma.order.updateMany({
+      where: { id, status: expectedStatus },
       data: {
         status,
         ...timestamps,
       },
+    });
+
+    if (result.count === 0) {
+      throw new ConflictException('Order status transition failed due to conflict');
+    }
+
+    return this.prisma.order.findUniqueOrThrow({
+      where: { id },
     });
   }
 
