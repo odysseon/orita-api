@@ -54,6 +54,48 @@ export class NotificationPresenter {
           actionUrl = `/messages/${entity.referenceId}`;
         }
         break;
+      case 'ORDER_REQUESTED':
+        title = 'New order received';
+        subtitle = 'A buyer has placed an order with you';
+        icon = 'lucideShoppingBag';
+        if (entity.referenceId) actionUrl = `/orders/${entity.referenceId}`;
+        break;
+      case 'ORDER_ACCEPTED':
+        title = 'Order accepted';
+        subtitle = 'Your order has been accepted';
+        icon = 'lucideCheckCircle';
+        if (entity.referenceId) actionUrl = `/orders/${entity.referenceId}`;
+        break;
+      case 'ORDER_DECLINED':
+        title = 'Order declined';
+        subtitle = 'Unfortunately your order was declined';
+        icon = 'lucideXCircle';
+        if (entity.referenceId) actionUrl = `/orders/${entity.referenceId}`;
+        break;
+      case 'ORDER_FULFILLING':
+        title = 'Order on its way';
+        subtitle = 'The seller is now fulfilling your order';
+        icon = 'lucideTruck';
+        if (entity.referenceId) actionUrl = `/orders/${entity.referenceId}`;
+        break;
+      case 'ORDER_COMPLETION_REQUESTED':
+        title = 'Completion requested';
+        subtitle = 'The other party has requested order completion';
+        icon = 'lucideFlag';
+        if (entity.referenceId) actionUrl = `/orders/${entity.referenceId}`;
+        break;
+      case 'ORDER_COMPLETED':
+        title = 'Order completed';
+        subtitle = 'The order has been marked as complete';
+        icon = 'lucideStar';
+        if (entity.referenceId) actionUrl = `/orders/${entity.referenceId}`;
+        break;
+      case 'ORDER_CANCELLED':
+        title = 'Order cancelled';
+        subtitle = 'The order has been cancelled';
+        icon = 'lucideBan';
+        if (entity.referenceId) actionUrl = `/orders/${entity.referenceId}`;
+        break;
     }
 
     return { title, subtitle, icon, actionUrl };

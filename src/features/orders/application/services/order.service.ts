@@ -6,12 +6,15 @@ import { OrderSubjectHelper } from '../helpers/order-subject.helper.js';
 import { OrderRecipientHelper } from '../helpers/order-recipient.helper.js';
 import { CreateOrderDto } from '../../api/dto/create-order.dto.js';
 import { Order, OrderActorRole, OrderStatus } from '../../core/domain/order.types.js';
+import { EventBusService } from '../../../../shared/events/event-bus.service.js';
+import type { OrderStatusChangedEvent } from '../../../../shared/events/order.events.js';
 
 @Injectable()
 export class OrderService {
   constructor(
     @Inject('IOrderRepository')
     private readonly orderRepository: IOrderRepository,
+    private readonly eventBus: EventBusService,
   ) {}
 
   /**
@@ -25,7 +28,7 @@ export class OrderService {
     const subjectFields = OrderSubjectHelper.toDatabaseFields(dto.subject);
     const recipientFields = OrderRecipientHelper.toDatabaseFields(dto.recipient);
 
-    return this.orderRepository.create({
+    const order = await this.orderRepository.create({
       ...subjectFields,
       ...recipientFields,
       buyerId: actorId,
@@ -46,6 +49,21 @@ export class OrderService {
       cancelledAt: null,
       declinedAt: null,
     });
+
+    const event: OrderStatusChangedEvent = {
+      orderId: order.id,
+      buyerId: order.buyerId,
+      sellerUserId: order.sellerUserId,
+      sellerBusinessId: order.sellerBusinessId,
+      oldStatus: null,
+      newStatus: order.status,
+      listingId: order.listingId,
+      opportunityId: order.opportunityId,
+      conversationId: order.conversationId,
+    };
+    await this.eventBus.publish('order.status.changed', event);
+
+    return order;
   }
 
   /**
@@ -93,7 +111,22 @@ export class OrderService {
       timestamps.completionRequestedById = actorId;
     }
 
-    return this.orderRepository.updateStatus(orderId, newStatus, timestamps);
+    const updatedOrder = await this.orderRepository.updateStatus(orderId, newStatus, timestamps);
+
+    const event: OrderStatusChangedEvent = {
+      orderId: updatedOrder.id,
+      buyerId: updatedOrder.buyerId,
+      sellerUserId: updatedOrder.sellerUserId,
+      sellerBusinessId: updatedOrder.sellerBusinessId,
+      oldStatus: order.status,
+      newStatus: updatedOrder.status,
+      listingId: updatedOrder.listingId,
+      opportunityId: updatedOrder.opportunityId,
+      conversationId: updatedOrder.conversationId,
+    };
+    await this.eventBus.publish('order.status.changed', event);
+
+    return updatedOrder;
   }
 
   async getOrder(id: string): Promise<Order> {

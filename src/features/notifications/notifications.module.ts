@@ -10,6 +10,7 @@ import { BusinessPublishedPolicy } from './application/policies/business-publish
 import { BusinessPublishedOwnerPolicy } from './application/policies/business-published-owner.policy.js';
 import { MessageReceivedPolicy } from './application/policies/message-received.policy.js';
 import { OpportunityConversationStartedPolicy } from './application/policies/opportunity-conversation-started.policy.js';
+import { OrderStatusChangedPolicy } from './application/policies/order-status-changed.policy.js';
 import { EmailWorker } from './infrastructure/workers/email.worker.js';
 import { PushWorker } from './infrastructure/workers/push.worker.js';
 import { InAppWorker } from './infrastructure/workers/in-app.worker.js';
@@ -60,6 +61,7 @@ import { AuthModule } from '../../auth/auth.module.js';
     BusinessPublishedOwnerPolicy,
     MessageReceivedPolicy,
     OpportunityConversationStartedPolicy,
+    OrderStatusChangedPolicy,
 
     // Workers
     EmailWorker,
