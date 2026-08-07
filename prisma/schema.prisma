@@ -1132,3 +1132,23 @@ model Order {
   @@index([status, createdAt])
   @@map("orders")
 }
+
+model OutboxEvent {
+  id            String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  stream        String
+  aggregateType String
+  aggregateId   String
+  eventType     String
+  eventVersion  Int       @default(1)
+  payload       Json
+  metadata      Json?
+  occurredAt    DateTime  @default(now())
+  availableAt   DateTime  @default(now())
+  publishedAt   DateTime?
+  failedAt      DateTime?
+  retryCount    Int       @default(0)
+  createdAt     DateTime  @default(now())
+  
+  @@index([publishedAt, availableAt])
+  @@map("outbox_events")
+}
