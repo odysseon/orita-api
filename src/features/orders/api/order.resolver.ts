@@ -1,4 +1,5 @@
 import { Resolver, Args, Query } from '@nestjs/graphql';
+import { CurrentIdentity, type RequestIdentity } from '@odysseon/whoami-adapter-nestjs';
 import { UseGuards } from '@nestjs/common';
 import { StatefulAuthGuard } from '../../../auth/guards/stateful-auth.guard.js';
 import { OrderService } from '../application/services/order.service.js';
@@ -10,8 +11,11 @@ export class OrderResolver {
   constructor(private readonly orderService: OrderService) {}
 
   @Query(() => OrderResponse)
-  async order(@Args('id') id: string): Promise<OrderResponse> {
-    const order = await this.orderService.getOrder(id);
+  async order(
+    @Args('id') id: string,
+    @CurrentIdentity() identity: RequestIdentity,
+  ): Promise<OrderResponse> {
+    const order = await this.orderService.getOrderForActor(identity.accountId, id);
     return OrderResponse.fromEntity(order);
   }
 
