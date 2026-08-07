@@ -1,4 +1,5 @@
 import { OrderStatus, OrderActorRole, Order } from '../domain/order.types.js';
+import { OrderTransitionError } from '../errors/order.errors.js';
 
 /**
  * Allowed transitions grouped by current status.
@@ -40,14 +41,14 @@ export class OrderStateMachine {
     actorRole: OrderActorRole,
   ): void {
     if (currentStatus === newStatus) {
-      throw new Error(`Order is already in status ${newStatus}`);
+      throw new OrderTransitionError(`Order is already in status ${newStatus}`);
     }
 
     const roleTransitions = ALLOWED_TRANSITIONS[currentStatus];
     const allowedForRole = roleTransitions[actorRole] || [];
 
     if (!allowedForRole.includes(newStatus)) {
-      throw new Error(
+      throw new OrderTransitionError(
         `Transition from ${currentStatus} to ${newStatus} is not allowed for ${actorRole}`,
       );
     }
