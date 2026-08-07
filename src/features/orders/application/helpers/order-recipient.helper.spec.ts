@@ -4,9 +4,9 @@ import { OrderRecipientHelper } from './order-recipient.helper.js';
 describe('OrderRecipientHelper', () => {
   describe('validate', () => {
     it('throws if type is invalid', () => {
-      expect(() => OrderRecipientHelper.validate({ type: 'INVALID' as any, id: '123' })).toThrow(
-        Error,
-      );
+      expect(() =>
+        OrderRecipientHelper.validate({ type: 'INVALID' as unknown as 'USER', id: '123' }),
+      ).toThrow(Error);
     });
 
     it('throws if id is missing', () => {
