@@ -1144,11 +1144,14 @@ model OutboxEvent {
   metadata      Json?
   occurredAt    DateTime  @default(now())
   availableAt   DateTime  @default(now())
-  publishedAt   DateTime?
-  failedAt      DateTime?
-  retryCount    Int       @default(0)
-  createdAt     DateTime  @default(now())
+  publishedAt    DateTime?
+  failedAt       DateTime?
+  deadLetteredAt DateTime?
+  retryCount     Int       @default(0)
+  leasedBy       String?
+  leasedUntil    DateTime?
+  createdAt      DateTime  @default(now())
   
-  @@index([publishedAt, availableAt])
+  @@index([publishedAt, availableAt, leasedUntil])
   @@map("outbox_events")
 }
