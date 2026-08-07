@@ -1,9 +1,4 @@
-import {
-  Injectable,
-  NotFoundException,
-  BadRequestException,
-  Inject,
-} from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, Inject } from '@nestjs/common';
 import { Prisma } from '../../../../../generated/prisma/client.js';
 import type { IOrderRepository } from '../../core/domain/order.ports.js';
 import { OrderStateMachine } from '../../core/state-machine/order-state-machine.js';
@@ -14,6 +9,8 @@ import { Order, OrderActorRole, OrderStatus } from '../../core/domain/order.type
 import { EventBusService } from '../../../../shared/events/event-bus.service.js';
 import type { OrderStatusChangedEvent } from '../../../../shared/events/order.events.js';
 import { OrderValidationError, OrderTransitionError } from '../../core/errors/order.errors.js';
+import { TransactionManager } from '../../../../prisma/transaction-manager.service.js';
+import { PrismaService } from '../../../../prisma/prisma.service.js';
 
 @Injectable()
 export class OrderService {
@@ -21,6 +18,8 @@ export class OrderService {
     @Inject('IOrderRepository')
     private readonly orderRepository: IOrderRepository,
     private readonly eventBus: EventBusService,
+    private readonly transactionManager: TransactionManager,
+    private readonly prisma: PrismaService,
   ) {}
 
   /**
@@ -41,42 +40,44 @@ export class OrderService {
     const subjectFields = OrderSubjectHelper.toDatabaseFields(dto.subject);
     const recipientFields = OrderRecipientHelper.toDatabaseFields(dto.recipient);
 
-    const order = await this.orderRepository.create({
-      ...subjectFields,
-      ...recipientFields,
-      buyerId: actorId,
-      buyerBusinessId: null,
-      conversationId: dto.conversationId || null,
-      quantity: new Prisma.Decimal(dto.quantity ?? 1),
-      agreedPrice: dto.agreedPrice != null ? new Prisma.Decimal(dto.agreedPrice) : null,
-      currency: dto.currency ?? 'NGN',
-      scheduledFor: dto.scheduledFor ? new Date(dto.scheduledFor) : null,
-      note: dto.note || null,
-      status: 'REQUESTED',
-      requestedAt: new Date(),
-      acceptedAt: null,
-      fulfillingAt: null,
-      completionRequestedAt: null,
-      completionRequestedById: null,
-      completedAt: null,
-      cancelledAt: null,
-      declinedAt: null,
+    return this.transactionManager.execute(this.prisma, async () => {
+      const order = await this.orderRepository.create({
+        ...subjectFields,
+        ...recipientFields,
+        buyerId: actorId,
+        buyerBusinessId: null,
+        conversationId: dto.conversationId || null,
+        quantity: new Prisma.Decimal(dto.quantity ?? 1),
+        agreedPrice: dto.agreedPrice != null ? new Prisma.Decimal(dto.agreedPrice) : null,
+        currency: dto.currency ?? 'NGN',
+        scheduledFor: dto.scheduledFor ? new Date(dto.scheduledFor) : null,
+        note: dto.note || null,
+        status: 'REQUESTED',
+        requestedAt: new Date(),
+        acceptedAt: null,
+        fulfillingAt: null,
+        completionRequestedAt: null,
+        completionRequestedById: null,
+        completedAt: null,
+        cancelledAt: null,
+        declinedAt: null,
+      });
+
+      const event: OrderStatusChangedEvent = {
+        orderId: order.id,
+        buyerId: order.buyerId,
+        sellerUserId: order.sellerUserId,
+        sellerBusinessId: order.sellerBusinessId,
+        oldStatus: null,
+        newStatus: order.status,
+        listingId: order.listingId,
+        opportunityId: order.opportunityId,
+        conversationId: order.conversationId,
+      };
+      await this.eventBus.publish('order.status.changed', event);
+
+      return order;
     });
-
-    const event: OrderStatusChangedEvent = {
-      orderId: order.id,
-      buyerId: order.buyerId,
-      sellerUserId: order.sellerUserId,
-      sellerBusinessId: order.sellerBusinessId,
-      oldStatus: null,
-      newStatus: order.status,
-      listingId: order.listingId,
-      opportunityId: order.opportunityId,
-      conversationId: order.conversationId,
-    };
-    await this.eventBus.publish('order.status.changed', event);
-
-    return order;
   }
 
   /**
@@ -131,27 +132,29 @@ export class OrderService {
       timestamps.completionRequestedById = actorId;
     }
 
-    const updatedOrder = await this.orderRepository.updateStatus(
-      orderId,
-      order.status,
-      newStatus,
-      timestamps,
-    );
+    return this.transactionManager.execute(this.prisma, async () => {
+      const updatedOrder = await this.orderRepository.updateStatus(
+        orderId,
+        order.status,
+        newStatus,
+        timestamps,
+      );
 
-    const event: OrderStatusChangedEvent = {
-      orderId: updatedOrder.id,
-      buyerId: updatedOrder.buyerId,
-      sellerUserId: updatedOrder.sellerUserId,
-      sellerBusinessId: updatedOrder.sellerBusinessId,
-      oldStatus: order.status,
-      newStatus: updatedOrder.status,
-      listingId: updatedOrder.listingId,
-      opportunityId: updatedOrder.opportunityId,
-      conversationId: updatedOrder.conversationId,
-    };
-    await this.eventBus.publish('order.status.changed', event);
+      const event: OrderStatusChangedEvent = {
+        orderId: updatedOrder.id,
+        buyerId: updatedOrder.buyerId,
+        sellerUserId: updatedOrder.sellerUserId,
+        sellerBusinessId: updatedOrder.sellerBusinessId,
+        oldStatus: order.status,
+        newStatus: updatedOrder.status,
+        listingId: updatedOrder.listingId,
+        opportunityId: updatedOrder.opportunityId,
+        conversationId: updatedOrder.conversationId,
+      };
+      await this.eventBus.publish('order.status.changed', event);
 
-    return updatedOrder;
+      return updatedOrder;
+    });
   }
 
   async getOrderForActor(actorId: string, id: string): Promise<Order> {

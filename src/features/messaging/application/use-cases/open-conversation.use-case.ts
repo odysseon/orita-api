@@ -4,6 +4,7 @@ import { ParticipantService } from '../services/participant.service.js';
 import { IConversationRepository } from '../../domain/ports/conversation.repository.port.js';
 import { EventBusService } from '../../../../shared/events/event-bus.service.js';
 import { CreateConversationUseCase } from './create-conversation.use-case.js';
+import { TransactionManager } from '../../../../prisma/transaction-manager.service.js';
 
 export interface OpenConversationInput {
   userId: string;
@@ -19,6 +20,7 @@ export class OpenConversationUseCase {
     private readonly repo: IConversationRepository,
     private readonly eventBus: EventBusService,
     private readonly createConversation: CreateConversationUseCase,
+    private readonly transactionManager: TransactionManager,
   ) {}
 
   async execute(input: OpenConversationInput) {
@@ -71,8 +73,10 @@ export class OpenConversationUseCase {
     }
     const lockId = Math.abs(hash);
 
-    return this.prisma.$transaction(
-      async (tx) => {
+    return this.transactionManager.execute(
+      this.prisma,
+      async () => {
+        const tx = this.prisma;
         await tx.$executeRaw`SELECT pg_advisory_xact_lock(${lockId})`;
 
         // Look for an existing conversation

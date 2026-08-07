@@ -13,6 +13,8 @@ import { Listing } from '../../domain/types/listing.entity.js';
 import { ICategoryRepository } from '../../../category/domain/ports/category.repository.port.js';
 import { IBusinessProfileRepository } from '../../../business-profile/domain/ports/business-profile.repository.port.js';
 import { ValidateListingAttributesService } from '../services/validate-listing-attributes.service.js';
+import { TransactionManager } from '../../../../prisma/transaction-manager.service.js';
+import { PrismaService } from '../../../../prisma/prisma.service.js';
 
 @Injectable()
 export class CreateListingUseCase {
@@ -22,6 +24,8 @@ export class CreateListingUseCase {
     private readonly attributeValidator: ValidateListingAttributesService,
     private readonly businessProfileRepo: IBusinessProfileRepository,
     private readonly eventBus: EventBusService,
+    private readonly transactionManager: TransactionManager,
+    private readonly prisma: PrismaService,
   ) {}
 
   async execute(input: CreateListingInput): Promise<Listing> {
@@ -51,34 +55,37 @@ export class CreateListingUseCase {
     }
 
     const slug = await this.deriveUniqueSlug(businessProfile.id, input.title);
-    const listing = await this.repo.create(businessProfile.id, input, slug);
 
-    await this.eventBus.publish(
-      'listing.published',
-      new ListingCreatedEvent(
-        listing.id,
-        listing.slug,
-        listing.title,
-        listing.businessProfileId,
-        businessProfile.name,
-      ),
-      {
-        location:
-          businessProfile.latitude && businessProfile.longitude
-            ? {
-                lat: businessProfile.latitude,
-                lng: businessProfile.longitude,
-              }
-            : undefined,
-        categoryIds: [
-          ...(businessProfile.primaryCategoryId ? [businessProfile.primaryCategoryId] : []),
-          ...(businessProfile.secondaryCategoryIds ?? []),
-          category.id,
-        ],
-      },
-    );
+    return this.transactionManager.execute(this.prisma, async () => {
+      const listing = await this.repo.create(businessProfile.id, input, slug);
 
-    return listing;
+      await this.eventBus.publish(
+        'listing.published',
+        new ListingCreatedEvent(
+          listing.id,
+          listing.slug,
+          listing.title,
+          listing.businessProfileId,
+          businessProfile.name,
+        ),
+        {
+          location:
+            businessProfile.latitude && businessProfile.longitude
+              ? {
+                  lat: businessProfile.latitude,
+                  lng: businessProfile.longitude,
+                }
+              : undefined,
+          categoryIds: [
+            ...(businessProfile.primaryCategoryId ? [businessProfile.primaryCategoryId] : []),
+            ...(businessProfile.secondaryCategoryIds ?? []),
+            category.id,
+          ],
+        },
+      );
+
+      return listing;
+    });
   }
 
   private async deriveUniqueSlug(businessProfileId: string, title: string): Promise<string> {
